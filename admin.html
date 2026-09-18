@@ -50,7 +50,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 <div class="two"><div><label>Etiqueta</label><input id="pbadge" placeholder="Popular"></div><div><label>Orden</label><input id="psort" type="number" value="0"></div></div>
 <div class="row" style="margin-top:12px"><label style="margin:0"><input id="pfeatured" type="checkbox" style="width:auto"> Destacado</label><label style="margin:0"><input id="pavailable" type="checkbox" style="width:auto" checked> Disponible</label></div>
 <div class="row" style="margin-top:15px"><button class="primary" onclick="saveProduct()">Guardar producto</button><button class="ghost" onclick="clearProduct()">Limpiar</button></div></div>
-<div class="card span7"><div class="row between"><h2>Productos</h2><div class="actions"><button class="danger" onclick="removeDemoProducts()">Quitar productos demo</button><button class="ghost" onclick="loadProducts()">Actualizar</button></div></div><div id="productList" class="list"></div></div>
+<div class="card span7"><div class="row between"><h2>Productos</h2><div class="actions"><button class="primary" onclick="addDemoProducts()">Agregar productos demo</button><button class="danger" onclick="removeDemoProducts()">Quitar productos demo</button><button class="ghost" onclick="loadProducts()">Actualizar</button></div></div><div id="productList" class="list"></div></div>
 </div></section>
 
 <section id="categories" class="section"><div class="grid"><div class="card span5"><h2>Nueva categoría</h2><input id="cid" type="hidden"><label>Nombre</label><input id="cname"><label>Slug</label><input id="cslug" placeholder="hamburguesas"><label>Orden</label><input id="csort" type="number" value="0"><label><input id="cactive" type="checkbox" style="width:auto" checked> Activa</label><div class="row" style="margin-top:15px"><button class="primary" onclick="saveCategory()">Guardar</button><button class="ghost" onclick="clearCategory()">Limpiar</button></div></div><div class="card span7"><h2>Categorías</h2><div id="categoryList" class="list"></div></div></div></section>
@@ -122,6 +122,36 @@ async function saveProduct(){const row={restaurant_id:currentRestaurant,name:pna
 function editProduct(id){const p=products.find(x=>x.id===id);pid.value=p.id;pname.value=p.name;pdesc.value=p.description||"";pprice.value=p.price;pcat.value=p.category_id||"";pimage.value=p.image_url||"";pbadge.value=p.badge||"";pfeatured.checked=p.featured;pavailable.checked=p.available;psort.value=p.sort_order;productTitle.textContent="Editar producto";scrollTo({top:0,behavior:"smooth"})}
 function clearProduct(){pid.value="";pname.value="";pdesc.value="";pprice.value="";pcat.value="";pimage.value="";pbadge.value="";pfeatured.checked=false;pavailable.checked=true;psort.value=0;productTitle.textContent="Nuevo producto"}
 async function toggleProduct(id,v){const {error}=await sb.from("restaurant_products").update({available:v,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toast(error.message);await loadProducts()}
+async function addDemoProducts(){
+ if(!currentRestaurant)return toast("Selecciona un restaurante");
+ const demoCats=[["Combos","combos",1],["Hamburguesas","hamburguesas",2],["Papas y más","acompanamientos",3],["Bebidas","bebidas",4],["Postres","postres",5]];
+ const {data:existing}=await sb.from("restaurant_categories").select("id,slug").eq("restaurant_id",currentRestaurant);
+ const map={};(existing||[]).forEach(x=>map[x.slug]=x.id);
+ for(const [name,slug,sort_order] of demoCats){if(!map[slug]){const {data,error}=await sb.from("restaurant_categories").insert({restaurant_id:currentRestaurant,name,slug,sort_order,active:true,is_demo:true}).select("id").single();if(error)return toast(error.message);map[slug]=data.id}}
+ const demo=[
+ ["combos","Combo Clásica","La Clásica simple con papas fritas y gaseosa 500 ml.",2900,3200,"Ahorrás",true],
+ ["combos","Combo Doble","La Clásica doble con papas fritas y gaseosa 500 ml.",3200,3500,"",false],
+ ["combos","Combo Bacon","Bacon Crocante doble, papas con cheddar y panceta y una cerveza artesanal.",4400,4930,"",false],
+ ["combos","Combo Pareja","Dos Clásicas dobles, papas fritas para compartir y dos gaseosas.",5400,6100,"",false],
+ ["hamburguesas","La Clásica","Medallón blend 120g, cheddar, lechuga, tomate, pepinillos y salsa de la casa en pan de papa.",1600,null,"Más pedida",true],
+ ["hamburguesas","Cheddar Total","Medallón blend 120g, cheddar fundido en abundancia y salsa secreta en pan de papa.",1650,null,"",false],
+ ["hamburguesas","Bacon Crocante","Medallón blend 120g, cheddar, panceta crocante y alioli de la casa.",1730,null,"",true],
+ ["hamburguesas","Crispy Onion","Medallón blend 120g, cheddar, cebolla crispy y salsa barbacoa.",1700,null,"Nuevo",false],
+ ["hamburguesas","La Ahumada","Medallón blend 120g, cheddar ahumado, cebolla caramelizada y salsa ahumada.",1750,null,"",false],
+ ["acompanamientos","Papas fritas","Porción individual, bien crocantes.",900,null,"",false],
+ ["acompanamientos","Papas con cheddar y panceta","Papas fritas bañadas en cheddar caliente con panceta crocante.",1500,null,"Favorita",true],
+ ["acompanamientos","Aros de cebolla","Rebozados y fritos al momento. Vienen con salsa barbacoa.",1100,null,"",false],
+ ["bebidas","Gaseosa 500 ml","Línea Coca-Cola. Consultá sabores por WhatsApp.",700,null,"",false],
+ ["bebidas","Limonada con menta","Exprimida en el día, con menta y jengibre.",900,null,"",false],
+ ["bebidas","Cerveza artesanal 473 ml","Rubia, roja o IPA, según disponibilidad.",1400,null,"",false],
+ ["bebidas","Agua sin gas 500 ml","Botella individual.",500,null,"",false],
+ ["postres","Brownie con helado","Brownie tibio de chocolate con bocha de crema americana.",1600,null,"",false],
+ ["postres","Flan casero","Con dulce de leche y crema.",1200,null,"",false]];
+ const {data:existingP}=await sb.from("restaurant_products").select("name").eq("restaurant_id",currentRestaurant).eq("is_demo",true);const names=new Set((existingP||[]).map(x=>x.name));
+ const rows=demo.filter(x=>!names.has(x[1])).map((x,i)=>({restaurant_id:currentRestaurant,category_id:map[x[0]],name:x[1],description:x[2],price:x[3],compare_price:x[4],badge:x[5]||null,featured:x[6],available:x[1]!=="La Ahumada",sort_order:i+1,is_demo:true}));
+ if(rows.length){const {error}=await sb.from("restaurant_products").insert(rows);if(error)return toast(error.message)}
+ await Promise.all([loadCategories(),loadProducts()]);toast("Productos demo agregados")
+}
 async function removeDemoProducts(){if(!currentRestaurant)return toast("Selecciona un restaurante");if(!confirm("¿Quitar todos los productos y categorías demo de este restaurante?"))return;const {error:e1}=await sb.from("restaurant_products").delete().eq("restaurant_id",currentRestaurant).eq("is_demo",true);if(e1)return toast(e1.message);const {error:e2}=await sb.from("restaurant_categories").delete().eq("restaurant_id",currentRestaurant).eq("is_demo",true);if(e2)return toast(e2.message);await Promise.all([loadCategories(),loadProducts()]);toast("Productos demo eliminados")}
 async function deleteProduct(id){if(!confirm("¿Eliminar este producto?"))return;const {error}=await sb.from("restaurant_products").delete().eq("id",id);if(error)return toast(error.message);await loadProducts();toast("Producto eliminado")}
 async function loadOrders(){const {data,error}=await sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(100);if(error)return toast(error.message);orders=data||[];const render=o=>`<div class="item"><div class="row between"><div><h3>#${esc(o.order_code)} · ${esc(o.customer_name)}</h3><div class="mut">${new Date(o.created_at).toLocaleString()} · ${esc(o.order_type)} · ${esc(o.payment_method)}</div><div class="price">${money(o.total)}</div></div><div><select onchange="setOrderStatus(${o.id},this.value)">${["nuevo","confirmado","preparando","listo","enviado","entregado","cancelado"].map(s=>`<option ${s===o.status?"selected":""}>${s}</option>`).join("")}</select></div></div></div>`;orderList.innerHTML=orders.map(render).join("")||"<p class='mut'>Sin pedidos.</p>";recentOrders.innerHTML=orders.slice(0,5).map(render).join("")||"<p class='mut'>Sin pedidos recientes.</p>";renderStats()}
