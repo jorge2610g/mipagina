@@ -445,8 +445,18 @@ fieldset.field{border:0;padding:0}
   async function loadMenuFromCloud(){
     if(!db) return;
     const params=new URLSearchParams(location.search);
-    const slug=params.get("r")||"principal";
-    const {data:r}=await db.from("restaurants").select("*").eq("slug",slug).eq("active",true).maybeSingle();
+    const requestedSlug=params.get("r");
+    const host=location.hostname.toLowerCase().replace(/^www\./,"");
+    const platformHosts=["jorge2610g.github.io","localhost","127.0.0.1"];
+    let query=db.from("restaurants").select("*").eq("active",true);
+    if(requestedSlug){
+      query=query.eq("slug",requestedSlug);
+    }else if(!platformHosts.includes(host)){
+      query=query.or("custom_domain.eq."+host+",custom_domain.eq.www."+host);
+    }else{
+      query=query.eq("slug","principal");
+    }
+    const {data:r}=await query.maybeSingle();
     if(!r) return;
     CONFIG.name=r.name||CONFIG.name; CONFIG.whatsapp=r.whatsapp||CONFIG.whatsapp; CONFIG.address=r.address||CONFIG.address;
     CONFIG.open=(r.open_time||CONFIG.open).slice(0,5); CONFIG.close=(r.close_time||CONFIG.close).slice(0,5);
