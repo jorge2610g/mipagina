@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Panel Restaurante</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">document.querySelectorAll(".dashGo").forEach(b=>b.addEventListener("click",()=>{const t=b.dataset.go;const tab=document.querySelector('[data-tab="'+t+'"]');if(tab&&tab.style.display!=="none")tab.click()}));
+</script>
 <style>
 :root{--bg:#07111f;--card:#0e1d30;--line:#203550;--txt:#f6f8fb;--mut:#9fb0c5;--a:#ffb703;--ok:#2dd4bf;--bad:#fb7185}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;background:linear-gradient(135deg,#07111f,#0c1b2f);color:var(--txt);min-height:100vh}
@@ -36,11 +37,16 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 <div class="card span7"><div class="row between"><h2>Mis restaurantes</h2><button class="ghost" onclick="loadRestaurants()">Actualizar</button></div><div id="restaurantList" class="list"></div></div>
 <div class="card span12"><div class="row between"><div><h2 id="selectedRestaurantTitle">Contenido del restaurante</h2><div class="mut">Categorías y productos del restaurante seleccionado.</div></div><button class="primary" onclick="openSelectedContent()">Administrar contenido</button></div><div class="grid" style="margin-top:14px"><div class="span5"><h3>Categorías</h3><div id="restaurantCategoryPreview" class="list"></div></div><div class="span7"><h3>Productos</h3><div id="restaurantProductPreview" class="list"></div></div></div></div>
 </div></section>
-<section id="dashboard" class="section"><div class="grid">
-<div class="card span4"><div class="mut">Productos activos</div><div id="statProducts" class="stat">0</div></div>
-<div class="card span4"><div class="mut">Pedidos</div><div id="statOrders" class="stat">0</div></div>
-<div class="card span4"><div class="mut">Ventas registradas</div><div id="statSales" class="stat">$0</div></div>
-<div class="card span12"><h2>Pedidos recientes</h2><div id="recentOrders" class="list"></div></div>
+<section id="dashboard" class="section">
+<div class="row between" style="margin-bottom:16px"><div><h2 style="margin:0">Resumen del negocio</h2><div class="mut">Actividad y rendimiento del restaurante seleccionado</div></div><button class="ghost" onclick="refreshAll()">Actualizar datos</button></div>
+<div class="grid">
+<div class="card span3"><div class="mut">Ventas totales</div><div id="statSales" class="stat">$0</div><small class="mut">Pedidos registrados</small></div>
+<div class="card span3"><div class="mut">Pedidos</div><div id="statOrders" class="stat">0</div><small class="mut">Total acumulado</small></div>
+<div class="card span3"><div class="mut">Productos activos</div><div id="statProducts" class="stat">0</div><small class="mut">Disponibles en el menú</small></div>
+<div class="card span3"><div class="mut">Ticket promedio</div><div id="statAverage" class="stat">$0</div><small class="mut">Promedio por pedido</small></div>
+<div class="card span8"><div class="row between"><h2>Pedidos recientes</h2><span class="badge">En vivo</span></div><div id="recentOrders" class="list"></div></div>
+<div class="card span4"><h2>Estado del negocio</h2><div id="businessStatus" class="list"></div></div>
+<div class="card span12"><h2>Accesos rápidos</h2><div class="row" style="flex-wrap:wrap"><button class="ghost dashGo" data-go="products">Gestionar productos</button><button class="ghost dashGo" data-go="categories">Categorías</button><button class="ghost dashGo" data-go="orders">Ver pedidos</button><button class="ghost dashGo" data-go="settings">Configurar negocio</button></div></div>
 </div></section>
 
 <section id="products" class="section"><div class="grid">
