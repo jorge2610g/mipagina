@@ -240,7 +240,7 @@ fieldset.field{border:0;padding:0}
       <div class="hero-art" id="hero-art"></div>
     </div>
     <h1 id="biz-name">Hamburguesería Demo</h1>
-    <p class="lead">Hamburguesas armadas al momento. Elegí, personalizá y enviá tu pedido por WhatsApp.</p><div class="top-actions"><button class="mini-btn" id="theme-toggle" type="button">◐ Cambiar tema</button><button class="mini-btn" id="clear-cart" type="button">Vaciar pedido</button></div>
+    <p class="lead">Hamburguesas armadas al momento. Elegí, personalizá y enviá tu pedido por WhatsApp.</p><div class="top-actions"><button class="mini-btn" id="theme-toggle" type="button">🌙 Modo oscuro</button><span class="mini-btn" style="cursor:default;pointer-events:none">Versión v1.0.1</span><button class="mini-btn" id="clear-cart" type="button">Vaciar pedido</button></div>
   </div>
 </header>
 
@@ -960,9 +960,9 @@ fieldset.field{border:0;padding:0}
   const savedTheme = localStorage.getItem("menu_theme");
   if(savedTheme) document.documentElement.dataset.theme=savedTheme;
   else document.documentElement.dataset.theme=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
-  function updateThemeButton(){const b=$("#theme-toggle");if(b)b.textContent=document.documentElement.dataset.theme==="dark"?"☀️ Modo claro":"🌙 Modo oscuro";}
+  function updateThemeButton(){const b=document.getElementById("theme-toggle");if(b)b.textContent=document.documentElement.dataset.theme==="dark"?"☀️ Modo claro":"🌙 Modo oscuro";}
   updateThemeButton();
-  $("#theme-toggle").addEventListener("click",()=>{const next=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=next;localStorage.setItem("menu_theme",next);updateThemeButton();});
+  document.getElementById("theme-toggle")?.addEventListener("click",()=>{const next=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",next);localStorage.setItem("menu_theme",next);updateThemeButton();});
   $("#clear-cart").addEventListener("click",()=>{ if(cart.size && confirm("¿Vaciar todo el pedido?")){ cart.clear(); saveCart(); update(); } });
   try{ const c=JSON.parse(localStorage.getItem(CUSTOMER_KEY)||"{}"); $("#f-name").value=c.name||""; $("#f-addr").value=c.addr||""; }catch(e){}
   ["#f-name","#f-addr"].forEach(sel=>$(sel).addEventListener("change",()=>{try{localStorage.setItem(CUSTOMER_KEY,JSON.stringify({name:$("#f-name").value.trim(),addr:$("#f-addr").value.trim()}));}catch(e){}}));
