@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panel Restaurante</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#07111f;--card:#0e1d30;--line:#203550;--txt:#f6f8fb;--mut:#9fb0c5;--a:#ffb703;--ok:#2dd4bf;--bad:#fb7185}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;background:linear-gradient(135deg,#07111f,#0c1b2f);color:var(--txt);min-height:100vh}
+button,input,textarea,select{font:inherit}.hidden{display:none!important}.wrap{max-width:1280px;margin:auto;padding:24px}.card{background:rgba(14,29,48,.96);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 18px 50px #0004}
+.login{max-width:430px;margin:10vh auto}.login h1{margin:0 0 8px}.mut{color:var(--mut)}label{display:block;margin:12px 0 6px;font-size:13px;color:var(--mut)}
+input,textarea,select{width:100%;background:#071525;border:1px solid var(--line);color:var(--txt);border-radius:11px;padding:12px;outline:none}textarea{min-height:90px;resize:vertical}
+button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:800}.primary{background:var(--a);color:#171000}.ghost{background:#16273b;color:var(--txt);border:1px solid var(--line)}.danger{background:#3b1720;color:#fecdd3}.full{width:100%;margin-top:16px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.top h1{font-size:24px;margin:0}.tabs{display:flex;gap:8px;overflow:auto;margin-bottom:18px}.tab{white-space:nowrap;background:#13253a;color:var(--mut)}.tab.active{background:var(--a);color:#171000}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}.span4{grid-column:span 4}.span5{grid-column:span 5}.span7{grid-column:span 7}.span8{grid-column:span 8}.span12{grid-column:span 12}
+.stat{font-size:28px;font-weight:900;margin-top:8px}.row{display:flex;gap:10px;align-items:center}.between{justify-content:space-between}.list{display:grid;gap:10px}.item{border:1px solid var(--line);border-radius:13px;padding:13px;background:#0a192a}.item h3{margin:0 0 5px}.pill{display:inline-block;border-radius:999px;padding:5px 9px;background:#17304a;font-size:12px}.price{font-weight:900;color:var(--a)}
+.actions{display:flex;gap:7px;flex-wrap:wrap}.actions button{padding:7px 10px;font-size:12px}.section{display:none}.section.active{display:block}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.toast{position:fixed;right:18px;bottom:18px;padding:12px 16px;background:#10243a;border:1px solid var(--line);border-radius:12px;display:none;z-index:5}
+@media(max-width:800px){.wrap{padding:14px}.span4,.span5,.span7,.span8,.span12{grid-column:span 12}.two{grid-template-columns:1fr}.top{align-items:flex-start}.top .row{flex-wrap:wrap;justify-content:flex-end}}
+</style></head>
+<body>
+<div id="login" class="wrap login"><div class="card"><h1>Panel de administración</h1><p class="mut">Gestiona menú, precios, disponibilidad, pedidos y datos del negocio.</p>
+<label>Correo administrador</label><input id="email" type="email" autocomplete="username" placeholder="tu@email.com">
+<label>Contraseña</label><input id="password" type="password" autocomplete="current-password" placeholder="••••••••">
+<button class="primary full" onclick="login()">Ingresar</button><p id="loginMsg" class="mut"></p></div></div>
+
+<div id="app" class="wrap hidden">
+<div class="top"><div><h1>Panel Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><a href="index.html"><button class="ghost">Ver menú</button></a><button class="ghost" onclick="logout()">Salir</button></div></div>
+<div class="tabs">
+<button class="tab active" data-tab="dashboard">Resumen</button><button class="tab" data-tab="products">Productos</button><button class="tab" data-tab="categories">Categorías</button><button class="tab" data-tab="orders">Pedidos</button><button class="tab" data-tab="settings">Negocio</button>
+</div>
+
+<section id="dashboard" class="section active"><div class="grid">
+<div class="card span4"><div class="mut">Productos activos</div><div id="statProducts" class="stat">0</div></div>
+<div class="card span4"><div class="mut">Pedidos</div><div id="statOrders" class="stat">0</div></div>
+<div class="card span4"><div class="mut">Ventas registradas</div><div id="statSales" class="stat">$0</div></div>
+<div class="card span12"><h2>Pedidos recientes</h2><div id="recentOrders" class="list"></div></div>
+</div></section>
+
+<section id="products" class="section"><div class="grid">
+<div class="card span5"><h2 id="productTitle">Nuevo producto</h2><input id="pid" type="hidden">
+<label>Nombre</label><input id="pname"><label>Descripción</label><textarea id="pdesc"></textarea>
+<div class="two"><div><label>Precio</label><input id="pprice" type="number" min="0" step=".01"></div><div><label>Categoría</label><select id="pcat"></select></div></div>
+<label>URL de imagen</label><input id="pimage" placeholder="https://...">
+<div class="two"><div><label>Etiqueta</label><input id="pbadge" placeholder="Popular"></div><div><label>Orden</label><input id="psort" type="number" value="0"></div></div>
+<div class="row" style="margin-top:12px"><label style="margin:0"><input id="pfeatured" type="checkbox" style="width:auto"> Destacado</label><label style="margin:0"><input id="pavailable" type="checkbox" style="width:auto" checked> Disponible</label></div>
+<div class="row" style="margin-top:15px"><button class="primary" onclick="saveProduct()">Guardar producto</button><button class="ghost" onclick="clearProduct()">Limpiar</button></div></div>
+<div class="card span7"><div class="row between"><h2>Productos</h2><button class="ghost" onclick="loadProducts()">Actualizar</button></div><div id="productList" class="list"></div></div>
+</div></section>
+
+<section id="categories" class="section"><div class="grid"><div class="card span5"><h2>Nueva categoría</h2><input id="cid" type="hidden"><label>Nombre</label><input id="cname"><label>Slug</label><input id="cslug" placeholder="hamburguesas"><label>Orden</label><input id="csort" type="number" value="0"><label><input id="cactive" type="checkbox" style="width:auto" checked> Activa</label><div class="row" style="margin-top:15px"><button class="primary" onclick="saveCategory()">Guardar</button><button class="ghost" onclick="clearCategory()">Limpiar</button></div></div><div class="card span7"><h2>Categorías</h2><div id="categoryList" class="list"></div></div></div></section>
+
+<section id="orders" class="section"><div class="card"><div class="row between"><h2>Pedidos</h2><button class="ghost" onclick="loadOrders()">Actualizar</button></div><div id="orderList" class="list"></div></div></section>
+
+<section id="settings" class="section"><div class="card"><h2>Datos del negocio</h2><div class="grid">
+<div class="span4"><label>Nombre</label><input id="sname"></div><div class="span4"><label>WhatsApp</label><input id="swhatsapp"></div><div class="span4"><label>Instagram</label><input id="sinstagram"></div>
+<div class="span12"><label>Dirección</label><input id="saddress"></div><div class="span4"><label>Apertura</label><input id="sopen" type="time"></div><div class="span4"><label>Cierre</label><input id="sclose" type="time"></div><div class="span4"><label>Tiempo retiro</label><input id="spickup"></div><div class="span8"><label>Tiempo delivery</label><input id="sdelivery"></div><div class="span12"><label>Nota delivery</label><input id="sdeliverynote"></div>
+<div class="span12"><button class="primary" onclick="saveSettings()">Guardar configuración</button></div></div></div></section>
+</div><div id="toast" class="toast"></div>
+
+<script>
+const SB_URL="https://gulctljitzlwokqydigx.supabase.co";
+const SB_KEY="sb_publishable__moppTxObowifx6rJbW_tw_3GiCkqhG";
+const sb=supabase.createClient(SB_URL,SB_KEY);
+let categories=[],products=[],orders=[];
+const money=n=>new Intl.NumberFormat("es-CL",{style:"currency",currency:"CLP",maximumFractionDigits:0}).format(Number(n||0));
+function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2500)}
+async function login(){loginMsg.textContent="Ingresando...";const {data,error}=await sb.auth.signInWithPassword({email:email.value.trim(),password:password.value});if(error){loginMsg.textContent=error.message;return}await enter(data.user)}
+async function logout(){await sb.auth.signOut();location.reload()}
+async function enter(user){const {data}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();if(!data){await sb.auth.signOut();loginMsg.textContent="Esta cuenta no tiene permisos de administrador.";return}login.classList.add("hidden");app.classList.remove("hidden");who.textContent=user.email;await refreshAll()}
+sb.auth.getSession().then(async({data})=>{if(data.session) await enter(data.session.user)});
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.tab).classList.add("active")});
+async function refreshAll(){await Promise.all([loadCategories(),loadProducts(),loadOrders(),loadSettings()]);renderStats()}
+async function loadCategories(){const {data,error}=await sb.from("restaurant_categories").select("*").order("sort_order");if(error)return toast(error.message);categories=data||[];categoryList.innerHTML=categories.map(c=>`<div class="item row between"><div><h3>${esc(c.name)}</h3><span class="pill">${esc(c.slug)}</span> ${c.active?"":"<span class='pill'>Inactiva</span>"}</div><div class="actions"><button class="ghost" onclick="editCategory(${c.id})">Editar</button><button class="danger" onclick="deleteCategory(${c.id})">Eliminar</button></div></div>`).join("")||"<p class='mut'>Sin categorías.</p>";pcat.innerHTML='<option value="">Sin categoría</option>'+categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")}
+async function saveCategory(){const row={name:cname.value.trim(),slug:cslug.value.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""),sort_order:+csort.value||0,active:cactive.checked};if(!row.name||!row.slug)return toast("Completa nombre y slug");let q=cid.value?sb.from("restaurant_categories").update(row).eq("id",cid.value):sb.from("restaurant_categories").insert(row);const {error}=await q;if(error)return toast(error.message);clearCategory();await loadCategories();toast("Categoría guardada")}
+function editCategory(id){const c=categories.find(x=>x.id===id);cid.value=c.id;cname.value=c.name;cslug.value=c.slug;csort.value=c.sort_order;cactive.checked=c.active}
+function clearCategory(){cid.value="";cname.value="";cslug.value="";csort.value=0;cactive.checked=true}
+async function deleteCategory(id){if(!confirm("¿Eliminar esta categoría?"))return;const {error}=await sb.from("restaurant_categories").delete().eq("id",id);if(error)return toast(error.message);await loadCategories();toast("Categoría eliminada")}
+async function loadProducts(){const {data,error}=await sb.from("restaurant_products").select("*").order("sort_order");if(error)return toast(error.message);products=data||[];productList.innerHTML=products.map(p=>`<div class="item"><div class="row between"><div><h3>${esc(p.name)}</h3><div class="mut">${esc(p.description||"")}</div><div class="price">${money(p.price)}</div></div><div class="actions"><button class="ghost" onclick="editProduct(${p.id})">Editar</button><button class="ghost" onclick="toggleProduct(${p.id},${!p.available})">${p.available?"Desactivar":"Activar"}</button><button class="danger" onclick="deleteProduct(${p.id})">Eliminar</button></div></div></div>`).join("")||"<p class='mut'>Sin productos.</p>";renderStats()}
+async function saveProduct(){const row={name:pname.value.trim(),description:pdesc.value.trim(),price:+pprice.value||0,category_id:pcat.value?+pcat.value:null,image_url:pimage.value.trim()||null,badge:pbadge.value.trim()||null,featured:pfeatured.checked,available:pavailable.checked,sort_order:+psort.value||0,updated_at:new Date().toISOString()};if(!row.name)return toast("Escribe el nombre");let q=pid.value?sb.from("restaurant_products").update(row).eq("id",pid.value):sb.from("restaurant_products").insert(row);const {error}=await q;if(error)return toast(error.message);clearProduct();await loadProducts();toast("Producto guardado")}
+function editProduct(id){const p=products.find(x=>x.id===id);pid.value=p.id;pname.value=p.name;pdesc.value=p.description||"";pprice.value=p.price;pcat.value=p.category_id||"";pimage.value=p.image_url||"";pbadge.value=p.badge||"";pfeatured.checked=p.featured;pavailable.checked=p.available;psort.value=p.sort_order;productTitle.textContent="Editar producto";scrollTo({top:0,behavior:"smooth"})}
+function clearProduct(){pid.value="";pname.value="";pdesc.value="";pprice.value="";pcat.value="";pimage.value="";pbadge.value="";pfeatured.checked=false;pavailable.checked=true;psort.value=0;productTitle.textContent="Nuevo producto"}
+async function toggleProduct(id,v){const {error}=await sb.from("restaurant_products").update({available:v,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toast(error.message);await loadProducts()}
+async function deleteProduct(id){if(!confirm("¿Eliminar este producto?"))return;const {error}=await sb.from("restaurant_products").delete().eq("id",id);if(error)return toast(error.message);await loadProducts();toast("Producto eliminado")}
+async function loadOrders(){const {data,error}=await sb.from("restaurant_orders").select("*").order("created_at",{ascending:false}).limit(100);if(error)return toast(error.message);orders=data||[];const render=o=>`<div class="item"><div class="row between"><div><h3>#${esc(o.order_code)} · ${esc(o.customer_name)}</h3><div class="mut">${new Date(o.created_at).toLocaleString()} · ${esc(o.order_type)} · ${esc(o.payment_method)}</div><div class="price">${money(o.total)}</div></div><div><select onchange="setOrderStatus(${o.id},this.value)">${["nuevo","confirmado","preparando","listo","enviado","entregado","cancelado"].map(s=>`<option ${s===o.status?"selected":""}>${s}</option>`).join("")}</select></div></div></div>`;orderList.innerHTML=orders.map(render).join("")||"<p class='mut'>Sin pedidos.</p>";recentOrders.innerHTML=orders.slice(0,5).map(render).join("")||"<p class='mut'>Sin pedidos recientes.</p>";renderStats()}
+async function setOrderStatus(id,status){const {error}=await sb.from("restaurant_orders").update({status,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toast(error.message);toast("Estado actualizado");await loadOrders()}
+async function loadSettings(){const {data,error}=await sb.from("restaurant_settings").select("*").eq("id",1).single();if(error)return toast(error.message);sname.value=data.business_name||"";swhatsapp.value=data.whatsapp||"";saddress.value=data.address||"";sopen.value=(data.open_time||"").slice(0,5);sclose.value=(data.close_time||"").slice(0,5);sinstagram.value=data.instagram||"";spickup.value=data.pickup_eta||"";sdelivery.value=data.delivery_eta||"";sdeliverynote.value=data.delivery_note||""}
+async function saveSettings(){const row={business_name:sname.value.trim(),whatsapp:swhatsapp.value.trim(),address:saddress.value.trim(),open_time:sopen.value,close_time:sclose.value,instagram:sinstagram.value.trim(),pickup_eta:spickup.value.trim(),delivery_eta:sdelivery.value.trim(),delivery_note:sdeliverynote.value.trim(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_settings").update(row).eq("id",1);if(error)return toast(error.message);toast("Configuración guardada")}
+function renderStats(){statProducts.textContent=products.filter(p=>p.available).length;statOrders.textContent=orders.length;statSales.textContent=money(orders.filter(o=>o.status!=="cancelado").reduce((a,o)=>a+Number(o.total||0),0))}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+</script></body></html>
