@@ -322,6 +322,8 @@ fieldset.field{border:0;padding:0}
     <div class="field" id="addr-wrap" hidden>
       <label for="f-addr">Dirección de entrega</label>
       <input type="text" id="f-addr" autocomplete="street-address">
+      <button type="button" id="gps-btn" style="margin-top:8px;width:100%">Usar mi ubicación para calcular el delivery</button>
+      <small id="gps-status" style="display:block;margin-top:6px"></small>
     </div>
 
     <div class="field">
@@ -353,7 +355,8 @@ fieldset.field{border:0;padding:0}
     close: "23:30",
     instagram: "",                   // ej: "tuhamburgueseria" (dejalo vacío para ocultarlo)
     payments: ["Efectivo", "Transferencia", "Mercado Pago"],
-    eta: { pickup: "Listo en 20–30 min", delivery: "35–50 min, envío a confirmar" }
+    eta: { pickup: "Listo en 20–30 min", delivery: "35–50 min, envío a confirmar" },
+    delivery: { mode:"fixed", fixed:0, zones:[], lat:null, lng:null }
   };
 
   const EXTRAS_BURGER = [
@@ -467,6 +470,7 @@ fieldset.field{border:0;padding:0}
     CONFIG.name=r.name||CONFIG.name; CONFIG.whatsapp=r.whatsapp||CONFIG.whatsapp; CONFIG.address=r.address||CONFIG.address;
     CONFIG.open=(r.open_time||CONFIG.open).slice(0,5); CONFIG.close=(r.close_time||CONFIG.close).slice(0,5);
     CONFIG.instagram=r.instagram||""; CONFIG.eta={pickup:r.pickup_eta||CONFIG.eta.pickup,delivery:r.delivery_eta||CONFIG.eta.delivery};
+    CONFIG.delivery={mode:r.delivery_pricing_mode||"fixed",fixed:Number(r.delivery_fixed_price||0),zones:Array.isArray(r.delivery_zones)?r.delivery_zones:[],lat:r.latitude==null?null:Number(r.latitude),lng:r.longitude==null?null:Number(r.longitude)};
     const [{data:cats},{data:prods}]=await Promise.all([
       db.from("restaurant_categories").select("*").eq("restaurant_id",r.id).eq("active",true).order("sort_order"),
       db.from("restaurant_products").select("*").eq("restaurant_id",r.id).eq("available",true).order("sort_order")
@@ -733,10 +737,24 @@ fieldset.field{border:0;padding:0}
     announce("Agregaste " + it.name + (it.opts[oi].l ? " " + it.opts[oi].l : "") + " al pedido.");
     saveCart(); update(true);
   }
+  let deliveryFee=0, deliveryDistance=null, deliveryCoords=null, deliveryUnavailable=false;
+  function deliverySelected(){return document.querySelector('input[name="tipo"]:checked')?.value==="Delivery"}
   function totals(){
-    let n = 0, t = 0;
-    cart.forEach(v => { n += v.qty; t += v.qty * unitOf(v); });
-    return { n, t };
+    let n=0, subtotal=0;
+    cart.forEach(v=>{n+=v.qty;subtotal+=v.qty*unitOf(v)});
+    const fee=deliverySelected()?Number(deliveryFee||0):0;
+    return {n,subtotal,fee,t:subtotal+fee};
+  }
+  function haversineKm(a,b,c,d){const R=6371,toRad=x=>x*Math.PI/180,dp=toRad(c-a),dl=toRad(d-b);const q=Math.sin(dp/2)**2+Math.cos(toRad(a))*Math.cos(toRad(c))*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(q))}
+  function applyDeliveryFee(){
+    deliveryUnavailable=false;
+    if(!deliverySelected()){deliveryFee=0;deliveryDistance=null;return}
+    if(CONFIG.delivery.mode==="fixed"){deliveryFee=Number(CONFIG.delivery.fixed||0);return}
+    if(!deliveryCoords||CONFIG.delivery.lat==null||CONFIG.delivery.lng==null){deliveryFee=0;return}
+    deliveryDistance=haversineKm(CONFIG.delivery.lat,CONFIG.delivery.lng,deliveryCoords.lat,deliveryCoords.lng);
+    const zones=[...(CONFIG.delivery.zones||[])].sort((a,b)=>Number(a.max_km)-Number(b.max_km));
+    const zone=zones.find(z=>deliveryDistance<=Number(z.max_km));
+    if(zone) deliveryFee=Number(zone.price||0); else {deliveryFee=0;deliveryUnavailable=true}
   }
 
   const sheet = $("#sheet"), linesEl = $("#lines"), bar = $("#bar");
@@ -748,7 +766,8 @@ fieldset.field{border:0;padding:0}
       + `<span>${fmt(unitOf(v))} c/u</span></div>`
       + `<div class="step"><button type="button" data-k="${esc(k)}" data-a="-1" aria-label="Quitar uno de ${lineName(v)}">−</button><span>${v.qty}</span><button type="button" data-k="${esc(k)}" data-a="1" aria-label="Sumar uno de ${lineName(v)}">+</button></div>`
       + `<div class="lt">${fmt(v.qty * unitOf(v))}</div></div>`).join("");
-    $("#total").textContent = fmt(totals().t);
+    applyDeliveryFee(); $("#total").textContent=fmt(totals().t);
+    if(deliverySelected()){const h=$("#ship-hint");if(CONFIG.delivery.mode==="fixed")h.textContent="Delivery: "+fmt(deliveryFee);else if(deliveryUnavailable)h.textContent="Tu ubicación está fuera de la zona de delivery.";else if(deliveryDistance!=null)h.textContent="Delivery: "+fmt(deliveryFee)+" · "+deliveryDistance.toFixed(1)+" km";else h.textContent="Usa tu ubicación para calcular el costo del delivery.";}
     const inCart = new Set([...cart.values()].map(v => v.it.id));
     const sug = Object.values(ITEMS).filter(it => it.quick && !it.out && !inCart.has(it.id)).slice(0, 4);
     $("#sug-wrap").hidden = sug.length === 0;
@@ -880,6 +899,7 @@ fieldset.field{border:0;padding:0}
       "*Nuevo pedido — " + CONFIG.name + "*",
       "Pedido: #" + Date.now().toString().slice(-6), "",
       ...lines, "",
+      ...(f.type==="Delivery"?["Subtotal: "+fmt(totals().subtotal),"Delivery: "+fmt(totals().fee)+(deliveryDistance!=null?" ("+deliveryDistance.toFixed(1)+" km)":"")]:[]),
       "*Total: " + fmt(totals().t) + "*", "",
       "Nombre: " + f.name,
       f.type === "Delivery" ? "Entrega: Delivery a " + f.addr : "Entrega: Retiro en el local",
@@ -895,7 +915,13 @@ fieldset.field{border:0;padding:0}
     $("#addr-wrap").hidden = !d;
     $("#ship-hint").hidden = !d;
   }
-  $$('input[name="tipo"]').forEach(r => r.addEventListener("change", () => { toggleDelivery(); refreshLink(); }));
+  $('input[name="tipo"]').forEach(r=>r.addEventListener("change",()=>{applyDeliveryFee();toggleDelivery();update();refreshLink()}));
+  $("#gps-btn").addEventListener("click",()=>{
+    const st=$("#gps-status");
+    if(!navigator.geolocation){st.textContent="Este dispositivo no permite obtener la ubicación.";return}
+    st.textContent="Obteniendo ubicación…";
+    navigator.geolocation.getCurrentPosition(p=>{deliveryCoords={lat:p.coords.latitude,lng:p.coords.longitude};applyDeliveryFee();st.textContent=deliveryUnavailable?"Fuera de la zona de delivery.":"Ubicación lista"+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":"");update();refreshLink()},()=>{st.textContent="No se pudo obtener la ubicación. Revisa el permiso de GPS."},{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
+  });
   ["#f-name", "#f-addr", "#f-pay", "#f-notes"].forEach(s => $(s).addEventListener("input", refreshLink));
   async function saveOrderToCloud(){
     if (!db || !cart.size) return false;
@@ -905,7 +931,7 @@ fieldset.field{border:0;padding:0}
     const { error } = await db.from("restaurant_orders").insert({
       restaurant_id:window.__restaurantId||null, order_code:orderCode, customer_name:f.name, order_type:f.type,
       delivery_address:f.type === "Delivery" ? f.addr : null, payment_method:f.pay,
-      notes:f.notes || null, items, total:totals().t, status:"nuevo"
+      notes:f.notes || null,items,total:totals().t,delivery_fee:f.type==="Delivery"?totals().fee:0,delivery_distance_km:f.type==="Delivery"?deliveryDistance:null,delivery_latitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lat:null,delivery_longitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lng:null,status:"nuevo"
     });
     if(error){ console.error("No se pudo guardar el pedido", error); throw error; }
     localStorage.setItem("last_order_code",orderCode);
@@ -918,7 +944,9 @@ fieldset.field{border:0;padding:0}
     let msg = "";
     if (!cart.size) msg = "Agregá al menos un producto.";
     else if (!f.name){ msg = "Escribí tu nombre para saber a quién entregarle el pedido."; $("#f-name").focus(); }
-    else if (f.type === "Delivery" && !f.addr){ msg = "Escribí la dirección de entrega."; $("#f-addr").focus(); }
+    else if(f.type==="Delivery"&&!f.addr){msg="Escribí la dirección de entrega.";$("#f-addr").focus();}
+    else if(f.type==="Delivery"&&CONFIG.delivery.mode==="distance"&&!deliveryCoords){msg="Usa tu ubicación para calcular el costo del delivery.";}
+    else if(f.type==="Delivery"&&deliveryUnavailable){msg="Tu ubicación está fuera de la zona de delivery.";}
     $("#err").textContent = msg;
     if (msg){ e.preventDefault(); return; }
     try{await saveOrderToCloud();}catch(err){e.preventDefault();$("#err").textContent="No pudimos registrar el pedido. Intenta nuevamente.";return;}
