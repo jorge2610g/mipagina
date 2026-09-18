@@ -4,8 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#ffc21a">
-<meta name="description" content="Menú digital: elegí tus hamburguesas, combos y bebidas y enviá el pedido por WhatsApp.">
-<title>Hamburguesería Demo | Menú digital</title>
+<meta name="description" content="Menú digital del restaurante. Pedidos directos por WhatsApp.">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Menú del restaurante</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -238,7 +241,7 @@ fieldset.field{border:0;padding:0}
       </div>
       <div class="hero-art" id="hero-art"></div>
     </div>
-    <h1 id="biz-name">Hamburguesería Demo</h1>
+    <h1 id="biz-name">Cargando restaurante…</h1>
     <p class="lead">Hamburguesas armadas al momento. Elegí, personalizá y enviá tu pedido por WhatsApp.</p><div class="top-actions"><button class="mini-btn" id="theme-toggle" type="button" onclick="toggleMenuTheme()">◐ Cambiar tema</button><script>function toggleMenuTheme(){var h=document.documentElement;var next=h.getAttribute("data-theme")==="dark"?"light":"dark";h.setAttribute("data-theme",next);try{localStorage.setItem("menu_theme",next)}catch(e){}}</script><button class="mini-btn" id="clear-cart" type="button">Vaciar pedido</button></div>
   </div>
 </header>
@@ -445,7 +448,7 @@ fieldset.field{border:0;padding:0}
     ]}
   ];
   async function loadMenuFromCloud(){
-    if(!db) return;
+    if(!db) throw new Error("No se pudo conectar con el servicio de datos.");
     const params=new URLSearchParams(location.search);
     const cleanPath=decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g,""));
     const pathSlug=(cleanPath.split("/").filter(Boolean).pop()||"").replace(/^index\.html$/i,"");
@@ -462,12 +465,13 @@ fieldset.field{border:0;padding:0}
       query=query.order("id",{ascending:true}).limit(1);
     }
     let {data:r,error:rError}=await query.maybeSingle();
+    if(rError) throw new Error("No se pudo consultar el restaurante: "+rError.message);
     // Compatibilidad con enlaces antiguos: si el slug cambió, cargar el primer restaurante activo.
     if(!r && platformHosts.includes(host) && !requestedSlug){
       const fallback=await db.from("restaurants").select("*").eq("active",true).order("id",{ascending:true}).limit(1).maybeSingle();
       r=fallback.data;
     }
-    if(!r) return;
+    if(!r) throw new Error(requestedSlug ? "El restaurante solicitado no existe o no está activo." : "No se encontró un restaurante para este enlace.");
     CONFIG.name=r.name||CONFIG.name; CONFIG.logo=r.logo_url||""; CONFIG.whatsapp=r.whatsapp||CONFIG.whatsapp; CONFIG.address=r.address||CONFIG.address;
     CONFIG.open=(r.open_time||CONFIG.open).slice(0,5); CONFIG.close=(r.close_time||CONFIG.close).slice(0,5);
     CONFIG.instagram=r.instagram||""; CONFIG.eta={pickup:r.pickup_eta||CONFIG.eta.pickup,delivery:r.delivery_eta||CONFIG.eta.delivery};
@@ -618,8 +622,16 @@ fieldset.field{border:0;padding:0}
   }
 
   /* ---------- Datos ---------- */
-  await loadMenuFromCloud();
-document.body.classList.remove("menu-loading");document.body.classList.add("menu-ready");
+  try {
+    await loadMenuFromCloud();
+    if(!window.__restaurantId) throw new Error("No se pudo identificar el restaurante.");
+    document.body.classList.remove("menu-loading");document.body.classList.add("menu-ready");
+  } catch (loadError) {
+    console.error(loadError);
+    document.body.innerHTML = `<main style="max-width:620px;margin:12vh auto;padding:28px;font-family:system-ui;text-align:center"><h1>No pudimos cargar este restaurante</h1><p>Revisa que el enlace sea correcto e inténtalo nuevamente.</p><button onclick="location.reload()" style="padding:12px 20px;border:0;border-radius:999px;font-weight:700;cursor:pointer">Reintentar</button></main>`;
+    document.body.classList.remove("menu-loading");document.body.classList.add("menu-ready");
+    return;
+  }
   const ITEMS = {};
   const popItems = [];
   MENU.forEach(cat => cat.items.forEach(it => {
@@ -968,5 +980,5 @@ document.body.classList.remove("menu-loading");document.body.classList.add("menu
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.0.16</footer></body>
+<footer class="site-version">Versión v1.0.17</footer></body>
 </html>
