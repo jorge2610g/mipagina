@@ -28,13 +28,7 @@
   --display:'Bowlby One','Arial Black',Impact,sans-serif;
   --body:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#151719;--surface:#22272b;--ink:#f2f1ec;--muted:#a7abb1;--line:#32383d;
-    --t-warm:#3a3217;--t-cool:#1d3242;--t-sweet:#3e2622;--t-hot:#432028;
-    --shadow:0 6px 24px rgba(0,0,0,.55);
-  }
-}
+
 :root[data-theme="dark"]{
   --bg:#151719;--surface:#22272b;--ink:#f2f1ec;--muted:#a7abb1;--line:#32383d;
   --t-warm:#3a3217;--t-cool:#1d3242;--t-sweet:#3e2622;--t-hot:#432028;
@@ -211,7 +205,7 @@ fieldset.field{border:0;padding:0}
 .segopt .box b{font-weight:700}
 .segopt .box small{color:var(--muted);font-size:.8125rem;line-height:1.3}
 .err{min-height:1.4em;margin:14px 0 0;color:var(--red);font-weight:600;font-size:.9375rem}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .err{color:#ff8592}}
+
 :root[data-theme="dark"] .err{color:#ff8592}
 .send{display:flex;align-items:center;justify-content:center;min-height:58px;margin-top:6px;padding:0 20px;border-radius:999px;background:var(--green);color:#fff;font-weight:700;font-size:1.0625rem;text-decoration:none;text-align:center}
 
@@ -231,7 +225,7 @@ fieldset.field{border:0;padding:0}
 .site-version{padding:24px 12px 34px;text-align:center;color:var(--muted);font-size:12px;opacity:.75}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
+<script>(function(){try{document.documentElement.setAttribute("data-theme",localStorage.getItem("menu_theme")==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}})();</script></head>
 <body>
 
 <header class="hero">
@@ -975,5 +969,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.0.3</footer></body>
+<footer class="site-version">Versión v1.0.4</footer></body>
 </html>
