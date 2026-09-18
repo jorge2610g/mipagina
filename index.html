@@ -454,9 +454,15 @@ fieldset.field{border:0;padding:0}
     }else if(!platformHosts.includes(host)){
       query=query.or("custom_domain.eq."+host+",custom_domain.eq.www."+host);
     }else{
-      query=query.eq("slug","principal");
+      // En GitHub Pages, si no viene ?r=, usar el restaurante principal disponible.
+      query=query.order("id",{ascending:true}).limit(1);
     }
-    const {data:r}=await query.maybeSingle();
+    let {data:r,error:rError}=await query.maybeSingle();
+    // Compatibilidad con enlaces antiguos: si el slug cambió, cargar el primer restaurante activo.
+    if(!r && platformHosts.includes(host) && !requestedSlug){
+      const fallback=await db.from("restaurants").select("*").eq("active",true).order("id",{ascending:true}).limit(1).maybeSingle();
+      r=fallback.data;
+    }
     if(!r) return;
     CONFIG.name=r.name||CONFIG.name; CONFIG.whatsapp=r.whatsapp||CONFIG.whatsapp; CONFIG.address=r.address||CONFIG.address;
     CONFIG.open=(r.open_time||CONFIG.open).slice(0,5); CONFIG.close=(r.close_time||CONFIG.close).slice(0,5);
