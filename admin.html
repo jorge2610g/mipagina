@@ -89,9 +89,28 @@ async function enter(user){
   const msg=document.getElementById("loginMsg");
   try{
     msg.textContent="Verificando permisos...";
-    const {data,error}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle(); isSuperAdmin=!!data; let membership=[]; if(!isSuperAdmin){const mr=await sb.from("restaurant_staff").select("restaurant_id").eq("user_id",user.id).eq("active",true);if(mr.error){msg.textContent="Error al verificar restaurante: "+mr.error.message;return}membership=mr.data||[];currentRole=membership[0]?.role||"";}
+    const {data,error}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle(); isSuperAdmin=!!data; let membership=[]; if(!isSuperAdmin){const mr=await sb.from("restaurant_staff").select("restaurant_id,role,permissions").eq("user_id",user.id).eq("active",true);if(mr.error){msg.textContent="Error al verificar restaurante: "+mr.error.message;return}membership=mr.data||[];currentRole=membership[0]?.role||"";}
     if(error){msg.textContent="Error al verificar permisos: "+error.message;return}
-    if(!isSuperAdmin && !membership.length){await sb.auth.signOut();msg.textContent="Esta cuenta no tiene acceso a ningún restaurante.";return} if(!isSuperAdmin&&membership.length){currentRestaurant=membership[0].restaurant_id;if(currentRole==="restaurant"){document.querySelectorAll("[data-tab=restaurants],[data-tab=users],[data-tab=dashboard]").forEach(x=>x.style.display="none");}else if(currentRole==="editor"){document.querySelectorAll("[data-tab=users]").forEach(x=>x.style.display="none");}}
+    if(!isSuperAdmin && !membership.length){await sb.auth.signOut();msg.textContent="Esta cuenta no tiene acceso a ningún restaurante.";return} if(!isSuperAdmin&&membership.length){
+ currentRestaurant=membership[0].restaurant_id;
+ currentRole=membership[0].role||"restaurant";
+ const p=membership[0].permissions||{};
+ document.querySelectorAll(".tab").forEach(x=>x.style.display="");
+ if(currentRole==="restaurant"){
+   document.querySelectorAll("[data-tab=restaurants],[data-tab=users],[data-tab=dashboard]").forEach(x=>x.style.display="none");
+ }else if(currentRole==="editor"){
+   document.querySelectorAll("[data-tab=users]").forEach(x=>x.style.display="none");
+ }
+ if(currentRole!=="manager"){
+   if(!p.products) document.querySelector('[data-tab="products"]')?.style.setProperty("display","none");
+   if(!p.categories) document.querySelector('[data-tab="categories"]')?.style.setProperty("display","none");
+   if(!p.orders) document.querySelector('[data-tab="orders"]')?.style.setProperty("display","none");
+   if(!p.business) document.querySelector('[data-tab="business"]')?.style.setProperty("display","none");
+ }
+ const first=[...document.querySelectorAll(".tab")].find(x=>x.style.display!=="none");
+ document.querySelectorAll(".tab,.section").forEach(x=>x.classList.remove("active"));
+ if(first){first.classList.add("active");document.getElementById(first.dataset.tab)?.classList.add("active")}
+}
     document.getElementById("login").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
     document.getElementById("who").textContent=user.email;
