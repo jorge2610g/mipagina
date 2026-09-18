@@ -447,7 +447,8 @@ fieldset.field{border:0;padding:0}
   async function loadMenuFromCloud(){
     if(!db) return;
     const params=new URLSearchParams(location.search);
-    const pathSlug=decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g,"")).replace(/^index\.html$/i,"");
+    const cleanPath=decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g,""));
+    const pathSlug=(cleanPath.split("/").filter(Boolean).pop()||"").replace(/^index\.html$/i,"");
     const requestedSlug=params.get("r") || pathSlug || null;
     const host=location.hostname.toLowerCase().replace(/^www\./,"");
     const platformHosts=["app.expressdelivery.pro","jorge2610g.github.io","localhost","127.0.0.1"];
@@ -967,5 +968,5 @@ document.body.classList.remove("menu-loading");document.body.classList.add("menu
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.0.15</footer></body>
+<footer class="site-version">Versión v1.0.16</footer></body>
 </html>
