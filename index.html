@@ -959,7 +959,10 @@ fieldset.field{border:0;padding:0}
   // Preferencias y persistencia
   const savedTheme = localStorage.getItem("menu_theme");
   if(savedTheme) document.documentElement.dataset.theme=savedTheme;
-  $("#theme-toggle").addEventListener("click",()=>{ const dark=document.documentElement.dataset.theme==="dark"; document.documentElement.dataset.theme=dark?"light":"dark"; localStorage.setItem("menu_theme",document.documentElement.dataset.theme); });
+  else document.documentElement.dataset.theme=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
+  function updateThemeButton(){const b=$("#theme-toggle");if(b)b.textContent=document.documentElement.dataset.theme==="dark"?"☀️ Modo claro":"🌙 Modo oscuro";}
+  updateThemeButton();
+  $("#theme-toggle").addEventListener("click",()=>{const next=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=next;localStorage.setItem("menu_theme",next);updateThemeButton();});
   $("#clear-cart").addEventListener("click",()=>{ if(cart.size && confirm("¿Vaciar todo el pedido?")){ cart.clear(); saveCart(); update(); } });
   try{ const c=JSON.parse(localStorage.getItem(CUSTOMER_KEY)||"{}"); $("#f-name").value=c.name||""; $("#f-addr").value=c.addr||""; }catch(e){}
   ["#f-name","#f-addr"].forEach(sel=>$(sel).addEventListener("change",()=>{try{localStorage.setItem(CUSTOMER_KEY,JSON.stringify({name:$("#f-name").value.trim(),addr:$("#f-addr").value.trim()}));}catch(e){}}));
