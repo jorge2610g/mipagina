@@ -30,6 +30,17 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
  #productList{gap:8px!important}
 }
 .admin-version{padding:24px 12px;text-align:center;color:var(--mut);font-size:12px;opacity:.75}
+
+/* Ajuste móvil v1.0.7: contenido centrado y tarjetas sin desbordes */
+@media(max-width:600px){
+  body{overflow-x:hidden!important}
+  main,.wrap,.container,.content,.panel{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
+  main{padding-left:12px!important;padding-right:12px!important}
+  .card,.item,#productList .item,#categoryList .item{width:100%!important;max-width:100%!important;min-width:0!important;margin-left:0!important;margin-right:0!important;box-sizing:border-box!important}
+  #productList,#categoryList{grid-template-columns:minmax(0,1fr)!important;width:100%!important;max-width:100%!important;margin:0!important}
+  #productList .item .row,#categoryList .item .row{display:flex!important;flex-wrap:wrap!important;justify-content:flex-start!important;align-items:center!important}
+  #productList .item button,#categoryList .item button{flex:0 0 auto!important}
+}
 </style><style id="responsive-v2">
 html,body{max-width:100%;overflow-x:hidden}
 .wrap{width:min(1440px,100%);padding-left:clamp(12px,3vw,32px);padding-right:clamp(12px,3vw,32px)}
@@ -277,4 +288,4 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.0.2</footer></body></html>
+</script><footer class="admin-version">Versión v1.0.7</footer></body></html>
