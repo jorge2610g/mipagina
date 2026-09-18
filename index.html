@@ -340,7 +340,7 @@ fieldset.field{border:0;padding:0}
 </dialog>
 
 <script>
-(function(){
+(async function(){
   const SUPABASE_URL = "https://gulctljitzlwokqydigx.supabase.co";
   const SUPABASE_KEY = "sb_publishable__moppTxObowifx6rJbW_tw_3GiCkqhG";
   const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
@@ -366,7 +366,8 @@ fieldset.field{border:0;padding:0}
   // tone: warm | cool | sweet | hot  (color de fondo de la ilustración)
   // pop: true  -> aparece en "Los más pedidos" | quick: true -> se sugiere en el pedido
   // Para usar una foto real en un producto, agregá  img: "data:image/jpeg;base64,..."
-  const MENU = [
+  let MENU = [];
+  const DEMO_MENU = [
     { id:"combos", name:"Combos", tone:"hot", items:[
       { id:"combo-clasica", name:"Combo Clásica", pop:true, badge:"Ahorrás",
         desc:"La Clásica simple con papas fritas y gaseosa 500 ml.",
@@ -441,7 +442,26 @@ fieldset.field{border:0;padding:0}
         opts:[{l:"",p:1200}], art:{k:"flan"} }
     ]}
   ];
-  /* =====================  FIN DE LA CONFIGURACIÓN  ===================== */
+  async function loadMenuFromCloud(){
+    if(!db) return;
+    const params=new URLSearchParams(location.search);
+    const slug=params.get("r")||"principal";
+    const {data:r}=await db.from("restaurants").select("*").eq("slug",slug).eq("active",true).maybeSingle();
+    if(!r) return;
+    CONFIG.name=r.name||CONFIG.name; CONFIG.whatsapp=r.whatsapp||CONFIG.whatsapp; CONFIG.address=r.address||CONFIG.address;
+    CONFIG.open=(r.open_time||CONFIG.open).slice(0,5); CONFIG.close=(r.close_time||CONFIG.close).slice(0,5);
+    CONFIG.instagram=r.instagram||""; CONFIG.eta={pickup:r.pickup_eta||CONFIG.eta.pickup,delivery:r.delivery_eta||CONFIG.eta.delivery};
+    const [{data:cats},{data:prods}]=await Promise.all([
+      db.from("restaurant_categories").select("*").eq("restaurant_id",r.id).eq("active",true).order("sort_order"),
+      db.from("restaurant_products").select("*").eq("restaurant_id",r.id).eq("available",true).order("sort_order")
+    ]);
+    MENU=(cats||[]).map(cat=>({id:cat.slug,name:cat.name,tone:"warm",items:(prods||[]).filter(p=>p.category_id===cat.id).map(p=>({
+      id:"db-"+p.id,name:p.name,desc:p.description||"",badge:p.badge||"",pop:!!p.featured,img:p.image_url||"",
+      opts:[{l:"",p:Number(p.price)||0}],was:p.compare_price?Number(p.compare_price):null,art:{k:"burger"}
+    }))}));
+    window.__restaurantId=r.id;
+  }
+    /* =====================  FIN DE LA CONFIGURACIÓN  ===================== */
 
   const $  = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
@@ -577,6 +597,7 @@ fieldset.field{border:0;padding:0}
   }
 
   /* ---------- Datos ---------- */
+  await loadMenuFromCloud();
   const ITEMS = {};
   const popItems = [];
   MENU.forEach(cat => cat.items.forEach(it => {
@@ -866,7 +887,7 @@ fieldset.field{border:0;padding:0}
     const orderCode = "WEB-" + Date.now().toString(36).toUpperCase();
     const items=[...cart.values()].map(v=>({name:lineName(v),qty:v.qty,unit_price:unitOf(v),extras:v.ex.map(x=>x.name),note:v.note||""}));
     const { error } = await db.from("restaurant_orders").insert({
-      order_code:orderCode, customer_name:f.name, order_type:f.type,
+      restaurant_id:window.__restaurantId||null, order_code:orderCode, customer_name:f.name, order_type:f.type,
       delivery_address:f.type === "Delivery" ? f.addr : null, payment_method:f.pay,
       notes:f.notes || null, items, total:totals().t, status:"nuevo"
     });
