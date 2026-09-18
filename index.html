@@ -925,7 +925,10 @@ fieldset.field{border:0;padding:0}
     $("#err").textContent = msg;
     if (msg){ e.preventDefault(); return; }
     try{await saveOrderToCloud();}catch(err){if(err?.message==="LOGIN_REQUIRED"){e.preventDefault();$("#err").textContent="Inicia sesión para finalizar y seguir tu pedido.";return;}e.preventDefault();$("#err").textContent="No pudimos registrar el pedido. Intenta nuevamente.";return;}
+    // El enlace de WhatsApp ya contiene el detalle completo. Vaciar el carrito
+    // después de registrar el pedido evita que reaparezca al volver al menú.
     refreshLink();
+    setTimeout(()=>{ cart.clear(); saveCart(); update(); },250);
   });
 
   // Preferencias y persistencia
