@@ -899,16 +899,13 @@ fieldset.field{border:0;padding:0}
   ["#f-name", "#f-addr", "#f-pay", "#f-notes"].forEach(s => $(s).addEventListener("input", refreshLink));
   async function saveOrderToCloud(){
     if (!db || !cart.size) return false;
-    const {data:{user}}=await db.auth.getUser();
-    if(!user){ openCustomerAccount(); throw new Error("LOGIN_REQUIRED"); }
     const f=form();
     const orderCode = "WEB-" + Date.now().toString(36).toUpperCase();
     const items=[...cart.values()].map(v=>({name:lineName(v),qty:v.qty,unit_price:unitOf(v),extras:v.ex.map(x=>x.name),note:v.note||""}));
     const { error } = await db.from("restaurant_orders").insert({
       restaurant_id:window.__restaurantId||null, order_code:orderCode, customer_name:f.name, order_type:f.type,
       delivery_address:f.type === "Delivery" ? f.addr : null, payment_method:f.pay,
-      notes:f.notes || null, items, total:totals().t, status:"nuevo",
-      customer_id:user.id, customer_email:user.email||null
+      notes:f.notes || null, items, total:totals().t, status:"nuevo"
     });
     if(error){ console.error("No se pudo guardar el pedido", error); throw error; }
     localStorage.setItem("last_order_code",orderCode);
@@ -924,7 +921,7 @@ fieldset.field{border:0;padding:0}
     else if (f.type === "Delivery" && !f.addr){ msg = "Escribí la dirección de entrega."; $("#f-addr").focus(); }
     $("#err").textContent = msg;
     if (msg){ e.preventDefault(); return; }
-    try{await saveOrderToCloud();}catch(err){if(err?.message==="LOGIN_REQUIRED"){e.preventDefault();$("#err").textContent="Inicia sesión para finalizar y seguir tu pedido.";return;}e.preventDefault();$("#err").textContent="No pudimos registrar el pedido. Intenta nuevamente.";return;}
+    try{await saveOrderToCloud();}catch(err){e.preventDefault();$("#err").textContent="No pudimos registrar el pedido. Intenta nuevamente.";return;}
     // El enlace de WhatsApp ya contiene el detalle completo. Vaciar el carrito
     // después de registrar el pedido evita que reaparezca al volver al menú.
     refreshLink();
@@ -943,39 +940,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<style id="customer-account-ui">
-#accountBtn{position:fixed;right:18px;bottom:84px;z-index:70;border:0;border-radius:999px;padding:12px 16px;font-weight:800;box-shadow:0 10px 30px #0002;cursor:pointer}
-.customerShade{position:fixed;inset:0;background:#0008;z-index:100;display:none;padding:18px;overflow:auto}
-.customerShade.open{display:flex;align-items:center;justify-content:center}
-.customerBox{background:var(--card,#fff);color:var(--text,#111);width:min(620px,100%);max-height:90vh;overflow:auto;border-radius:22px;padding:22px;box-shadow:0 20px 70px #0005}
-.customerBox input{width:100%;padding:12px;margin:6px 0 10px;border:1px solid #bbb;border-radius:10px}
-.customerActions{display:flex;gap:8px;flex-wrap:wrap}.customerActions button{padding:11px 14px;border-radius:10px;cursor:pointer}
-.trackOrder{border:1px solid #ddd;border-radius:16px;padding:15px;margin:12px 0}
-.trackSteps{display:flex;gap:5px;margin:12px 0}.trackSteps i{height:7px;flex:1;border-radius:10px;background:#ddd}.trackSteps i.on{background:#22a447}
-@media(max-width:600px){#accountBtn{right:12px;bottom:76px}.customerShade{padding:8px}.customerBox{padding:16px;border-radius:16px}.customerActions>*{flex:1 1 140px}}
-</style>
-<button id="accountBtn" type="button" onclick="openCustomerAccount()">👤 Mi cuenta / Pedidos</button>
-<div id="customerShade" class="customerShade" onclick="if(event.target===this)closeCustomerAccount()"><div class="customerBox">
-<div style="display:flex;justify-content:space-between;gap:12px"><div><h2 style="margin:0">Mi cuenta</h2><p id="customerWho" style="margin:5px 0 15px;opacity:.7">Inicia sesión para ver tus pedidos.</p></div><button onclick="closeCustomerAccount()" style="height:40px">✕</button></div>
-<div id="customerLogin">
-<input id="customerEmail" type="email" placeholder="Correo electrónico" autocomplete="email">
-<input id="customerPass" type="password" placeholder="Contraseña" autocomplete="current-password">
-<div class="customerActions"><button onclick="customerSignIn()">Iniciar sesión</button><button onclick="customerSignUp()">Crear cuenta</button></div>
-<p id="customerMsg" style="min-height:20px"></p>
-</div>
-<div id="customerArea" hidden><div class="customerActions"><button onclick="loadCustomerOrders()">Actualizar pedidos</button><button onclick="customerSignOut()">Cerrar sesión</button></div><h3>Mis pedidos</h3><div id="customerOrders"></div></div>
-</div></div>
-<script>
-let customerChannel=null;
-window.openCustomerAccount=async function(){customerShade.classList.add("open");await refreshCustomerSession()}
-window.closeCustomerAccount=function(){customerShade.classList.remove("open")}
-async function refreshCustomerSession(){const {data:{user}}=await db.auth.getUser();customerLogin.hidden=!!user;customerArea.hidden=!user;customerWho.textContent=user?(user.user_metadata?.full_name||user.email):"Inicia sesión para ver tus pedidos.";if(user){await loadCustomerOrders();subscribeCustomerOrders(user.id)}}
-window.customerSignIn=async function(){customerMsg.textContent="";const {error}=await db.auth.signInWithPassword({email:customerEmail.value.trim(),password:customerPass.value});customerMsg.textContent=error?error.message:"Sesión iniciada";if(!error)refreshCustomerSession()}
-window.customerSignUp=async function(){customerMsg.textContent="";const {error}=await db.auth.signUp({email:customerEmail.value.trim(),password:customerPass.value,options:{emailRedirectTo:"https://jorge2610g.github.io/mipagina/"+location.search}});customerMsg.textContent=error?error.message:"Cuenta creada. Revisa tu correo si se solicita confirmación.";if(!error)refreshCustomerSession()}
-window.customerSignOut=async function(){await db.auth.signOut();if(customerChannel){db.removeChannel(customerChannel);customerChannel=null}refreshCustomerSession()}
-function customerStatus(o){const pickup=(o.order_type||"").toLowerCase().includes("retiro");const flow=pickup?["nuevo","confirmado","preparando","listo","entregado"]:["nuevo","confirmado","preparando","listo","enviado","entregado"];const labels=pickup?["Recibido","Confirmado","En preparación","Listo para retirar","Retirado"]:["Recibido","Confirmado","En preparación","Listo para enviar","En camino","Entregado"];let pos=flow.indexOf(o.status);if(pos<0)pos=0;return {flow,labels,pos,pickup}}
-window.loadCustomerOrders=async function(){const {data:{user}}=await db.auth.getUser();if(!user)return;const {data,error}=await db.rpc("my_customer_orders");if(error){customerOrders.innerHTML="<p>No se pudieron cargar los pedidos.</p>";return}customerOrders.innerHTML=(data||[]).map(o=>{const s=customerStatus(o),cancel=o.status==="cancelado";return '<div class="trackOrder"><b>#'+esc(o.order_code)+'</b> · '+money(o.total)+'<div style="margin-top:5px">'+(cancel?"Pedido cancelado":s.labels[s.pos])+'</div><div class="trackSteps">'+s.labels.map((x,i)=>'<i class="'+(!cancel&&i<=s.pos?"on":"")+'" title="'+x+'"></i>').join("")+'</div><small>'+s.labels.join(" → ")+'</small>'+(s.pickup&&o.status==="listo"?'<p><b>Listo para retirar.</b><br>Retíralo en: '+esc(CONFIG.address||"el local")+'</p>':"")+'</div>'}).join("")||"<p>Aún no tienes pedidos.</p>"}
-function subscribeCustomerOrders(uid){if(customerChannel)db.removeChannel(customerChannel);customerChannel=db.channel("customer-orders-"+uid).on("postgres_changes",{event:"*",schema:"public",table:"restaurant_orders",filter:"customer_id=eq."+uid},()=>loadCustomerOrders()).subscribe()}
-db.auth.onAuthStateChange(()=>setTimeout(refreshCustomerSession,0));
-</script></body>
+</body>
 </html>
