@@ -447,7 +447,7 @@ fieldset.field{border:0;padding:0}
     const params=new URLSearchParams(location.search);
     const requestedSlug=params.get("r");
     const host=location.hostname.toLowerCase().replace(/^www\./,"");
-    const platformHosts=["jorge2610g.github.io","localhost","127.0.0.1"];
+    const platformHosts=["app.expressdelivery.pro","jorge2610g.github.io","localhost","127.0.0.1"];
     let query=db.from("restaurants").select("*").eq("active",true);
     if(requestedSlug){
       query=query.eq("slug",requestedSlug);
