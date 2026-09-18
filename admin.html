@@ -65,9 +65,33 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 let categories=[],products=[],orders=[];
 const money=n=>new Intl.NumberFormat("es-CL",{style:"currency",currency:"CLP",maximumFractionDigits:0}).format(Number(n||0));
 function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2500)}
-async function login(){loginMsg.textContent="Ingresando...";const {data,error}=await sb.auth.signInWithPassword({email:email.value.trim(),password:password.value});if(error){loginMsg.textContent=error.message;return}await enter(data.user)}
+async function login(){
+  const msg=document.getElementById("loginMsg"), emailEl=document.getElementById("email"), passEl=document.getElementById("password");
+  msg.textContent="Ingresando...";
+  try{
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error("La conexión está tardando demasiado. Intenta nuevamente.")),15000));
+    const auth=sb.auth.signInWithPassword({email:emailEl.value.trim(),password:passEl.value});
+    const {data,error}=await Promise.race([auth,timeout]);
+    if(error){msg.textContent=error.message;return}
+    if(!data?.user){msg.textContent="No se pudo iniciar sesión.";return}
+    await enter(data.user);
+  }catch(e){msg.textContent=e.message||"Error de conexión. Intenta nuevamente."}
+}
 async function logout(){await sb.auth.signOut();location.reload()}
-async function enter(user){const {data}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();if(!data){await sb.auth.signOut();loginMsg.textContent="Esta cuenta no tiene permisos de administrador.";return}login.classList.add("hidden");app.classList.remove("hidden");who.textContent=user.email;await refreshAll()}
+async function enter(user){
+  const msg=document.getElementById("loginMsg");
+  try{
+    msg.textContent="Verificando permisos...";
+    const {data,error}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();
+    if(error){msg.textContent="Error al verificar permisos: "+error.message;return}
+    if(!data){await sb.auth.signOut();msg.textContent="Esta cuenta no tiene permisos de administrador.";return}
+    document.getElementById("login").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+    document.getElementById("who").textContent=user.email;
+    msg.textContent="";
+    await refreshAll();
+  }catch(e){msg.textContent=e.message||"No se pudo abrir el panel."}
+}
 sb.auth.getSession().then(async({data})=>{if(data.session) await enter(data.session.user)});
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.tab).classList.add("active")});
 async function refreshAll(){await Promise.all([loadCategories(),loadProducts(),loadOrders(),loadSettings()]);renderStats()}
