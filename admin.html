@@ -41,7 +41,32 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
   #productList .item .row,#categoryList .item .row{display:flex!important;flex-wrap:wrap!important;justify-content:flex-start!important;align-items:center!important}
   #productList .item button,#categoryList .item button{flex:0 0 auto!important}
 }
-#orders,[data-tab="orders"],#orderEditModal{display:none!important}</style><style id="responsive-v2">
+#orders,[data-tab="orders"],#orderEditModal{display:none!important}
+/* Vista móvil del resumen de contenido v1.0.9 */
+@media(max-width:600px){
+ #restaurants .card.span12{padding:16px!important;width:100%!important;overflow:hidden!important}
+ #restaurants .card.span12>.row.between{display:block!important}
+ #restaurants .card.span12>.row.between .primary{width:100%!important;margin-top:14px!important}
+ #restaurants .card.span12>.grid{display:block!important;width:100%!important}
+ #restaurants .card.span12>.grid>.span5,
+ #restaurants .card.span12>.grid>.span7{width:100%!important;max-width:100%!important;margin:0 0 18px!important}
+ #restaurantCategoryPreview,#restaurantProductPreview{width:100%!important;display:block!important}
+ #restaurantCategoryPreview .item,#restaurantProductPreview .item{
+   width:100%!important;max-width:100%!important;min-width:0!important;
+   margin:0 0 10px!important;padding:14px!important;box-sizing:border-box!important;
+ }
+ #restaurantCategoryPreview .item .row,#restaurantProductPreview .item .row{
+   display:flex!important;flex-wrap:wrap!important;gap:8px!important;
+   justify-content:flex-start!important;align-items:center!important;width:100%!important
+ }
+ #restaurantCategoryPreview .actions,#restaurantProductPreview .actions{
+   display:flex!important;flex-wrap:wrap!important;gap:8px!important;width:100%!important;margin-top:8px!important
+ }
+ #restaurantCategoryPreview button,#restaurantProductPreview button{
+   min-width:0!important;padding:9px 12px!important;font-size:13px!important
+ }
+}
+</style><style id="responsive-v2">
 html,body{max-width:100%;overflow-x:hidden}
 .wrap{width:min(1440px,100%);padding-left:clamp(12px,3vw,32px);padding-right:clamp(12px,3vw,32px)}
 .tabs{display:flex;gap:10px;overflow-x:auto;overscroll-behavior-inline:contain;padding-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
@@ -285,4 +310,4 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.0.8</footer></body></html>
+</script><footer class="admin-version">Versión v1.0.9</footer></body></html>
