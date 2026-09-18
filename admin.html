@@ -19,8 +19,9 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.toast{position:fixed;right:18px;bottom:18px;padding:12px 16px;background:#10243a;border:1px solid var(--line);border-radius:12px;display:none;z-index:5}
 @media(max-width:800px){.wrap{padding:14px}.span4,.span5,.span7,.span8,.span12{grid-column:span 12}.two{grid-template-columns:1fr}.top{align-items:flex-start}.top .row{flex-wrap:wrap;justify-content:flex-end}}
 </style></head>
-<body>
-<div id="login" class="wrap login"><div class="card"><h1>Panel de administración</h1><p class="mut">Gestiona menú, precios, disponibilidad, pedidos y datos del negocio.</p>
+<body class="auth-loading">
+<style>.auth-loading #login,.auth-loading #app{display:none!important}</style>
+<div id="login" class="wrap login hidden"><div class="card"><h1>Panel de administración</h1><p class="mut">Gestiona menú, precios, disponibilidad, pedidos y datos del negocio.</p>
 <label>Correo administrador</label><input id="email" type="email" autocomplete="username" placeholder="tu@email.com">
 <label>Contraseña</label><div class="row"><input id="password" type="password" autocomplete="current-password" placeholder="••••••••"><button type="button" class="ghost" aria-label="Mostrar contraseña" onclick="return togglePassword('password',this)">Ver</button></div>
 <button class="primary full" onclick="login()">Ingresar</button><p id="loginMsg" class="mut"></p></div></div>
@@ -119,12 +120,13 @@ async function enter(user){
 }
     document.getElementById("login").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
+    document.body.classList.remove("auth-loading");
     document.getElementById("who").textContent=user.email;
     msg.textContent="";
     await refreshAll();
   }catch(e){msg.textContent=e.message||"No se pudo abrir el panel."}
 }
-sb.auth.getSession().then(async({data})=>{if(data.session) await enter(data.session.user)});
+async function restoreSession(){try{const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){await enter(data.session.user)}else{document.getElementById("login").classList.remove("hidden")}}catch(e){document.getElementById("login").classList.remove("hidden");document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."}finally{document.body.classList.remove("auth-loading")}}restoreSession();
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.tab).classList.add("active")});
 async function refreshAll(){await loadRestaurants();if(isSuperAdmin||currentRole==="manager")await loadStaff();await Promise.all([loadCategories(),loadProducts(),loadOrders(),loadSettings()]);renderStats()}
 async function loadRestaurants(){let rq=sb.from("restaurants").select("*").order("created_at");if(!isSuperAdmin&&currentRole!=="manager"){const {data:m}=await sb.from("restaurant_staff").select("restaurant_id").eq("active",true);rq=rq.in("id",(m||[]).map(x=>x.restaurant_id));}const {data,error}=await rq;if(error)return toast(error.message);restaurants=data||[];if(!currentRestaurant&&restaurants.length)currentRestaurant=restaurants[0].id;restaurantList.innerHTML=restaurants.map(r=>`<div class="item"><div class="row between"><div><h3>${esc(r.name)}</h3><div class="mut">Link: <a style="color:#ffb703" target="_blank" href="index.html?r=${encodeURIComponent(r.slug)}">?r=${esc(r.slug)}</a></div><div class="mut">${r.custom_domain?esc(r.custom_domain):"Sin dominio propio"}</div></div><div class="actions"><button class="primary" onclick="selectRestaurant(${r.id})">${currentRestaurant===r.id?"Seleccionado":"Administrar"}</button><button class="ghost" onclick="editRestaurant(${r.id})">Editar</button><button class="danger" onclick="deleteRestaurant(${r.id})">Eliminar</button></div></div></div>`).join("")||"<p class='mut'>Sin restaurantes.</p>"}
