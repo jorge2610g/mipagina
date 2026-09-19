@@ -373,8 +373,12 @@ fieldset.field{border:0;padding:0}
     <div class="field" id="addr-wrap" hidden>
       <label for="f-addr">Dirección de entrega</label>
       <input type="text" id="f-addr" autocomplete="off" placeholder="Escribe tu dirección y selecciónala de Google Maps">
-      <button type="button" id="gps-btn" style="margin-top:8px;width:100%">Usar mi ubicación para calcular el delivery</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button type="button" id="gps-btn" style="flex:1;min-width:220px">📍 Usar mi ubicación</button>
+        <button type="button" id="search-location-btn" style="flex:1;min-width:220px">🔎 Buscar esta dirección</button>
+      </div>
       <small id="gps-status" style="display:block;margin-top:6px"></small>
+      <strong id="delivery-cost-status" style="display:block;margin-top:8px"></strong>
     </div>
 
     <div class="field">
@@ -919,11 +923,13 @@ fieldset.field{border:0;padding:0}
     deliveryUnavailable=false;
     if(!deliverySelected()){deliveryFee=0;deliveryDistance=null;return}
     if(CONFIG.delivery.mode==="fixed"){deliveryFee=Number(CONFIG.delivery.fixed||0);return}
-    if(!deliveryCoords||CONFIG.delivery.lat==null||CONFIG.delivery.lng==null){deliveryFee=0;return}
+    if(!deliveryCoords||CONFIG.delivery.lat==null||CONFIG.delivery.lng==null){deliveryFee=0;deliveryDistance=null;return}
     deliveryDistance=haversineKm(CONFIG.delivery.lat,CONFIG.delivery.lng,deliveryCoords.lat,deliveryCoords.lng);
     const zones=[...(CONFIG.delivery.zones||[])].sort((a,b)=>Number(a.max_km)-Number(b.max_km));
     const zone=zones.find(z=>deliveryDistance<=Number(z.max_km));
     if(zone) deliveryFee=Number(zone.price||0); else {deliveryFee=0;deliveryUnavailable=true}
+    const cost=document.getElementById("delivery-cost-status");
+    if(cost)cost.textContent=deliveryUnavailable?"Delivery: fuera de cobertura":("Costo del delivery: "+fmt(deliveryFee)+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":""));
   }
 
   const sheet = $("#sheet"), linesEl = $("#lines"), bar = $("#bar");
@@ -1134,7 +1140,25 @@ fieldset.field{border:0;padding:0}
       update();refreshLink();
     },()=>{st.textContent="No se pudo obtener la ubicación. Revisa el permiso de GPS."},{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
   });
-  ["#f-name", "#f-phone", "#f-addr", "#f-pay", "#f-notes"].forEach(s => $(s).addEventListener("input", refreshLink));
+  $("#search-location-btn").addEventListener("click",async()=>{
+    const input=$("#f-addr"),st=$("#gps-status");
+    const address=input.value.trim();
+    if(!address){st.textContent="Escribe una dirección para buscarla.";return}
+    if(!window.google?.maps?.Geocoder){st.textContent="Google Maps todavía no está disponible.";return}
+    st.textContent="Buscando dirección…";
+    try{
+      const geocoder=new google.maps.Geocoder();
+      const result=await geocoder.geocode({address});
+      const place=result.results?.[0];
+      if(!place){st.textContent="No encontramos esa dirección.";return}
+      const loc=place.geometry.location;
+      deliveryCoords={lat:loc.lat(),lng:loc.lng()};
+      input.value=place.formatted_address||address;
+      applyDeliveryFee();update();refreshLink();
+      st.textContent=deliveryUnavailable?"La dirección está fuera de la zona de delivery.":"Dirección encontrada"+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":"");
+    }catch(e){st.textContent="No se pudo buscar la dirección. Intenta nuevamente."}
+  });
+    ["#f-name", "#f-phone", "#f-addr", "#f-pay", "#f-notes"].forEach(s => $(s).addEventListener("input", refreshLink));
   async function saveOrderToCloud(){
     if (!db || !cart.size) return false;
     const f=form();
@@ -1202,5 +1226,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.42</footer></body>
+<footer class="site-version">Versión v1.4.43</footer></body>
 </html>
