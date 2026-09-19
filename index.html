@@ -651,10 +651,10 @@ fieldset.field{border:0;padding:0}
       db.from("restaurant_categories").select("*").eq("restaurant_id",r.id).eq("active",true).order("sort_order"),
       db.from("restaurant_products").select("*").eq("restaurant_id",r.id).eq("available",true).order("sort_order")
     ]);
-    MENU=(cats||[]).map(cat=>({id:cat.slug,name:cat.name,tone:"warm",items:(prods||[]).filter(p=>p.category_id===cat.id).map(p=>({
+    const activeCats=(cats||[]);const visibleProds=(prods||[]);const uncategorized=visibleProds.filter(p=>!p.category_id||!activeCats.some(cat=>cat.id===p.category_id));MENU=activeCats.map(cat=>({id:cat.slug,name:cat.name,tone:"warm",items:visibleProds.filter(p=>p.category_id===cat.id).map(p=>({
       id:"db-"+p.id,name:p.name,desc:p.description||"",badge:p.badge||"",pop:!!p.featured,img:p.image_url||"",
       opts:[{l:"",p:Number(p.price)||0}],was:p.compare_price?Number(p.compare_price):null,art:{k:"burger"}
-    }))}));
+    }))}));if(uncategorized.length)MENU.push({id:"general",name:"General",tone:"warm",items:uncategorized.map(p=>({id:p.id,name:p.name,desc:p.description||"",price:Number(p.price||0),img:p.image_url||"",badge:p.badge||"",featured:!!p.featured}))});
     window.__restaurantId=r.id;
   }
     /* =====================  FIN DE LA CONFIGURACIÓN  ===================== */
