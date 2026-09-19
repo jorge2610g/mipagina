@@ -448,7 +448,25 @@ async function reverseRestaurantLocation(lat,lng){
 }
 let restaurantPickerMap=null,restaurantPickerMarker=null,restaurantPickerPoint=null;
 async function setRestaurantPickerPoint(lat,lng,center=true){restaurantPickerPoint={lat:Number(lat),lng:Number(lng)};if(!restaurantPickerMarker){restaurantPickerMarker=new google.maps.Marker({position:restaurantPickerPoint,map:restaurantPickerMap,draggable:true});restaurantPickerMarker.addListener("dragend",e=>setRestaurantPickerPoint(e.latLng.lat(),e.latLng.lng(),false))}else restaurantPickerMarker.setPosition(restaurantPickerPoint);if(center)restaurantPickerMap.panTo(restaurantPickerPoint);try{const g=new google.maps.Geocoder(),r=await g.geocode({location:restaurantPickerPoint});restaurantMapPickerAddress.textContent=r.results?.[0]?.formatted_address||"Ubicación seleccionada"}catch(_){restaurantMapPickerAddress.textContent="Ubicación seleccionada"}}
-function openRestaurantMapPicker(){if(!window.google?.maps)return toast("Google Maps todavía no está disponible");restaurantMapPickerDialog.showModal();const lat=Number(slat.value)||-20.2307,lng=Number(slng.value)||-70.1357,start={lat,lng};setTimeout(()=>{if(!restaurantPickerMap){restaurantPickerMap=new google.maps.Map(restaurantMapPickerMap,{center:start,zoom:16,mapTypeControl:false,streetViewControl:false,fullscreenControl:false});restaurantPickerMap.addListener("click",e=>setRestaurantPickerPoint(e.latLng.lat(),e.latLng.lng()))}google.maps.event.trigger(restaurantPickerMap,"resize");restaurantPickerMap.setCenter(start);setRestaurantPickerPoint(lat,lng)},80)}
+function openRestaurantMapPicker(){
+ if(!window.google?.maps){toast("Google Maps todavía no está disponible");return}
+ const dlg=document.getElementById("restaurantMapPickerDialog"),mapEl=document.getElementById("restaurantMapPickerMap");
+ if(!dlg||!mapEl){toast("No se pudo abrir el selector de ubicación");return}
+ const lat=Number(document.getElementById("slat")?.value)||-20.2307,lng=Number(document.getElementById("slng")?.value)||-70.1357,start={lat,lng};
+ dlg.showModal();
+ setTimeout(()=>{
+  try{
+   if(!restaurantPickerMap){
+    restaurantPickerMap=new google.maps.Map(mapEl,{center:start,zoom:16,mapTypeControl:false,streetViewControl:false,fullscreenControl:false});
+    restaurantPickerMap.addListener("click",e=>setRestaurantPickerPoint(e.latLng.lat(),e.latLng.lng()));
+   }
+   google.maps.event.trigger(restaurantPickerMap,"resize");
+   restaurantPickerMap.setCenter(start);
+   restaurantPickerMap.setZoom(16);
+   setRestaurantPickerPoint(lat,lng);
+  }catch(e){console.error("Error cargando mapa",e);toast("No se pudo cargar Google Maps. Revisa la configuración de la API Key.")}
+ },300);
+}
 function restaurantPickerUseGps(){navigator.geolocation?.getCurrentPosition(p=>setRestaurantPickerPoint(p.coords.latitude,p.coords.longitude),()=>toast("No se pudo obtener la ubicación"),{enableHighAccuracy:true,timeout:12000})}
 async function confirmRestaurantMapPicker(){if(!restaurantPickerPoint)return;slat.value=restaurantPickerPoint.lat;slng.value=restaurantPickerPoint.lng;await reverseRestaurantLocation(restaurantPickerPoint.lat,restaurantPickerPoint.lng);smapstatus.textContent="✅ Ubicación seleccionada en el mapa. Guarda la configuración.";restaurantMapPickerDialog.close()}
 function useRestaurantCurrentLocation(){
@@ -485,7 +503,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.4.45</footer><script>
+</script><footer class="admin-version">Versión v1.4.47</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
