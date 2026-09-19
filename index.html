@@ -661,9 +661,9 @@ fieldset.field{border:0;padding:0}
     window.__restaurantId=r.id;
     // Mercado Pago solo se ofrece cuando la conexión del restaurante fue validada.
     try{
-      const {data:mpStatus,error:mpStatusError}=await db.rpc("restaurant_mp_connection_status",{rid:r.id});
+      const {data:mpStatus,error:mpStatusError}=await db.rpc("restaurant_mp_public_status",{rid:r.id});
       const mpRow=Array.isArray(mpStatus)?mpStatus[0]:mpStatus;
-      const mpValidated=!mpStatusError && !!mpRow?.configured && !!mpRow?.mp_user_id;
+      const mpValidated=!mpStatusError && !!mpRow?.configured;
       if(!mpValidated) CONFIG.payments=CONFIG.payments.filter(p=>p!=="Mercado Pago");
     }catch(_){
       CONFIG.payments=CONFIG.payments.filter(p=>p!=="Mercado Pago");
@@ -1311,5 +1311,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.54</footer></body>
+<footer class="site-version">Versión v1.4.55</footer></body>
 </html>
