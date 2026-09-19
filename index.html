@@ -408,6 +408,7 @@ fieldset.field{border:0;padding:0}
     const guest=document.getElementById("account-guest"), auth=document.getElementById("account-auth"), userText=document.getElementById("account-user");
     if(currentCustomer){
       accountBtn.textContent="👤 Mi cuenta"; ordersBtn.hidden=false; guest.hidden=true; auth.hidden=false;
+      if(Notification.permission==="granted") ordersBtn.textContent="🔔 Mis pedidos";
       const {data:p}=await db.from("customer_profiles").select("*").eq("user_id",currentCustomer.id).maybeSingle();
       userText.textContent=p?.full_name ? p.full_name+" · "+currentCustomer.email : currentCustomer.email;
       if(p?.full_name && document.getElementById("f-name")) document.getElementById("f-name").value=p.full_name;
@@ -1157,5 +1158,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.5.9</footer></body>
+<footer class="site-version">Versión v1.6.0</footer></body>
 </html>
