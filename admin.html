@@ -450,17 +450,15 @@ let restaurantPickerMap=null,restaurantPickerMarker=null,restaurantPickerPoint=n
 async function setRestaurantPickerPoint(lat,lng,center=true){
  restaurantPickerPoint={lat:Number(lat),lng:Number(lng)};
  const addressEl=document.getElementById("restaurantMapPickerAddress");
- if(!restaurantPickerMap)return;
- try{
-  if(!restaurantPickerMarker){
-   restaurantPickerMarker=new google.maps.Marker({position:restaurantPickerPoint,map:restaurantPickerMap,draggable:true,title:"Ubicación del restaurante"});
-   restaurantPickerMarker.addListener("dragend",e=>setRestaurantPickerPoint(e.latLng.lat(),e.latLng.lng(),false));
-  }else{
-   restaurantPickerMarker.setMap(restaurantPickerMap);
-   restaurantPickerMarker.setPosition(restaurantPickerPoint);
-  }
-  if(center){restaurantPickerMap.panTo(restaurantPickerPoint);restaurantPickerMap.setZoom(18)}
- }catch(e){console.error("No se pudo dibujar el puntero",e)}
+ if(!restaurantPickerMap||!window.google?.maps)return;
+ if(!restaurantPickerMarker){
+  restaurantPickerMarker=new google.maps.Marker({position:restaurantPickerPoint,map:restaurantPickerMap,draggable:true});
+  restaurantPickerMarker.addListener("dragend",e=>setRestaurantPickerPoint(e.latLng.lat(),e.latLng.lng(),false));
+ }else{
+  restaurantPickerMarker.setMap(restaurantPickerMap);
+  restaurantPickerMarker.setPosition(restaurantPickerPoint);
+ }
+ if(center)restaurantPickerMap.panTo(restaurantPickerPoint);
  try{
   const g=new google.maps.Geocoder(),r=await g.geocode({location:restaurantPickerPoint});
   if(addressEl)addressEl.textContent=r.results?.[0]?.formatted_address||"Ubicación seleccionada";
@@ -473,7 +471,7 @@ function openRestaurantMapPicker(){
  const savedLat=parseFloat(document.getElementById("slat")?.value),savedLng=parseFloat(document.getElementById("slng")?.value);
  const start={lat:Number.isFinite(savedLat)?savedLat:-20.2307,lng:Number.isFinite(savedLng)?savedLng:-70.1357};
  dlg.showModal();
- setTimeout(()=>{
+ setTimeout(async()=>{
   try{
    if(!restaurantPickerMap){
     restaurantPickerMap=new google.maps.Map(mapEl,{center:start,zoom:16,mapTypeControl:false,streetViewControl:false,fullscreenControl:false});
@@ -482,12 +480,12 @@ function openRestaurantMapPicker(){
    google.maps.event.trigger(restaurantPickerMap,"resize");
    restaurantPickerMap.setCenter(start);
    restaurantPickerMap.setZoom(16);
-   setRestaurantPickerPoint(start.lat,start.lng);
+   await setRestaurantPickerPoint(start.lat,start.lng);
   }catch(e){
    console.error("Error cargando mapa del restaurante",e);
-   toast("No se pudo cargar el mapa del restaurante");
+   const a=document.getElementById("restaurantMapPickerAddress");if(a)a.textContent="No se pudo cargar el mapa. Cierra y vuelve a abrir el selector.";
   }
- },300);
+ },450);
 }
 function restaurantPickerUseGps(){
  const btn=document.querySelector('#restaurantMapPickerDialog button[onclick="restaurantPickerUseGps()"]');
@@ -541,7 +539,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.4.51</footer><script>
+</script><footer class="admin-version">Versión v1.4.52</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
