@@ -82,7 +82,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .uploadBox{display:grid;gap:10px;margin-top:8px}.uploadBox input[type=file]{display:none}.uploadPreview{width:96px;height:96px;object-fit:cover;border-radius:14px;border:1px solid var(--border)}@media(max-width:600px){.uploadBox button{width:100%}}
 .subscription-trial{color:#ffb703}.subscription-active{color:#2dd4bf}.subscription-expired,.subscription-suspended{color:#fb7185}.sub-progress{height:8px;background:var(--ghost);border-radius:999px;overflow:hidden;margin:9px 0}.sub-progress>i{display:block;height:100%;background:var(--a)}
-</style><style id="responsive-v2">
+.order-status-nav{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;margin:16px 0 22px}.order-status-btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:16px;padding:16px;text-align:left;cursor:pointer;font:inherit}.order-status-btn strong{display:block;font-size:16px}.order-status-btn span{display:inline-flex;margin-top:8px;min-width:28px;height:28px;align-items:center;justify-content:center;border-radius:999px;background:var(--ghost);font-weight:800}.order-status-btn.active{background:var(--a);color:#171000;border-color:var(--a)}@media(max-width:760px){.order-status-nav{grid-template-columns:repeat(2,1fr)}}</style><style id="responsive-v2">
 html,body{max-width:100%;overflow-x:hidden}
 .wrap{width:min(1440px,100%);padding-left:clamp(12px,3vw,32px);padding-right:clamp(12px,3vw,32px)}
 .tabs{display:flex;gap:10px;overflow-x:auto;overscroll-behavior-inline:contain;padding-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
@@ -148,7 +148,7 @@ img,svg,video{max-width:100%;height:auto}
 <div class="card span12"><h2>Accesos rápidos</h2><div class="row" style="flex-wrap:wrap"><button class="ghost dashGo" data-go="products">Gestionar productos</button><button class="ghost dashGo" data-go="categories">Categorías</button><button class="ghost dashGo" data-go="settings">Configurar negocio</button></div></div>
 </div></section>
 
-<section id="orders" class="section"><div class="grid"><div class="card span12"><div class="row between"><div><h2>Pedidos Mercado Pago</h2><p class="mut">Gestiona los pedidos pagados en línea y actualiza el estado que verá el cliente.</p></div><button class="ghost" onclick="loadOrders()">Actualizar</button></div><div id="orderList" class="list" style="margin-top:16px"></div></div></div></section>
+<section id="orders" class="section"><div class="grid"><div class="card span12"><div class="row between"><div><h2>Pedidos Mercado Pago</h2><p class="mut">Gestiona los pedidos pagados en línea y actualiza el estado que verá el cliente.</p></div><button class="ghost" onclick="loadOrders()">Actualizar</button></div><div id="orderStatusNav" class="order-status-nav"></div><div id="orderList" class="list" style="margin-top:16px"></div></div></div></section>
 
 <section id="products" class="section"><div class="grid">
 <div class="card span5"><h2 id="productTitle">Nuevo producto</h2><input id="pid" type="hidden">
@@ -345,6 +345,8 @@ function startRestaurantOrderRealtime(){
    if(row.payment_method==="Mercado Pago"&&row.payment_status==="approved"&&old.payment_status!=="approved"){restaurantOrderAlert(row);await loadOrders();}
   }).subscribe();
 }
+let activeOrderStatus="nuevo";
+function setOrderCategory(status){activeOrderStatus=status;renderOrderCategories();}
 async function loadOrders(){
  if(!currentRestaurant)return;
  const {data,error}=await sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).eq("payment_method","Mercado Pago").eq("payment_status","approved").order("created_at",{ascending:false}).limit(100);
@@ -365,10 +367,14 @@ async function loadOrders(){
   const items=Array.isArray(o.items)?o.items:[];
   return `<div class="item"><div class="row between"><div><h3>#${esc(o.order_code)} · ${esc(o.customer_name)}</h3><div class="mut">${new Date(o.created_at).toLocaleString("es-CL")} · ${esc(o.order_type)} · Mercado Pago</div><div class="price">${money(o.total)}</div></div><div style="min-width:180px"><label>Estado</label><select onchange="setOrderStatus(${o.id},this.value)">${states.map(s=>`<option value="${s}" ${s===o.status?"selected":""}>${labels[s]}</option>`).join("")}</select></div></div><div class="order-track">${flow.map((s,i)=>`<span class="${o.status==="cancelado"?"":i<(flow.indexOf(o.status))?"done":s===o.status?"current":""}">${labels[s]}</span>`).join("")}${o.status==="cancelado"?'<span class="current">Cancelado</span>':""}</div><div class="order-detail"><b>${o.order_type==="Delivery"?"📍 Entrega":"📍 Retiro"}:</b> ${esc(o.order_type==="Delivery"?(o.delivery_address||"Sin dirección"):(restaurants.find(r=>r.id===currentRestaurant)?.address||"Dirección del restaurante"))}<br><span class="mut">${items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join(" · ")}</span></div></div>`;
  };
- orderList.innerHTML=groups.map(g=>{
+ function renderOrderCategories(){
+   const nav=document.getElementById("orderStatusNav");
+   nav.innerHTML=groups.map(g=>{const n=orders.filter(o=>o.status===g.key).length;return `<button class="order-status-btn ${activeOrderStatus===g.key?"active":""}" onclick="setOrderCategory('${g.key}')"><strong>${g.title}</strong><span>${n}</span></button>`}).join("");
+   const g=groups.find(x=>x.key===activeOrderStatus)||groups[0];
    const list=orders.filter(o=>o.status===g.key);
-   return `<div class="order-section" style="margin-bottom:24px"><div class="row between"><h3 style="margin:0 0 12px">${g.title}</h3><span class="badge">${list.length}</span></div>${list.length?list.map(renderOrder).join(""):"<p class='mut'>No hay pedidos en esta sección.</p>"}</div>`;
- }).join("")+(orders.some(o=>o.status==="cancelado")?`<div class="order-section"><div class="row between"><h3>❌ Cancelados</h3><span class="badge">${orders.filter(o=>o.status==="cancelado").length}</span></div>${orders.filter(o=>o.status==="cancelado").map(renderOrder).join("")}</div>`:"");
+   orderList.innerHTML=`<div class="order-section"><div class="row between"><h3 style="margin:0 0 12px">${g.title}</h3><span class="badge">${list.length}</span></div>${list.length?list.map(renderOrder).join(""):"<p class='mut'>No hay pedidos en esta categoría.</p>"}</div>`;
+ }
+ renderOrderCategories();
 }
 async function setOrderStatus(id,status){
  const order=orders.find(o=>o.id===id);if(!order)return;
@@ -415,4 +421,4 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.4.3</footer></body></html>
+</script><footer class="admin-version">Versión v1.4.4</footer></body></html>
