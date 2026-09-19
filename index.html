@@ -894,6 +894,7 @@ fieldset.field{border:0;padding:0}
   /* ---------- Envío por WhatsApp ---------- */
   const form = () => ({
     name: $("#f-name").value.trim(),
+    phone: $("#f-phone").value.trim(),
     type: document.querySelector('input[name="tipo"]:checked').value,
     addr: $("#f-addr").value.trim(),
     pay: $("#f-pay").value,
@@ -913,7 +914,8 @@ fieldset.field{border:0;padding:0}
       ...lines, "",
       ...(f.type==="Delivery"?["Subtotal: "+fmt(totals().subtotal),"Delivery: "+fmt(totals().fee)+(deliveryDistance!=null?" ("+deliveryDistance.toFixed(1)+" km)":"")]:[]),
       "*Total: " + fmt(totals().t) + "*", "",
-      "Nombre: " + f.name,\n      "Teléfono: " + f.phone,
+      "Nombre: " + f.name,
+      "Teléfono: " + f.phone,
       f.type === "Delivery" ? "Entrega: Delivery a " + f.addr : "Entrega: Retiro en el local",
       "Pago: " + f.pay
     ];
@@ -934,7 +936,7 @@ fieldset.field{border:0;padding:0}
     st.textContent="Obteniendo ubicación…";
     navigator.geolocation.getCurrentPosition(p=>{deliveryCoords={lat:p.coords.latitude,lng:p.coords.longitude};applyDeliveryFee();st.textContent=deliveryUnavailable?"Fuera de la zona de delivery.":"Ubicación lista"+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":"");update();refreshLink()},()=>{st.textContent="No se pudo obtener la ubicación. Revisa el permiso de GPS."},{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
   });
-  ["#f-name", "#f-addr", "#f-pay", "#f-notes"].forEach(s => $(s).addEventListener("input", refreshLink));
+  ["#f-name", "#f-phone", "#f-addr", "#f-pay", "#f-notes"].forEach(s => $(s).addEventListener("input", refreshLink));
   async function saveOrderToCloud(){
     if (!db || !cart.size) return false;
     const f=form();
@@ -957,7 +959,8 @@ fieldset.field{border:0;padding:0}
 
     let msg = "";
     if (!cart.size) msg = "Agregá al menos un producto.";
-    else if (!f.name){ msg = "Escribí tu nombre para saber a quién entregarle el pedido."; $("#f-name").focus(); }\n    else if(!f.phone){msg="Ingresa tu número de teléfono.";$("#f-phone").focus();}
+    else if (!f.name){ msg = "Escribí tu nombre para saber a quién entregarle el pedido."; $("#f-name").focus(); }
+    else if(!f.phone){msg="Ingresa tu número de teléfono.";$("#f-phone").focus();}
     else if(f.type==="Delivery"&&!f.addr){msg="Escribí la dirección de entrega.";$("#f-addr").focus();}
     else if(f.type==="Delivery"&&CONFIG.delivery.mode==="distance"&&!deliveryCoords){msg="Usa tu ubicación para calcular el costo del delivery.";}
     else if(f.type==="Delivery"&&deliveryUnavailable){msg="Tu ubicación está fuera de la zona de delivery.";}
@@ -982,5 +985,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.3.4</footer></body>
+<footer class="site-version">Versión v1.3.8</footer></body>
 </html>
