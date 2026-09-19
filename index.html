@@ -1229,25 +1229,39 @@ fieldset.field{border:0;padding:0}
   }
 
   send.onclick = async e => {
-    const f = form();
-    if(!isOpen){e.preventDefault();$("#err").textContent="El local está cerrado. No se pueden enviar pedidos en este momento.";return;}
-    if(f.pay==="Mercado Pago"){e.preventDefault();if(!currentCustomer){$("#err").textContent="Para pagar con Mercado Pago tienes que iniciar sesión o crear una cuenta para poder hacer seguimiento de tu pedido.";document.getElementById("account-dialog").showModal();return;}$("#err").textContent="Conectando con Mercado Pago…";let msg="";if(!cart.size)msg="Agregá al menos un producto.";else if(!f.name)msg="Escribí tu nombre.";else if(!f.phone)msg="Ingresa tu número de teléfono.";else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";else if(f.type==="Delivery"&&!deliveryCoords)msg="Usa el botón de ubicación para confirmar dónde entregar.";if(msg){$("#err").textContent=msg;return;}send.textContent="Abriendo Mercado Pago…";let paymentOrderId=null;try{paymentOrderId=await saveOrderToCloud();}catch(err){console.error("No pudimos registrar el pedido antes del pago",err);$("#err").textContent="No pudimos preparar el pedido para el pago.";send.textContent="Pagar con Mercado Pago";return;}let resp;try{resp=await fetch(SUPABASE_URL+"/functions/v1/create-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,title:"Pedido — "+CONFIG.name,amount:totals().t,order_id:paymentOrderId,return_url:location.href})});const data=await resp.json();send.textContent="Pagar con Mercado Pago";if(!resp.ok||!data?.init_point){$("#err").textContent=data?.error||"No se pudo iniciar Mercado Pago.";return;}try{localStorage.setItem(MP_RETURN_ORDER_KEY,String(paymentOrderId));}catch(e){}window.location.assign(data.init_point);return;}catch(err){send.textContent="Pagar con Mercado Pago";$("#err").textContent="No se pudo conectar con Mercado Pago: "+err.message;return;}}
-
-    let msg = "";
-    if (!cart.size) msg = "Agregá al menos un producto.";
-    else if (!f.name){ msg = "Escribí tu nombre para saber a quién entregarle el pedido."; $("#f-name").focus(); }
-    else if(!f.phone){msg="Ingresa tu número de teléfono.";$("#f-phone").focus();}
-    else if(f.type==="Delivery"&&!f.addr){msg="Escribí la dirección de entrega.";$("#f-addr").focus();}
-    else if(f.type==="Delivery"&&CONFIG.delivery.mode==="distance"&&!deliveryCoords){msg="Usa tu ubicación para calcular el costo del delivery.";}
-    else if(f.type==="Delivery"&&deliveryUnavailable){msg="Tu ubicación está fuera de la zona de delivery.";}
-    $("#err").textContent = msg;
-    if (msg){ e.preventDefault(); return; }
-    try{await saveOrderToCloud();}catch(err){console.error("No pudimos registrar el pedido",err);}
-    // El enlace de WhatsApp ya contiene el detalle completo. Vaciar el carrito
-    // después de registrar el pedido evita que reaparezca al volver al menú.
-    refreshLink();
-    window.open(whatsappOrderUrl,"_blank","noopener");
-    setTimeout(()=>{ cart.clear(); saveCart(); update(); },250);
+    e.preventDefault();
+    const f=form();
+    if(!isOpen){$("#err").textContent="El local está cerrado. No se pueden enviar pedidos en este momento.";return;}
+    let msg="";
+    if(!cart.size)msg="Agregá al menos un producto.";
+    else if(!f.name)msg="Escribí tu nombre.";
+    else if(!f.phone)msg="Ingresa tu número de teléfono.";
+    else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";
+    else if(f.type==="Delivery"&&CONFIG.delivery.mode==="distance"&&!deliveryCoords)msg="Usa tu ubicación para calcular el costo del delivery.";
+    else if(f.type==="Delivery"&&deliveryUnavailable)msg="Tu ubicación está fuera de la zona de delivery.";
+    if(msg){$("#err").textContent=msg;return;}
+    if(f.pay==="Mercado Pago"){
+      if(!currentCustomer){$("#err").textContent="Para pagar con Mercado Pago tienes que iniciar sesión o crear una cuenta para poder hacer seguimiento de tu pedido.";document.getElementById("account-dialog").showModal();return;}
+      $("#err").textContent="Conectando con Mercado Pago…";send.disabled=true;send.textContent="Abriendo Mercado Pago…";
+      try{
+        const paymentOrderId=await saveOrderToCloud();
+        const resp=await fetch(SUPABASE_URL+"/functions/v1/create-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,title:"Pedido — "+CONFIG.name,amount:totals().t,order_id:paymentOrderId,return_url:location.href})});
+        const data=await resp.json();
+        if(!resp.ok||!data?.init_point)throw new Error(data?.error||"No se pudo iniciar Mercado Pago.");
+        try{localStorage.setItem(MP_RETURN_ORDER_KEY,String(paymentOrderId));}catch(_){}
+        window.location.href=data.init_point;
+      }catch(err){send.disabled=false;send.textContent="Pagar con Mercado Pago";$("#err").textContent="No se pudo conectar con Mercado Pago: "+(err.message||err);}
+      return;
+    }
+    $("#err").textContent="";
+    send.disabled=true;
+    try{
+      await saveOrderToCloud();
+      refreshLink();
+      if(!whatsappOrderUrl)throw new Error("No se pudo generar el enlace de WhatsApp.");
+      window.location.href=whatsappOrderUrl;
+      setTimeout(()=>{cart.clear();saveCart();update();send.disabled=false;},500);
+    }catch(err){send.disabled=false;send.textContent="Enviar pedido por WhatsApp";$("#err").textContent="No se pudo enviar el pedido: "+(err.message||err);}
   };
 
   // Preferencias y persistencia
@@ -1282,5 +1296,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.48</footer></body>
+<footer class="site-version">Versión v1.4.49</footer></body>
 </html>
