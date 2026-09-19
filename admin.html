@@ -82,6 +82,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .uploadBox{display:grid;gap:10px;margin-top:8px}.uploadBox input[type=file]{display:none}.uploadPreview{width:96px;height:96px;object-fit:cover;border-radius:14px;border:1px solid var(--border)}@media(max-width:600px){.uploadBox button{width:100%}}
 .subscription-trial{color:#ffb703}.subscription-active{color:#2dd4bf}.subscription-expired,.subscription-suspended{color:#fb7185}.sub-progress{height:8px;background:var(--ghost);border-radius:999px;overflow:hidden;margin:9px 0}.sub-progress>i{display:block;height:100%;background:var(--a)}
+@keyframes orderSpin{to{transform:rotate(360deg)}}
 </style><style id="responsive-v2">
 html,body{max-width:100%;overflow-x:hidden}
 .wrap{width:min(1440px,100%);padding-left:clamp(12px,3vw,32px);padding-right:clamp(12px,3vw,32px)}
@@ -381,6 +382,7 @@ function initOrderDateFilter(){
 async function loadOrders(){
  initOrderDateFilter();
  if(!currentRestaurant)return;
+ if(orderList)orderList.innerHTML='<div class="orders-loading" style="display:flex;align-items:center;gap:12px;padding:24px 4px;font-weight:800"><span style="width:24px;height:24px;border:3px solid rgba(255,255,255,.25);border-top-color:currentColor;border-radius:50%;display:inline-block;animation:orderSpin .8s linear infinite"></span><span>Buscando pedidos…</span></div>';
  const {data,error}=await sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).eq("payment_method","Mercado Pago").order("created_at",{ascending:false}).limit(500);
  if(error)return toast(error.message);
  orders=(data||[]).filter(o=>o.payment_status==="approved" || o.payment_status==="pending"); const bounds=orderDateBounds(); if(bounds)orders=orders.filter(o=>{const d=new Date(o.created_at);return d>=bounds[0]&&d<bounds[1]});
@@ -439,4 +441,4 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.4.12</footer></body></html>
+</script><footer class="admin-version">Versión v1.4.13</footer></body></html>
