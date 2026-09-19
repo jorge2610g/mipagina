@@ -352,13 +352,23 @@ async function loadOrders(){
  orders=data||[];
  const allStates=["nuevo","preparando","listo","en_camino","entregado","cancelado"];
  const labels={nuevo:"Recibido",preparando:"Preparando",listo:"Listo",en_camino:"En camino",entregado:"Entregado",cancelado:"Cancelado"};
- orderList.innerHTML=orders.map(o=>{
+ const groups=[
+  {key:"nuevo",title:"📥 Pedidos recibidos"},
+  {key:"preparando",title:"🍳 En preparación"},
+  {key:"listo",title:"✅ Listos"},
+  {key:"entregado",title:"🏁 Entregados"}
+ ];
+ const renderOrder=o=>{
   const states=o.order_type==="Delivery"?allStates:allStates.filter(s=>s!=="en_camino");
   const idx=states.indexOf(o.status);
   const flow=(o.order_type==="Delivery"?["nuevo","preparando","listo","en_camino","entregado"]:["nuevo","preparando","listo","entregado"]);
   const items=Array.isArray(o.items)?o.items:[];
   return `<div class="item"><div class="row between"><div><h3>#${esc(o.order_code)} · ${esc(o.customer_name)}</h3><div class="mut">${new Date(o.created_at).toLocaleString("es-CL")} · ${esc(o.order_type)} · Mercado Pago</div><div class="price">${money(o.total)}</div></div><div style="min-width:180px"><label>Estado</label><select onchange="setOrderStatus(${o.id},this.value)">${states.map(s=>`<option value="${s}" ${s===o.status?"selected":""}>${labels[s]}</option>`).join("")}</select></div></div><div class="order-track">${flow.map((s,i)=>`<span class="${o.status==="cancelado"?"":i<(flow.indexOf(o.status))?"done":s===o.status?"current":""}">${labels[s]}</span>`).join("")}${o.status==="cancelado"?'<span class="current">Cancelado</span>':""}</div><div class="order-detail"><b>${o.order_type==="Delivery"?"📍 Entrega":"📍 Retiro"}:</b> ${esc(o.order_type==="Delivery"?(o.delivery_address||"Sin dirección"):(restaurants.find(r=>r.id===currentRestaurant)?.address||"Dirección del restaurante"))}<br><span class="mut">${items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join(" · ")}</span></div></div>`;
- }).join("")||"<p class='mut'>Todavía no hay pedidos de Mercado Pago.</p>";
+ };
+ orderList.innerHTML=groups.map(g=>{
+   const list=orders.filter(o=>o.status===g.key);
+   return `<div class="order-section" style="margin-bottom:24px"><div class="row between"><h3 style="margin:0 0 12px">${g.title}</h3><span class="badge">${list.length}</span></div>${list.length?list.map(renderOrder).join(""):"<p class='mut'>No hay pedidos en esta sección.</p>"}</div>`;
+ }).join("")+(orders.some(o=>o.status==="cancelado")?`<div class="order-section"><div class="row between"><h3>❌ Cancelados</h3><span class="badge">${orders.filter(o=>o.status==="cancelado").length}</span></div>${orders.filter(o=>o.status==="cancelado").map(renderOrder).join("")}</div>`:"");
 }
 async function setOrderStatus(id,status){
  const order=orders.find(o=>o.id===id);if(!order)return;
@@ -405,4 +415,4 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.4.2</footer></body></html>
+</script><footer class="admin-version">Versión v1.4.3</footer></body></html>
