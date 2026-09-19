@@ -423,7 +423,7 @@ fieldset.field{border:0;padding:0}
     const banner=document.getElementById("pending-order-banner"),txt=document.getElementById("pending-order-text");
     window.__pendingCustomerOrder=null;
     if(!currentCustomer){banner.hidden=true;return;}
-    const {data,error}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address").eq("customer_id",currentCustomer.id).eq("payment_method","Mercado Pago").eq("payment_status","approved").not("status","in","(entregado,cancelado)").order("created_at",{ascending:false}).limit(1).maybeSingle();
+    const {data,error}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address").eq("customer_id",currentCustomer.id).eq("restaurant_id",window.__restaurantId).eq("payment_method","Mercado Pago").eq("payment_status","approved").not("status","in","(entregado,cancelado)").order("created_at",{ascending:false}).limit(1).maybeSingle();
     if(error||!data){banner.hidden=true;return;}
     window.__pendingCustomerOrder=data;banner.hidden=false;txt.textContent="Pedido "+data.order_code+" · "+statusLabel(data.status)+". Toca para ver el seguimiento.";
   }
@@ -445,7 +445,7 @@ fieldset.field{border:0;padding:0}
   async function loadCustomerOrders(){
     const box=document.getElementById("orders-list"); box.innerHTML="<p>Cargando pedidos…</p>";
     if(!currentCustomer){box.innerHTML="<p>Inicia sesión para ver tus pedidos.</p>";return;}
-    const {data,error}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address").eq("customer_id",currentCustomer.id).eq("payment_method","Mercado Pago").eq("payment_status","approved").order("created_at",{ascending:false}).limit(50);
+    const {data,error}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address").eq("customer_id",currentCustomer.id).eq("restaurant_id",window.__restaurantId).eq("payment_method","Mercado Pago").eq("payment_status","approved").order("created_at",{ascending:false}).limit(50);
     if(error){box.innerHTML="<p>No pudimos cargar tus pedidos.</p>";return;}
     if(!data?.length){box.innerHTML="<p>Aún no tienes pedidos pagados con Mercado Pago asociados a esta cuenta.</p>";return;}
     window.__customerOrders=data;box.innerHTML=data.map((o,i)=>{const items=Array.isArray(o.items)?o.items:[];return '<article class="order-card" data-order-index="'+i+'" tabindex="0" role="button"><div class="order-top"><div><div class="order-code">'+esc(o.order_code)+'</div><div class="order-meta">'+new Date(o.created_at).toLocaleString("es-CL")+'</div></div><span class="order-status">'+esc(statusLabel(o.status))+'</span></div><div class="order-items">'+items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join("<br>")+'</div><div class="order-meta">'+esc(o.order_type||"")+" · "+esc(o.payment_method||"")+' · <b>'+fmt(Number(o.total||0))+'</b></div><div class="order-meta"><b>Toca para ver seguimiento y lugar de '+(o.order_type==="Delivery"?"entrega":"retiro")+'</b></div></article>'}).join("");
@@ -500,7 +500,7 @@ fieldset.field{border:0;padding:0}
   }
   startOrderRealtime();
   // Respaldo cada 10 s por si la conexión en tiempo real se interrumpe.
-  setInterval(async()=>{if(!currentCustomer)return;await refreshPendingOrder();if(document.getElementById("orders-dialog").open)await loadCustomerOrders();if(document.getElementById("order-detail-dialog").open&&openedOrderId){const {data:o}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address,payment_status").eq("id",openedOrderId).eq("customer_id",currentCustomer.id).maybeSingle();if(o){const wasOpen=document.getElementById("order-detail-dialog").open;openOrderDetail(o);if(wasOpen&&document.getElementById("order-detail-dialog").open===false)document.getElementById("order-detail-dialog").showModal();}}},5000);
+  setInterval(async()=>{if(!currentCustomer)return;await refreshPendingOrder();if(document.getElementById("orders-dialog").open)await loadCustomerOrders();if(document.getElementById("order-detail-dialog").open&&openedOrderId){const {data:o}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address,payment_status").eq("id",openedOrderId).eq("customer_id",currentCustomer.id).eq("restaurant_id",window.__restaurantId).maybeSingle();if(o){const wasOpen=document.getElementById("order-detail-dialog").open;openOrderDetail(o);if(wasOpen&&document.getElementById("order-detail-dialog").open===false)document.getElementById("order-detail-dialog").showModal();}}},5000);
   /* =====================  EDITÁ ESTO  ===================== */
   const CONFIG = {
     name: "Hamburguesería Demo",
@@ -1158,5 +1158,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.6.6</footer></body>
+<footer class="site-version">Versión v1.4.39</footer></body>
 </html>
