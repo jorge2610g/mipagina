@@ -148,7 +148,14 @@ img,svg,video{max-width:100%;height:auto}
 <div class="card span12"><h2>Accesos rápidos</h2><div class="row" style="flex-wrap:wrap"><button class="ghost dashGo" data-go="products">Gestionar productos</button><button class="ghost dashGo" data-go="categories">Categorías</button><button class="ghost dashGo" data-go="settings">Configurar negocio</button></div></div>
 </div></section>
 
-<section id="orders" class="section"><div class="grid"><div class="card span12"><div class="row between"><div><h2>Pedidos Mercado Pago</h2><p class="mut">Gestiona los pedidos pagados en línea y actualiza el estado que verá el cliente.</p></div><button class="ghost" onclick="loadOrders()">Actualizar</button></div><div id="orderList" class="list" style="margin-top:16px"></div></div></div></section>
+<section id="orders" class="section"><div class="grid"><div class="card span12"><div class="row between"><div><h2>Pedidos Mercado Pago</h2><p class="mut">Gestiona los pedidos pagados en línea y actualiza el estado que verá el cliente.</p></div><button class="ghost" onclick="loadOrders()">Actualizar</button></div><div class="row" id="orderDateFilters" style="margin-top:16px;flex-wrap:wrap">
+<button class="ghost order-date-filter" data-range="today" onclick="setOrderDateFilter('today',this)">Hoy</button>
+<button class="ghost order-date-filter" data-range="yesterday" onclick="setOrderDateFilter('yesterday',this)">Ayer</button>
+<button class="ghost order-date-filter" data-range="week" onclick="setOrderDateFilter('week',this)">Semana</button>
+<button class="ghost order-date-filter" data-range="month" onclick="setOrderDateFilter('month',this)">Mes</button>
+<input id="orderFilterDate" type="date" style="width:auto" onchange="setOrderDateFilter('date',this)">
+<button class="ghost order-date-filter" data-range="all" onclick="setOrderDateFilter('all',this)">Todos</button>
+</div><div id="orderList" class="list" style="margin-top:16px"></div></div></div></section>
 
 <section id="products" class="section"><div class="grid">
 <div class="card span5"><h2 id="productTitle">Nuevo producto</h2><input id="pid" type="hidden">
@@ -345,9 +352,30 @@ function startRestaurantOrderRealtime(){
    if(row.payment_method==="Mercado Pago"&&row.payment_status==="approved"&&old.payment_status!=="approved"){restaurantOrderAlert(row);await loadOrders();}
   }).subscribe();
 }
+let orderDateFilter="all";
+function setOrderDateFilter(range,el){
+ orderDateFilter=range;
+ document.querySelectorAll(".order-date-filter").forEach(b=>b.classList.remove("primary"));
+ if(el?.classList?.contains("order-date-filter"))el.classList.add("primary");
+ loadOrders();
+}
+function orderDateBounds(){
+ const now=new Date(),start=new Date(now),end=new Date(now);
+ if(orderDateFilter==="all")return null;
+ if(orderDateFilter==="date"){
+  const v=document.getElementById("orderFilterDate")?.value;if(!v)return null;
+  const parts=v.split("-").map(Number);start.setFullYear(parts[0],parts[1]-1,parts[2]);start.setHours(0,0,0,0);end.setTime(start.getTime());end.setDate(end.getDate()+1);return [start,end];
+ }
+ start.setHours(0,0,0,0);
+ if(orderDateFilter==="today"){end.setTime(start.getTime());end.setDate(end.getDate()+1)}
+ else if(orderDateFilter==="yesterday"){end.setTime(start.getTime());start.setDate(start.getDate()-1)}
+ else if(orderDateFilter==="week"){const day=(start.getDay()+6)%7;start.setDate(start.getDate()-day);end.setTime(start.getTime());end.setDate(end.getDate()+7)}
+ else if(orderDateFilter==="month"){start.setDate(1);end.setFullYear(start.getFullYear(),start.getMonth()+1,1);end.setHours(0,0,0,0)}
+ return [start,end];
+}
 async function loadOrders(){
  if(!currentRestaurant)return;
- const {data,error}=await sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).eq("payment_method","Mercado Pago").eq("payment_status","approved").order("created_at",{ascending:false}).limit(100);
+ let query=sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).eq("payment_method","Mercado Pago").eq("payment_status","approved"); const bounds=orderDateBounds(); if(bounds)query=query.gte("created_at",bounds[0].toISOString()).lt("created_at",bounds[1].toISOString()); const {data,error}=await query.order("created_at",{ascending:false}).limit(100);
  if(error)return toast(error.message);
  orders=data||[];
  const allStates=["nuevo","preparando","listo","en_camino","entregado","cancelado"];
@@ -405,4 +433,4 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.4.8</footer></body></html>
+</script><footer class="admin-version">Versión v1.4.9</footer></body></html>
