@@ -1100,7 +1100,7 @@ fieldset.field{border:0;padding:0}
     const { data, error } = await db.from("restaurant_orders").insert({
       restaurant_id:window.__restaurantId||null, order_code:orderCode, customer_name:f.name, customer_phone:f.phone, customer_id:currentCustomer?.id||null, customer_email:currentCustomer?.email||null, order_type:f.type,
       delivery_address:f.type === "Delivery" ? f.addr : null, payment_method:f.pay,
-      notes:f.notes || null,items,total:totals().t,delivery_fee:f.type==="Delivery"?totals().fee:0,delivery_distance_km:f.type==="Delivery"?deliveryDistance:null,delivery_latitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lat:null,delivery_longitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lng:null,status:"nuevo",payment_status:f.pay==="Mercado Pago"?"pending":"not_applicable"
+      notes:f.notes || null,items,total:totals().t,delivery_fee:f.type==="Delivery"?totals().fee:0,delivery_distance_km:f.type==="Delivery"?deliveryDistance:null,delivery_latitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lat:null,delivery_longitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lng:null,status:"recibido",payment_status:f.pay==="Mercado Pago"?"pending":"not_applicable"
     }).select("id").single();
     if(error){ console.error("No se pudo guardar el pedido", error); throw error; }
     localStorage.setItem("last_order_code",orderCode);
@@ -1158,5 +1158,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.6.3</footer></body>
+<footer class="site-version">Versión v1.6.4</footer></body>
 </html>
