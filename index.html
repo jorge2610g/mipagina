@@ -1225,6 +1225,9 @@ fieldset.field{border:0;padding:0}
   try{ const c=JSON.parse(localStorage.getItem(CUSTOMER_KEY)||"{}"); $("#f-name").value=c.name||""; $("#f-phone").value=c.phone||""; $("#f-addr").value=c.addr||""; }catch(e){}
   ["#f-name","#f-phone","#f-addr"].forEach(sel=>$(sel).addEventListener("change",()=>{try{localStorage.setItem(CUSTOMER_KEY,JSON.stringify({name:$("#f-name").value.trim(),phone:$("#f-phone").value.trim(),addr:$("#f-addr").value.trim()}));}catch(e){}}));
   restoreCart();
+  // Sincroniza inmediatamente la barra con el carrito restaurado al recargar.
+  // Antes solo se restauraban los datos; la barra seguía oculta hasta modificar el carrito.
+  update();
   // Al volver desde Mercado Pago, vacía el carrito únicamente si el backend ya confirmó el pago.
   try{
     const returnedOrderId=localStorage.getItem(MP_RETURN_ORDER_KEY);
@@ -1247,5 +1250,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.45</footer></body>
+<footer class="site-version">Versión v1.4.46</footer></body>
 </html>
