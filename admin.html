@@ -205,7 +205,7 @@ async function enter(user){
     const {data,error}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle(); isSuperAdmin=!!data; let membership=[]; if(!isSuperAdmin){const mr=await sb.from("restaurant_staff").select("restaurant_id,role,permissions").eq("user_id",user.id).eq("active",true);if(mr.error){msg.textContent="Error al verificar restaurante: "+mr.error.message;return}membership=mr.data||[];currentRole=membership[0]?.role||"";}
     if(error){msg.textContent="Error al verificar permisos: "+error.message;return}
     if(!isSuperAdmin && !membership.length){await sb.auth.signOut();msg.textContent="Esta cuenta no tiene acceso a ningún restaurante.";return} if(!isSuperAdmin&&membership.length){
- currentRestaurant=membership[0].restaurant_id; const menuRestaurant=(restaurants||[]).find(x=>x.id===currentRestaurant); const menuLink=document.getElementById("viewMenuLink"); if(menuLink&&menuRestaurant){menuLink.href=location.origin+"/index.html?r="+encodeURIComponent(menuRestaurant.slug);menuLink.style.display="";}
+ currentRestaurant=membership[0].restaurant_id; const menuLink=document.getElementById("viewMenuLink"); if(menuLink){menuLink.href=location.origin+"/index.html?r="+encodeURIComponent(currentRestaurant);menuLink.style.display="";}
  currentRole=membership[0].role||"restaurant";
  const p=membership[0].permissions||{};
  document.querySelectorAll(".tab").forEach(x=>x.style.display="");
@@ -346,4 +346,4 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.2.1</footer></body></html>
+</script><footer class="admin-version">Versión v1.2.2</footer></body></html>
