@@ -1132,9 +1132,25 @@ fieldset.field{border:0;padding:0}
   }
   function openDeliveryMapPicker(){
     if(!window.google?.maps){$("#gps-status").textContent="Google Maps todavía no está disponible.";return}
-    const dlg=$("#map-picker-dialog");dlg.showModal();
-    const start=deliveryCoords||(CONFIG.delivery.lat!=null?{lat:CONFIG.delivery.lat,lng:CONFIG.delivery.lng}:{lat:-20.2307,lng:-70.1357});
-    setTimeout(()=>{if(!deliveryMap){deliveryMap=new google.maps.Map($("#map-picker-map"),{center:start,zoom:16,mapTypeControl:false,streetViewControl:false,fullscreenControl:false});deliveryMap.addListener("click",e=>setDeliveryMapPoint(e.latLng.lat(),e.latLng.lng()));}google.maps.event.trigger(deliveryMap,"resize");deliveryMap.setCenter(start);setDeliveryMapPoint(start.lat,start.lng);},80);
+    const dlg=document.getElementById("map-picker-dialog"),mapEl=document.getElementById("map-picker-map");
+    if(!dlg||!mapEl){$("#gps-status").textContent="No se pudo abrir el selector de ubicación.";return}
+    const start=deliveryCoords||(CONFIG.delivery.lat!=null&&CONFIG.delivery.lng!=null?{lat:Number(CONFIG.delivery.lat),lng:Number(CONFIG.delivery.lng)}:{lat:-20.2307,lng:-70.1357});
+    dlg.showModal();
+    setTimeout(()=>{
+      try{
+        if(!deliveryMap){
+          deliveryMap=new google.maps.Map(mapEl,{center:start,zoom:16,mapTypeControl:false,streetViewControl:false,fullscreenControl:false});
+          deliveryMap.addListener("click",e=>setDeliveryMapPoint(e.latLng.lat(),e.latLng.lng()));
+        }
+        google.maps.event.trigger(deliveryMap,"resize");
+        deliveryMap.setCenter(start);
+        deliveryMap.setZoom(16);
+        setDeliveryMapPoint(start.lat,start.lng);
+      }catch(e){
+        console.error("Error cargando mapa de delivery",e);
+        $("#gps-status").textContent="No se pudo cargar Google Maps. Revisa la configuración de la API.";
+      }
+    },300);
   }
   $("#search-location-btn").textContent="🗺️ Seleccionar en mapa";
   $("#search-location-btn").addEventListener("click",openDeliveryMapPicker);
@@ -1250,5 +1266,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.46</footer></body>
+<footer class="site-version">Versión v1.4.47</footer></body>
 </html>
