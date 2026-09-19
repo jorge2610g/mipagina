@@ -449,65 +449,58 @@ async function reverseRestaurantLocation(lat,lng){
 let restaurantPickerMap=null,restaurantPickerMarker=null,restaurantPickerPoint=null;
 async function setRestaurantPickerPoint(lat,lng,center=true){
  restaurantPickerPoint={lat:Number(lat),lng:Number(lng)};
- const addressEl=document.getElementById("restaurantMapPickerAddress");
- if(!restaurantPickerMap||!window.google?.maps)return;
- if(!restaurantPickerMarker){
-  restaurantPickerMarker=new google.maps.Marker({position:restaurantPickerPoint,map:restaurantPickerMap,draggable:true});
-  restaurantPickerMarker.addListener("dragend",e=>setRestaurantPickerPoint(e.latLng.lat(),e.latLng.lng(),false));
- }else{
-  restaurantPickerMarker.setMap(restaurantPickerMap);
-  restaurantPickerMarker.setPosition(restaurantPickerPoint);
- }
+ if(!restaurantPickerMarker){restaurantPickerMarker=new google.maps.Marker({position:restaurantPickerPoint,map:restaurantPickerMap,draggable:true});restaurantPickerMarker.addListener("dragend",e=>setRestaurantPickerPoint(e.latLng.lat(),e.latLng.lng(),false));}
+ else restaurantPickerMarker.setPosition(restaurantPickerPoint);
  if(center)restaurantPickerMap.panTo(restaurantPickerPoint);
- try{
-  const g=new google.maps.Geocoder(),r=await g.geocode({location:restaurantPickerPoint});
-  if(addressEl)addressEl.textContent=r.results?.[0]?.formatted_address||"Ubicación seleccionada";
- }catch(_){if(addressEl)addressEl.textContent="Ubicación seleccionada";}
+ try{const g=new google.maps.Geocoder(),r=await g.geocode({location:restaurantPickerPoint});document.getElementById("restaurantMapPickerAddress").textContent=r.results?.[0]?.formatted_address||"Ubicación seleccionada";}catch(_){document.getElementById("restaurantMapPickerAddress").textContent="Ubicación seleccionada";}
 }
 function openRestaurantMapPicker(){
- if(!window.google?.maps){toast("Google Maps todavía no está disponible");return}
+ if(!window.google?.maps){document.getElementById("smapstatus").textContent="Google Maps todavía no está disponible.";return}
  const dlg=document.getElementById("restaurantMapPickerDialog"),mapEl=document.getElementById("restaurantMapPickerMap");
- if(!dlg||!mapEl){toast("No se pudo abrir el selector de ubicación");return}
+ if(!dlg||!mapEl){document.getElementById("smapstatus").textContent="No se pudo abrir el selector de ubicación.";return}
  const savedLat=parseFloat(document.getElementById("slat")?.value),savedLng=parseFloat(document.getElementById("slng")?.value);
- const start={lat:Number.isFinite(savedLat)?savedLat:-20.2307,lng:Number.isFinite(savedLng)?savedLng:-70.1357};
- const addressEl=document.getElementById("restaurantMapPickerAddress");
- restaurantPickerMap=null;restaurantPickerMarker=null;restaurantPickerPoint=null;
- mapEl.replaceChildren();
- if(addressEl)addressEl.textContent="Cargando mapa…";
+ const start=Number.isFinite(savedLat)&&Number.isFinite(savedLng)?{lat:savedLat,lng:savedLng}:{lat:-20.2307,lng:-70.1357};
  dlg.showModal();
- const draw=async()=>{
+ setTimeout(()=>{
   try{
-   const rect=mapEl.getBoundingClientRect();
-   if(rect.width<50||rect.height<50){requestAnimationFrame(draw);return}
-   restaurantPickerMap=new google.maps.Map(mapEl,{center:start,zoom:16,mapTypeControl:false,streetViewControl:false,fullscreenControl:false});
-   restaurantPickerMap.addListener("click",e=>setRestaurantPickerPoint(e.latLng.lat(),e.latLng.lng()));
-   await new Promise(r=>google.maps.event.addListenerOnce(restaurantPickerMap,"idle",r));
-   await setRestaurantPickerPoint(start.lat,start.lng);
+   if(!restaurantPickerMap){
+    restaurantPickerMap=new google.maps.Map(mapEl,{center:start,zoom:16,mapTypeControl:false,streetViewControl:false,fullscreenControl:false});
+    restaurantPickerMap.addListener("click",e=>setRestaurantPickerPoint(e.latLng.lat(),e.latLng.lng()));
+   }
+   google.maps.event.trigger(restaurantPickerMap,"resize");
+   restaurantPickerMap.setCenter(start);
+   restaurantPickerMap.setZoom(16);
+   setRestaurantPickerPoint(start.lat,start.lng);
   }catch(e){
    console.error("Error cargando mapa del restaurante",e);
-   if(addressEl)addressEl.textContent="No se pudo cargar el mapa del restaurante.";
+   document.getElementById("smapstatus").textContent="No se pudo cargar Google Maps. Revisa la configuración de la API.";
   }
- };
- requestAnimationFrame(()=>requestAnimationFrame(draw));
+ },300);
 }
 function restaurantPickerUseGps(){
- const btn=document.querySelector('#restaurantMapPickerDialog button[onclick="restaurantPickerUseGps()"]');
- const addressEl=document.getElementById("restaurantMapPickerAddress");
- if(!navigator.geolocation){toast("Este dispositivo no permite obtener la ubicación");return}
- const original=btn?.textContent||"📍 Mi ubicación";
- if(btn){btn.disabled=true;btn.textContent="⏳ Buscando ubicación…"}
- if(addressEl)addressEl.textContent="⏳ Obteniendo tu ubicación actual…";
+ const btn=document.querySelector('#restaurantMapPickerDialog button[onclick="restaurantPickerUseGps()"]'),address=document.getElementById("restaurantMapPickerAddress");
+ if(!navigator.geolocation){address.textContent="Este dispositivo no permite obtener tu ubicación.";return}
+ const original=btn.textContent;
+ btn.disabled=true;btn.textContent="⏳ Buscando ubicación…";
+ address.textContent="⏳ Obteniendo tu ubicación actual…";
  navigator.geolocation.getCurrentPosition(async p=>{
-  await setRestaurantPickerPoint(p.coords.latitude,p.coords.longitude);
-  if(btn){btn.disabled=false;btn.textContent="✅ Ubicación encontrada"}
-  setTimeout(()=>{if(btn)btn.textContent=original},1800);
+  try{
+   await setRestaurantPickerPoint(p.coords.latitude,p.coords.longitude);
+   btn.textContent="✅ Ubicación encontrada";
+   setTimeout(()=>{btn.textContent=original},1600);
+  }finally{btn.disabled=false}
  },()=>{
-  if(btn){btn.disabled=false;btn.textContent="📍 Intentar nuevamente"}
-  if(addressEl)addressEl.textContent="No se pudo obtener tu ubicación. Revisa el permiso de ubicación.";
-  toast("No se pudo obtener la ubicación");
+  btn.disabled=false;btn.textContent="📍 Intentar nuevamente";
+  address.textContent="No se pudo obtener tu ubicación.";
  },{enableHighAccuracy:true,timeout:12000});
 }
-async function confirmRestaurantMapPicker(){if(!restaurantPickerPoint)return;slat.value=restaurantPickerPoint.lat;slng.value=restaurantPickerPoint.lng;await reverseRestaurantLocation(restaurantPickerPoint.lat,restaurantPickerPoint.lng);smapstatus.textContent="✅ Ubicación seleccionada en el mapa. Guarda la configuración.";restaurantMapPickerDialog.close()}
+async function confirmRestaurantMapPicker(){
+ if(!restaurantPickerPoint)return;
+ slat.value=restaurantPickerPoint.lat;slng.value=restaurantPickerPoint.lng;
+ try{const g=new google.maps.Geocoder(),r=await g.geocode({location:restaurantPickerPoint});const a=r.results?.[0]?.formatted_address||"";if(a){saddress.value=a;document.getElementById("smapaddress").value=a;}}catch(_){}
+ document.getElementById("smapstatus").textContent="✅ Ubicación seleccionada en el mapa. Guarda la configuración.";
+ document.getElementById("restaurantMapPickerDialog").close();
+}
 function useRestaurantCurrentLocation(){
  const st=document.getElementById("smapstatus");if(!navigator.geolocation){if(st)st.textContent="❌ Este navegador no permite obtener la ubicación.";return}
  if(st)st.textContent="📍 Obteniendo ubicación…";
@@ -542,7 +535,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.4.53</footer><script>
+</script><footer class="admin-version">Versión v1.4.54</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
