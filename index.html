@@ -236,7 +236,7 @@ fieldset.field{border:0;padding:0}
 .account-form{display:grid;gap:12px}.account-form input{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit}.account-form .primary{border:0;border-radius:12px;padding:13px 16px;background:var(--mustard);color:var(--on-mustard);font-weight:800;cursor:pointer}
 .account-msg{min-height:20px;font-size:13px;color:var(--muted);margin:8px 0 0}.account-msg.error{color:#d72f3f}
 .order-list{display:grid;gap:12px;max-height:60vh;overflow:auto}.order-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--surface)}.order-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.order-code{font-weight:800}.order-status{font-size:12px;font-weight:800;padding:6px 9px;border-radius:999px;background:var(--mustard);color:var(--on-mustard)}.order-meta{font-size:13px;color:var(--muted);margin-top:7px}.order-items{font-size:13px;margin-top:8px}.account-user{font-size:13px;color:var(--muted);margin:0 0 12px}
-</style>
+.order-card{cursor:pointer}.order-card:hover{transform:translateY(-1px)}.tracking-step{display:flex;gap:12px;align-items:flex-start;padding:10px 0}.tracking-dot{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);flex:0 0 auto;margin-top:2px}.tracking-step.done .tracking-dot,.tracking-step.current .tracking-dot{background:var(--mustard);border-color:var(--mustard)}.tracking-step.current{font-weight:800}.pickup-box{margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}.pickup-box b{display:block;margin-bottom:5px}</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>(function(){try{document.documentElement.setAttribute("data-theme",localStorage.getItem("menu_theme")==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}})();</script></head>
 <body class="menu-loading">
@@ -333,6 +333,7 @@ fieldset.field{border:0;padding:0}
   </div>
 </dialog>
 
+<dialog id="order-detail-dialog" class="account-dialog"><div class="account-card"><div class="account-head"><h2>Seguimiento del pedido</h2><button type="button" class="close" id="order-detail-close" aria-label="Cerrar">✕</button></div><div id="order-detail-content"></div></div></dialog>
 <dialog id="detail" aria-labelledby="d-title"></dialog>
 
 <dialog id="sheet" aria-labelledby="sheet-title">
@@ -424,10 +425,10 @@ fieldset.field{border:0;padding:0}
   async function loadCustomerOrders(){
     const box=document.getElementById("orders-list"); box.innerHTML="<p>Cargando pedidos…</p>";
     if(!currentCustomer){box.innerHTML="<p>Inicia sesión para ver tus pedidos.</p>";return;}
-    const {data,error}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at").eq("customer_id",currentCustomer.id).order("created_at",{ascending:false}).limit(50);
+    const {data,error}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address").eq("customer_id",currentCustomer.id).order("created_at",{ascending:false}).limit(50);
     if(error){box.innerHTML="<p>No pudimos cargar tus pedidos.</p>";return;}
     if(!data?.length){box.innerHTML="<p>Aún no tienes pedidos asociados a esta cuenta.</p>";return;}
-    box.innerHTML=data.map(o=>{const items=Array.isArray(o.items)?o.items:[];return '<article class="order-card"><div class="order-top"><div><div class="order-code">'+esc(o.order_code)+'</div><div class="order-meta">'+new Date(o.created_at).toLocaleString("es-CL")+'</div></div><span class="order-status">'+esc(statusLabel(o.status))+'</span></div><div class="order-items">'+items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join("<br>")+'</div><div class="order-meta">'+esc(o.order_type||"")+" · "+esc(o.payment_method||"")+' · <b>'+fmt(Number(o.total||0))+'</b></div></article>'}).join("");
+    window.__customerOrders=data;box.innerHTML=data.map((o,i)=>{const items=Array.isArray(o.items)?o.items:[];return '<article class="order-card" data-order-index="'+i+'" tabindex="0" role="button"><div class="order-top"><div><div class="order-code">'+esc(o.order_code)+'</div><div class="order-meta">'+new Date(o.created_at).toLocaleString("es-CL")+'</div></div><span class="order-status">'+esc(statusLabel(o.status))+'</span></div><div class="order-items">'+items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join("<br>")+'</div><div class="order-meta">'+esc(o.order_type||"")+" · "+esc(o.payment_method||"")+' · <b>'+fmt(Number(o.total||0))+'</b></div><div class="order-meta"><b>Toca para ver seguimiento y lugar de '+(o.order_type==="Delivery"?"entrega":"retiro")+'</b></div></article>'}).join("");
   }
 
 
@@ -435,6 +436,20 @@ fieldset.field{border:0;padding:0}
   document.getElementById("account-close").addEventListener("click",()=>document.getElementById("account-dialog").close());
   document.getElementById("orders-close").addEventListener("click",()=>document.getElementById("orders-dialog").close());
   document.getElementById("orders-btn").addEventListener("click",async()=>{document.getElementById("orders-dialog").showModal();await loadCustomerOrders();});
+  function openOrderDetail(o){
+    if(!o)return;
+    const raw=String(o.status||"nuevo").toLowerCase(), normalized=raw==="recibido"?"nuevo":raw;
+    const steps=o.order_type==="Delivery"?["nuevo","preparando","listo","en_camino","entregado"]:["nuevo","preparando","listo","entregado"];
+    const labels=o.order_type==="Delivery"?["Pedido recibido","Preparando tu pedido","Pedido listo","En camino","Entregado"]:["Pedido recibido","Preparando tu pedido","Listo para recoger","Pedido entregado"];
+    let idx=steps.indexOf(normalized);if(idx<0)idx=0;
+    const location=o.order_type==="Delivery"?(o.delivery_address||"Dirección de entrega no registrada"):(CONFIG.address||"Dirección del restaurante no disponible");
+    document.getElementById("order-detail-content").innerHTML='<div class="order-code">'+esc(o.order_code)+'</div><div class="order-meta">'+new Date(o.created_at).toLocaleString("es-CL")+'</div><div style="margin-top:14px">'+steps.map((s,i)=>'<div class="tracking-step '+(i<idx?"done":i===idx?"current":"")+'"><span class="tracking-dot"></span><div>'+esc(labels[i])+(i===idx?'<div class="order-meta">Estado actual</div>':'')+'</div></div>').join("")+'</div><div class="pickup-box"><b>'+(o.order_type==="Delivery"?"📍 Lugar de entrega":"📍 Dónde recogerlo")+'</b>'+esc(location)+'</div>';
+    document.getElementById("order-detail-dialog").showModal();
+  }
+  document.getElementById("orders-list").addEventListener("click",e=>{const card=e.target.closest("[data-order-index]");if(card)openOrderDetail(window.__customerOrders?.[Number(card.dataset.orderIndex)]);});
+  document.getElementById("orders-list").addEventListener("keydown",e=>{if(e.key==="Enter"){const card=e.target.closest("[data-order-index]");if(card)openOrderDetail(window.__customerOrders?.[Number(card.dataset.orderIndex)]);}});
+  document.getElementById("order-detail-close").addEventListener("click",()=>document.getElementById("order-detail-dialog").close());
+
   document.getElementById("tab-login").addEventListener("click",()=>setAccountTab(false));
   document.getElementById("tab-register").addEventListener("click",()=>setAccountTab(true));
   document.getElementById("login-form").addEventListener("submit",async e=>{e.preventDefault();const msg=document.getElementById("account-msg");msg.className="account-msg";msg.textContent="Ingresando…";const {error}=await db.auth.signInWithPassword({email:document.getElementById("login-email").value.trim(),password:document.getElementById("login-password").value});if(error){msg.className="account-msg error";msg.textContent="No pudimos iniciar sesión. Revisa correo y contraseña.";return;}msg.textContent="Sesión iniciada.";await syncCustomerUI();setTimeout(()=>document.getElementById("account-dialog").close(),500);});
@@ -1080,5 +1095,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.5.0</footer></body>
+<footer class="site-version">Versión v1.5.1</footer></body>
 </html>
