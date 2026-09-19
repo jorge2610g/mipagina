@@ -401,6 +401,8 @@ fieldset.field{border:0;padding:0}
   </div>
 </dialog>
 
+
+<dialog id="map-picker-dialog" style="border:0;border-radius:20px;padding:0;width:min(94vw,760px);max-width:760px"><div style="padding:16px;background:#fff;color:#171717"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><h3 style="margin:0">Selecciona tu ubicación</h3><small>Mueve el mapa o toca el lugar exacto de entrega.</small></div><button type="button" id="map-picker-close" style="width:auto">✕</button></div><div id="map-picker-map" style="height:min(58vh,480px);margin-top:14px;border-radius:14px;overflow:hidden;background:#eee"></div><p id="map-picker-address" style="margin:10px 0"></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="map-picker-gps" style="flex:1">📍 Mi ubicación</button><button type="button" id="map-picker-confirm" style="flex:1;background:#111;color:#fff">Confirmar ubicación</button></div></div></dialog>
 <script>
 (async function(){
   const SUPABASE_URL = "https://gulctljitzlwokqydigx.supabase.co";
@@ -1120,6 +1122,25 @@ fieldset.field{border:0;padding:0}
   else window.addEventListener("express-google-maps-ready",initRestaurantAddressAutocomplete,{once:true});
   let mapsTries=0;const mapsTimer=setInterval(()=>{mapsTries++;initRestaurantAddressAutocomplete();if($("#f-addr")?.dataset.mapsReady==="1"||mapsTries>30)clearInterval(mapsTimer)},500);
 
+  let deliveryMap=null,deliveryMarker=null,deliveryPicked=null;
+  async function setDeliveryMapPoint(lat,lng,center=true){
+    deliveryPicked={lat:Number(lat),lng:Number(lng)};
+    if(!deliveryMarker){deliveryMarker=new google.maps.Marker({position:deliveryPicked,map:deliveryMap,draggable:true});deliveryMarker.addListener("dragend",e=>setDeliveryMapPoint(e.latLng.lat(),e.latLng.lng(),false));}
+    else deliveryMarker.setPosition(deliveryPicked);
+    if(center)deliveryMap.panTo(deliveryPicked);
+    try{const g=new google.maps.Geocoder(),r=await g.geocode({location:deliveryPicked});document.getElementById("map-picker-address").textContent=r.results?.[0]?.formatted_address||"Ubicación seleccionada";}catch(_){document.getElementById("map-picker-address").textContent="Ubicación seleccionada";}
+  }
+  function openDeliveryMapPicker(){
+    if(!window.google?.maps){$("#gps-status").textContent="Google Maps todavía no está disponible.";return}
+    const dlg=$("#map-picker-dialog");dlg.showModal();
+    const start=deliveryCoords||(CONFIG.delivery.lat!=null?{lat:CONFIG.delivery.lat,lng:CONFIG.delivery.lng}:{lat:-20.2307,lng:-70.1357});
+    setTimeout(()=>{if(!deliveryMap){deliveryMap=new google.maps.Map($("#map-picker-map"),{center:start,zoom:16,mapTypeControl:false,streetViewControl:false,fullscreenControl:false});deliveryMap.addListener("click",e=>setDeliveryMapPoint(e.latLng.lat(),e.latLng.lng()));}google.maps.event.trigger(deliveryMap,"resize");deliveryMap.setCenter(start);setDeliveryMapPoint(start.lat,start.lng);},80);
+  }
+  $("#search-location-btn").textContent="🗺️ Seleccionar en mapa";
+  $("#search-location-btn").addEventListener("click",openDeliveryMapPicker);
+  $("#map-picker-close").addEventListener("click",()=>$("#map-picker-dialog").close());
+  $("#map-picker-gps").addEventListener("click",()=>navigator.geolocation?.getCurrentPosition(p=>setDeliveryMapPoint(p.coords.latitude,p.coords.longitude),()=>{$("#map-picker-address").textContent="No se pudo obtener tu ubicación."},{enableHighAccuracy:true,timeout:12000}));
+  $("#map-picker-confirm").addEventListener("click",async()=>{if(!deliveryPicked)return;deliveryCoords={...deliveryPicked};try{const g=new google.maps.Geocoder(),r=await g.geocode({location:deliveryCoords});const a=r.results?.[0]?.formatted_address||"";if(a)$("#f-addr").value=a;}catch(_){}applyDeliveryFee();update();refreshLink();$("#gps-status").textContent=deliveryUnavailable?"Fuera de la zona de delivery.":"Ubicación seleccionada"+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":"");$("#map-picker-dialog").close();});
   $("#gps-btn").addEventListener("click",()=>{
     const st=$("#gps-status");
     if(!navigator.geolocation){st.textContent="Este dispositivo no permite obtener la ubicación.";return}
@@ -1140,7 +1161,7 @@ fieldset.field{border:0;padding:0}
       update();refreshLink();
     },()=>{st.textContent="No se pudo obtener la ubicación. Revisa el permiso de GPS."},{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
   });
-  $("#search-location-btn").addEventListener("click",async()=>{
+  $("#legacy-search-location-btn").addEventListener("click",async()=>{
     const input=$("#f-addr"),st=$("#gps-status");
     const address=input.value.trim();
     if(!address){st.textContent="Escribe una dirección para buscarla.";return}
@@ -1226,5 +1247,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.44</footer></body>
+<footer class="site-version">Versión v1.4.45</footer></body>
 </html>
