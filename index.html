@@ -461,8 +461,8 @@ fieldset.field{border:0;padding:0}
   function openOrderDetail(o){
     if(!o)return;
     openedOrderId=o.id;
-    const raw=String(o.status||"nuevo").toLowerCase(), normalized=raw==="recibido"?"nuevo":raw;
-    const steps=o.order_type==="Delivery"?["nuevo","preparando","listo","en_camino","entregado"]:["nuevo","preparando","listo","entregado"];
+    const raw=String(o.status||"recibido").toLowerCase(), normalized=raw==="recibido"?"recibido":raw==="preparando"?"preparacion":raw;
+    const steps=o.order_type==="Delivery"?["recibido","preparacion","listo","en_camino","entregado"]:["recibido","preparacion","listo","entregado"];
     const labels=o.order_type==="Delivery"?["Pedido recibido","Preparando tu pedido","Pedido listo","En camino","Entregado"]:["Pedido recibido","Preparando tu pedido","Listo para recoger","Pedido entregado"];
     let idx=steps.indexOf(normalized);if(idx<0)idx=0;
     const location=o.order_type==="Delivery"?(o.delivery_address||"Dirección de entrega no registrada"):(CONFIG.address||"Dirección del restaurante no disponible");
@@ -493,14 +493,14 @@ fieldset.field{border:0;padding:0}
         notifyCustomerOrder(row);
         await refreshPendingOrder();
         if(document.getElementById("orders-dialog").open)await loadCustomerOrders();
-        if(document.getElementById("order-detail-dialog").open&&openedOrderId===row.id){
+        if(document.getElementById("order-detail-dialog").open&&String(openedOrderId)===String(row.id)){
           openOrderDetail(row);
         }
       }).subscribe();
   }
   startOrderRealtime();
   // Respaldo cada 10 s por si la conexión en tiempo real se interrumpe.
-  setInterval(async()=>{if(!currentCustomer)return;await refreshPendingOrder();if(document.getElementById("orders-dialog").open)await loadCustomerOrders();if(document.getElementById("order-detail-dialog").open&&openedOrderId){const {data:o}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address,payment_status").eq("id",openedOrderId).eq("customer_id",currentCustomer.id).maybeSingle();if(o)openOrderDetail(o);}},5000);
+  setInterval(async()=>{if(!currentCustomer)return;await refreshPendingOrder();if(document.getElementById("orders-dialog").open)await loadCustomerOrders();if(document.getElementById("order-detail-dialog").open&&openedOrderId){const {data:o}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address,payment_status").eq("id",openedOrderId).eq("customer_id",currentCustomer.id).maybeSingle();if(o){const wasOpen=document.getElementById("order-detail-dialog").open;openOrderDetail(o);if(wasOpen&&document.getElementById("order-detail-dialog").open===false)document.getElementById("order-detail-dialog").showModal();}}},5000);
   /* =====================  EDITÁ ESTO  ===================== */
   const CONFIG = {
     name: "Hamburguesería Demo",
@@ -1158,5 +1158,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.6.5</footer></body>
+<footer class="site-version">Versión v1.6.6</footer></body>
 </html>
