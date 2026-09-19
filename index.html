@@ -849,7 +849,7 @@ fieldset.field{border:0;padding:0}
     payBox.innerHTML=CONFIG.payments.map(p=>`<button type="button" data-pay="${esc(p)}" aria-pressed="${p===selected}" style="min-height:70px;border:2px solid ${p===selected?"var(--mustard)":"#ddd"};background:${p===selected?"#fff7d6":"#fff"};color:#171717;border-radius:14px;padding:8px;font-weight:800;cursor:pointer"><span style="display:block;font-size:23px;margin-bottom:3px">${paymentIcons[p]||"💳"}</span>${esc(p)}</button>`).join("");
     paySelected.textContent=selected?"Seleccionaste: "+selected:"";
     mpSafe.hidden=selected!=="Mercado Pago";
-    send.textContent=selected==="Mercado Pago"?"Pagar con Mercado Pago":"Enviar pedido por WhatsApp";
+    const sendBtn=$("#send");if(sendBtn)sendBtn.textContent=selected==="Mercado Pago"?"Pagar con Mercado Pago":"Enviar pedido por WhatsApp";
   }
   payBox.addEventListener("click",e=>{const b=e.target.closest("button[data-pay]");if(!b)return;$("#f-pay").value=b.dataset.pay;renderPaymentButtons();refreshLink()});
   $("#f-pay").addEventListener("change",()=>{renderPaymentButtons();refreshLink()});
@@ -1302,5 +1302,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.52</footer></body>
+<footer class="site-version">Versión v1.4.53</footer></body>
 </html>
