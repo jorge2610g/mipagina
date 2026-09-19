@@ -432,6 +432,15 @@ fieldset.field{border:0;padding:0}
     document.getElementById("account-msg").textContent="";
   }
   function statusLabel(s){return ({nuevo:"Recibido",recibido:"Recibido",preparando:"Preparando",listo:"Listo",en_camino:"En camino",entregado:"Entregado",cancelado:"Cancelado"}[s]||String(s||"Recibido").replaceAll("_"," "));}
+  async function enableOrderNotifications(){
+    if(!("Notification" in window))return;
+    if(Notification.permission==="default")await Notification.requestPermission();
+  }
+  function notifyCustomerOrder(row){
+    if(!("Notification" in window)||Notification.permission!=="granted")return;
+    const messages={nuevo:"Tu pedido fue recibido.",preparando:"🍳 Tu pedido está siendo preparado.",listo:row.order_type==="Delivery"?"✅ Tu pedido está listo.":"✅ Tu pedido está listo para recoger.",en_camino:"🛵 Tu pedido va en camino.",entregado:"🎉 Tu pedido fue entregado.",cancelado:"Tu pedido fue cancelado."};
+    try{new Notification("Express · "+statusLabel(row.status),{body:messages[row.status]||"Tu pedido cambió de estado.",tag:"order-"+row.id,renotify:true});}catch(e){}
+  }
   async function loadCustomerOrders(){
     const box=document.getElementById("orders-list"); box.innerHTML="<p>Cargando pedidos…</p>";
     if(!currentCustomer){box.innerHTML="<p>Inicia sesión para ver tus pedidos.</p>";return;}
@@ -445,7 +454,7 @@ fieldset.field{border:0;padding:0}
   document.getElementById("account-btn").addEventListener("click",()=>document.getElementById("account-dialog").showModal());
   document.getElementById("account-close").addEventListener("click",()=>document.getElementById("account-dialog").close());
   document.getElementById("orders-close").addEventListener("click",()=>document.getElementById("orders-dialog").close());
-  document.getElementById("orders-btn").addEventListener("click",async()=>{document.getElementById("orders-dialog").showModal();await loadCustomerOrders();});
+  document.getElementById("orders-btn").addEventListener("click",async()=>{await enableOrderNotifications();document.getElementById("orders-dialog").showModal();await loadCustomerOrders();});
   document.getElementById("pending-order-open").addEventListener("click",()=>openOrderDetail(window.__pendingCustomerOrder));
   function openOrderDetail(o){
     if(!o)return;
@@ -478,6 +487,7 @@ fieldset.field{border:0;padding:0}
       .on("postgres_changes",{event:"UPDATE",schema:"public",table:"restaurant_orders",filter:"customer_id=eq."+currentCustomer.id},async payload=>{
         const row=payload.new||{};
         if(row.payment_method!=="Mercado Pago")return;
+        notifyCustomerOrder(row);
         await refreshPendingOrder();
         if(document.getElementById("orders-dialog").open)await loadCustomerOrders();
         if(document.getElementById("order-detail-dialog").open){
@@ -1146,5 +1156,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.5.7</footer></body>
+<footer class="site-version">Versión v1.5.8</footer></body>
 </html>
