@@ -350,9 +350,10 @@ async function loadOrders(){
  const {data,error}=await sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).eq("payment_method","Mercado Pago").eq("payment_status","approved").order("created_at",{ascending:false}).limit(100);
  if(error)return toast(error.message);
  orders=data||[];
- const states=["nuevo","preparando","listo","en_camino","entregado","cancelado"];
+ const allStates=["nuevo","preparando","listo","en_camino","entregado","cancelado"];
  const labels={nuevo:"Recibido",preparando:"Preparando",listo:"Listo",en_camino:"En camino",entregado:"Entregado",cancelado:"Cancelado"};
  orderList.innerHTML=orders.map(o=>{
+  const states=o.order_type==="Delivery"?allStates:allStates.filter(s=>s!=="en_camino");
   const idx=states.indexOf(o.status);
   const flow=(o.order_type==="Delivery"?["nuevo","preparando","listo","en_camino","entregado"]:["nuevo","preparando","listo","entregado"]);
   const items=Array.isArray(o.items)?o.items:[];
@@ -360,9 +361,21 @@ async function loadOrders(){
  }).join("")||"<p class='mut'>Todavía no hay pedidos de Mercado Pago.</p>";
 }
 async function setOrderStatus(id,status){
- const {error}=await sb.from("restaurant_orders").update({status,updated_at:new Date().toISOString()}).eq("id",id).eq("restaurant_id",currentRestaurant);
- if(error)return toast(error.message);
- toast("Estado actualizado. El cliente ya puede verlo.");
+ const order=orders.find(o=>o.id===id);if(!order)return;
+ if(status==="cancelado"){
+  if(!confirm("Al cancelar este pedido se solicitará la devolución total del pago al cliente mediante Mercado Pago. ¿Continuar?"))return loadOrders();
+  toast("Procesando devolución en Mercado Pago…");
+  const {data:{session}}=await sb.auth.getSession();
+  try{
+   const res=await fetch(SUPABASE_URL+"/functions/v1/refund-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({order_id:id})});
+   const data=await res.json();if(!res.ok)throw new Error(data.error||"No se pudo devolver el pago");
+   toast("Pedido cancelado y devolución solicitada correctamente.");
+  }catch(e){toast(e.message);return loadOrders();}
+ }else{
+  const {error}=await sb.from("restaurant_orders").update({status,updated_at:new Date().toISOString()}).eq("id",id).eq("restaurant_id",currentRestaurant);
+  if(error)return toast(error.message);
+  toast("Estado actualizado. El cliente ya puede verlo.");
+ }
  await loadOrders();
 }
 async function loadSettings(){if(!currentRestaurant)return;const {data,error}=await sb.from("restaurants").select("*").eq("id",currentRestaurant).single();if(error)return toast(error.message);sname.value=data.name||"";swhatsapp.value=data.whatsapp||"";saddress.value=data.address||"";sopen.value=(data.open_time||"").slice(0,5);sclose.value=(data.close_time||"").slice(0,5);sinstagram.value=data.instagram||"";spickup.value=data.pickup_eta||"";sdelivery.value=data.delivery_eta||"";sdeliverynote.value=data.delivery_note||"";sdeliverymode.value=data.delivery_pricing_mode||"fixed";sdeliveryprice.value=Number(data.delivery_fixed_price||0);slat.value=data.latitude??"";slng.value=data.longitude??"";sdeliveryzones.value=(Array.isArray(data.delivery_zones)?data.delivery_zones:[]).map(z=>String(z.max_km)+"="+String(z.price)).join("\n");const mst=document.getElementById("manualOpenStatusText");if(mst)mst.textContent=data.manual_open_status==="open"?"🟢 Forzado ABIERTO":data.manual_open_status==="closed"?"🔴 Forzado CERRADO":"🕒 Usando horario predeterminado"}
@@ -392,4 +405,4 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.4.0</footer></body></html>
+</script><footer class="admin-version">Versión v1.4.1</footer></body></html>
