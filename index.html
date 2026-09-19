@@ -226,7 +226,17 @@ fieldset.field{border:0;padding:0}
 :root[data-theme="dark"]{color-scheme:dark}
 .theme-icon-btn{width:44px;height:44px;padding:0!important;border-radius:50%!important;font-size:22px!important;display:inline-grid!important;place-items:center}
 .site-version{padding:24px 12px 34px;text-align:center;color:var(--muted);font-size:12px;opacity:.75}
-.menu-loading{visibility:hidden}.menu-ready{visibility:visible}</style>
+.menu-loading{visibility:hidden}.menu-ready{visibility:visible}
+/* Cuenta cliente */
+.account-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.account-dialog{border:0;border-radius:24px;padding:0;width:min(94vw,520px);background:var(--bg);color:var(--ink);box-shadow:0 24px 80px #0005}
+.account-dialog::backdrop{background:#0009;backdrop-filter:blur(4px)}
+.account-card{padding:24px}.account-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.account-head h2{margin:0}
+.account-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}.account-tabs button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:11px;font-weight:700}.account-tabs button.active{background:var(--mustard);color:var(--on-mustard);border-color:transparent}
+.account-form{display:grid;gap:12px}.account-form input{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit}.account-form .primary{border:0;border-radius:12px;padding:13px 16px;background:var(--mustard);color:var(--on-mustard);font-weight:800;cursor:pointer}
+.account-msg{min-height:20px;font-size:13px;color:var(--muted);margin:8px 0 0}.account-msg.error{color:#d72f3f}
+.order-list{display:grid;gap:12px;max-height:60vh;overflow:auto}.order-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--surface)}.order-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.order-code{font-weight:800}.order-status{font-size:12px;font-weight:800;padding:6px 9px;border-radius:999px;background:var(--mustard);color:var(--on-mustard)}.order-meta{font-size:13px;color:var(--muted);margin-top:7px}.order-items{font-size:13px;margin-top:8px}.account-user{font-size:13px;color:var(--muted);margin:0 0 12px}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>(function(){try{document.documentElement.setAttribute("data-theme",localStorage.getItem("menu_theme")==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}})();</script></head>
 <body class="menu-loading">
@@ -242,7 +252,7 @@ fieldset.field{border:0;padding:0}
       <div class="hero-art" id="hero-art"></div>
     </div>
     <h1 id="biz-name">Cargando restaurante…</h1>
-    <p class="lead">Hamburguesas armadas al momento. Elegí, personalizá y enviá tu pedido por WhatsApp.</p><div class="top-actions"><button class="mini-btn" id="theme-toggle" type="button" onclick="toggleMenuTheme()">◐ Cambiar tema</button><script>function toggleMenuTheme(){var h=document.documentElement;var next=h.getAttribute("data-theme")==="dark"?"light":"dark";h.setAttribute("data-theme",next);try{localStorage.setItem("menu_theme",next)}catch(e){}}</script><button class="mini-btn" id="clear-cart" type="button">Vaciar pedido</button></div>
+    <p class="lead">Hamburguesas armadas al momento. Elegí, personalizá y enviá tu pedido por WhatsApp.</p><div class="top-actions"><button class="mini-btn" id="theme-toggle" type="button" onclick="toggleMenuTheme()">◐ Cambiar tema</button><script>function toggleMenuTheme(){var h=document.documentElement;var next=h.getAttribute("data-theme")==="dark"?"light":"dark";h.setAttribute("data-theme",next);try{localStorage.setItem("menu_theme",next)}catch(e){}}</script><button class="mini-btn" id="clear-cart" type="button">Vaciar pedido</button><button class="mini-btn" id="account-btn" type="button">👤 Iniciar sesión</button><button class="mini-btn" id="orders-btn" type="button" hidden>📦 Mis pedidos</button></div>
   </div>
 </header>
 
@@ -287,6 +297,41 @@ fieldset.field{border:0;padding:0}
 </div>
 
 <div class="sr" id="live" aria-live="polite"></div>
+
+
+<dialog id="account-dialog" class="account-dialog">
+  <div class="account-card">
+    <div class="account-head"><h2>Mi cuenta</h2><button type="button" class="close" id="account-close" aria-label="Cerrar">✕</button></div>
+    <p class="account-user" id="account-user"></p>
+    <div id="account-guest">
+      <div class="account-tabs"><button type="button" id="tab-login" class="active">Iniciar sesión</button><button type="button" id="tab-register">Crear cuenta</button></div>
+      <form id="login-form" class="account-form">
+        <input id="login-email" type="email" autocomplete="email" placeholder="Correo electrónico" required>
+        <input id="login-password" type="password" autocomplete="current-password" placeholder="Contraseña" minlength="6" required>
+        <button class="primary" type="submit">Entrar a mi cuenta</button>
+      </form>
+      <form id="register-form" class="account-form" hidden>
+        <input id="register-name" type="text" autocomplete="name" placeholder="Nombre y apellido" required>
+        <input id="register-phone" type="tel" autocomplete="tel" placeholder="Número de teléfono" required>
+        <input id="register-email" type="email" autocomplete="email" placeholder="Correo electrónico" required>
+        <input id="register-password" type="password" autocomplete="new-password" placeholder="Contraseña (mínimo 6 caracteres)" minlength="6" required>
+        <button class="primary" type="submit">Crear mi cuenta</button>
+      </form>
+      <p id="account-msg" class="account-msg"></p>
+    </div>
+    <div id="account-auth" hidden>
+      <button class="mini-btn" id="logout-btn" type="button">Cerrar sesión</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="orders-dialog" class="account-dialog">
+  <div class="account-card">
+    <div class="account-head"><h2>Mis pedidos</h2><button type="button" class="close" id="orders-close" aria-label="Cerrar">✕</button></div>
+    <p class="account-user">Aquí puedes seguir el estado de tus pedidos.</p>
+    <div id="orders-list" class="order-list"></div>
+  </div>
+</dialog>
 
 <dialog id="detail" aria-labelledby="d-title"></dialog>
 
@@ -353,6 +398,50 @@ fieldset.field{border:0;padding:0}
   const SUPABASE_URL = "https://gulctljitzlwokqydigx.supabase.co";
   const SUPABASE_KEY = "sb_publishable__moppTxObowifx6rJbW_tw_3GiCkqhG";
   const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+  let currentCustomer=null;
+  async function syncCustomerUI(){
+    const {data:{session}}=await db.auth.getSession();
+    currentCustomer=session?.user||null;
+    const accountBtn=document.getElementById("account-btn"), ordersBtn=document.getElementById("orders-btn");
+    const guest=document.getElementById("account-guest"), auth=document.getElementById("account-auth"), userText=document.getElementById("account-user");
+    if(currentCustomer){
+      accountBtn.textContent="👤 Mi cuenta"; ordersBtn.hidden=false; guest.hidden=true; auth.hidden=false;
+      const {data:p}=await db.from("customer_profiles").select("*").eq("user_id",currentCustomer.id).maybeSingle();
+      userText.textContent=p?.full_name ? p.full_name+" · "+currentCustomer.email : currentCustomer.email;
+      if(p?.full_name && document.getElementById("f-name")) document.getElementById("f-name").value=p.full_name;
+      if(p?.phone && document.getElementById("f-phone")) document.getElementById("f-phone").value=p.phone;
+      if(p?.default_address && document.getElementById("f-addr")) document.getElementById("f-addr").value=p.default_address;
+    }else{
+      accountBtn.textContent="👤 Iniciar sesión"; ordersBtn.hidden=true; guest.hidden=false; auth.hidden=true; userText.textContent="Crea una cuenta para guardar tus datos y seguir tus pedidos.";
+    }
+  }
+  function setAccountTab(register){
+    document.getElementById("login-form").hidden=register; document.getElementById("register-form").hidden=!register;
+    document.getElementById("tab-login").classList.toggle("active",!register); document.getElementById("tab-register").classList.toggle("active",register);
+    document.getElementById("account-msg").textContent="";
+  }
+  function statusLabel(s){return ({nuevo:"Recibido",recibido:"Recibido",preparando:"Preparando",listo:"Listo",en_camino:"En camino",entregado:"Entregado",cancelado:"Cancelado"}[s]||String(s||"Recibido").replaceAll("_"," "));}
+  async function loadCustomerOrders(){
+    const box=document.getElementById("orders-list"); box.innerHTML="<p>Cargando pedidos…</p>";
+    if(!currentCustomer){box.innerHTML="<p>Inicia sesión para ver tus pedidos.</p>";return;}
+    const {data,error}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at").eq("customer_id",currentCustomer.id).order("created_at",{ascending:false}).limit(50);
+    if(error){box.innerHTML="<p>No pudimos cargar tus pedidos.</p>";return;}
+    if(!data?.length){box.innerHTML="<p>Aún no tienes pedidos asociados a esta cuenta.</p>";return;}
+    box.innerHTML=data.map(o=>{const items=Array.isArray(o.items)?o.items:[];return '<article class="order-card"><div class="order-top"><div><div class="order-code">'+esc(o.order_code)+'</div><div class="order-meta">'+new Date(o.created_at).toLocaleString("es-CL")+'</div></div><span class="order-status">'+esc(statusLabel(o.status))+'</span></div><div class="order-items">'+items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join("<br>")+'</div><div class="order-meta">'+esc(o.order_type||"")+" · "+esc(o.payment_method||"")+' · <b>'+fmt(Number(o.total||0))+'</b></div></article>'}).join("");
+  }
+
+
+  document.getElementById("account-btn").addEventListener("click",()=>document.getElementById("account-dialog").showModal());
+  document.getElementById("account-close").addEventListener("click",()=>document.getElementById("account-dialog").close());
+  document.getElementById("orders-close").addEventListener("click",()=>document.getElementById("orders-dialog").close());
+  document.getElementById("orders-btn").addEventListener("click",async()=>{document.getElementById("orders-dialog").showModal();await loadCustomerOrders();});
+  document.getElementById("tab-login").addEventListener("click",()=>setAccountTab(false));
+  document.getElementById("tab-register").addEventListener("click",()=>setAccountTab(true));
+  document.getElementById("login-form").addEventListener("submit",async e=>{e.preventDefault();const msg=document.getElementById("account-msg");msg.className="account-msg";msg.textContent="Ingresando…";const {error}=await db.auth.signInWithPassword({email:document.getElementById("login-email").value.trim(),password:document.getElementById("login-password").value});if(error){msg.className="account-msg error";msg.textContent="No pudimos iniciar sesión. Revisa correo y contraseña.";return;}msg.textContent="Sesión iniciada.";await syncCustomerUI();setTimeout(()=>document.getElementById("account-dialog").close(),500);});
+  document.getElementById("register-form").addEventListener("submit",async e=>{e.preventDefault();const msg=document.getElementById("account-msg");msg.className="account-msg";msg.textContent="Creando cuenta…";const name=document.getElementById("register-name").value.trim(),phone=document.getElementById("register-phone").value.trim(),email=document.getElementById("register-email").value.trim(),password=document.getElementById("register-password").value;const {data,error}=await db.auth.signUp({email,password,options:{data:{full_name:name,phone}}});if(error){msg.className="account-msg error";msg.textContent=error.message;return;}if(data.session){await db.from("customer_profiles").upsert({user_id:data.user.id,full_name:name,phone});msg.textContent="Cuenta creada correctamente.";await syncCustomerUI();}else{msg.textContent="Cuenta creada. Revisa tu correo para confirmar el acceso.";}});
+  document.getElementById("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();await syncCustomerUI();document.getElementById("account-dialog").close();});
+  db.auth.onAuthStateChange(()=>setTimeout(syncCustomerUI,0));
+  await syncCustomerUI();
   /* =====================  EDITÁ ESTO  ===================== */
   const CONFIG = {
     name: "Hamburguesería Demo",
@@ -945,10 +1034,11 @@ fieldset.field{border:0;padding:0}
   async function saveOrderToCloud(){
     if (!db || !cart.size) return false;
     const f=form();
+    if(currentCustomer){await db.from("customer_profiles").upsert({user_id:currentCustomer.id,full_name:f.name,phone:f.phone,default_address:f.type==="Delivery"?f.addr:null,updated_at:new Date().toISOString()});}
     const orderCode = "WEB-" + Date.now().toString(36).toUpperCase();
     const items=[...cart.values()].map(v=>({name:lineName(v),qty:v.qty,unit_price:unitOf(v),extras:v.ex.map(x=>x.name),note:v.note||""}));
     const { error } = await db.from("restaurant_orders").insert({
-      restaurant_id:window.__restaurantId||null, order_code:orderCode, customer_name:f.name, customer_phone:f.phone, order_type:f.type,
+      restaurant_id:window.__restaurantId||null, order_code:orderCode, customer_name:f.name, customer_phone:f.phone, customer_id:currentCustomer?.id||null, customer_email:currentCustomer?.email||null, order_type:f.type,
       delivery_address:f.type === "Delivery" ? f.addr : null, payment_method:f.pay,
       notes:f.notes || null,items,total:totals().t,delivery_fee:f.type==="Delivery"?totals().fee:0,delivery_distance_km:f.type==="Delivery"?deliveryDistance:null,delivery_latitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lat:null,delivery_longitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lng:null,status:"nuevo"
     });
@@ -960,7 +1050,7 @@ fieldset.field{border:0;padding:0}
   send.onclick = async e => {
     const f = form();
     if(!isOpen){e.preventDefault();$("#err").textContent="El local está cerrado. No se pueden enviar pedidos en este momento.";return;}
-    if(f.pay==="Mercado Pago"){e.preventDefault();$("#err").textContent="Conectando con Mercado Pago…";let msg="";if(!cart.size)msg="Agregá al menos un producto.";else if(!f.name)msg="Escribí tu nombre.";else if(!f.phone)msg="Ingresa tu número de teléfono.";else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";else if(f.type==="Delivery"&&!deliveryCoords)msg="Usa el botón de ubicación para confirmar dónde entregar.";if(msg){$("#err").textContent=msg;return;}send.textContent="Abriendo Mercado Pago…";let resp;try{resp=await fetch(SUPABASE_URL+"/functions/v1/create-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,title:"Pedido — "+CONFIG.name,amount:totals().t})});const data=await resp.json();send.textContent="Pagar con Mercado Pago";if(!resp.ok||!data?.init_point){$("#err").textContent=data?.error||"No se pudo iniciar Mercado Pago.";return;}window.location.assign(data.init_point);return;}catch(err){send.textContent="Pagar con Mercado Pago";$("#err").textContent="No se pudo conectar con Mercado Pago: "+err.message;return;}}
+    if(f.pay==="Mercado Pago"){e.preventDefault();$("#err").textContent="Conectando con Mercado Pago…";let msg="";if(!cart.size)msg="Agregá al menos un producto.";else if(!f.name)msg="Escribí tu nombre.";else if(!f.phone)msg="Ingresa tu número de teléfono.";else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";else if(f.type==="Delivery"&&!deliveryCoords)msg="Usa el botón de ubicación para confirmar dónde entregar.";if(msg){$("#err").textContent=msg;return;}send.textContent="Abriendo Mercado Pago…";try{await saveOrderToCloud();}catch(err){console.error("No pudimos registrar el pedido antes del pago",err);}let resp;try{resp=await fetch(SUPABASE_URL+"/functions/v1/create-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,title:"Pedido — "+CONFIG.name,amount:totals().t})});const data=await resp.json();send.textContent="Pagar con Mercado Pago";if(!resp.ok||!data?.init_point){$("#err").textContent=data?.error||"No se pudo iniciar Mercado Pago.";return;}window.location.assign(data.init_point);return;}catch(err){send.textContent="Pagar con Mercado Pago";$("#err").textContent="No se pudo conectar con Mercado Pago: "+err.message;return;}}
 
     let msg = "";
     if (!cart.size) msg = "Agregá al menos un producto.";
@@ -971,7 +1061,7 @@ fieldset.field{border:0;padding:0}
     else if(f.type==="Delivery"&&deliveryUnavailable){msg="Tu ubicación está fuera de la zona de delivery.";}
     $("#err").textContent = msg;
     if (msg){ e.preventDefault(); return; }
-    try{await saveOrderToCloud();}catch(err){e.preventDefault();$("#err").textContent="No pudimos registrar el pedido. Intenta nuevamente.";return;}
+    try{await saveOrderToCloud();}catch(err){console.error("No pudimos registrar el pedido",err);}
     // El enlace de WhatsApp ya contiene el detalle completo. Vaciar el carrito
     // después de registrar el pedido evita que reaparezca al volver al menú.
     refreshLink();
@@ -990,5 +1080,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.2</footer></body>
+<footer class="site-version">Versión v1.5.0</footer></body>
 </html>
