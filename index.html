@@ -624,7 +624,7 @@ fieldset.field{border:0;padding:0}
     const pathSlug=(cleanPath.split("/").filter(Boolean).pop()||"").replace(/^index\.html$/i,"");
     const requestedSlug=params.get("r") || pathSlug || null;
     const host=location.hostname.toLowerCase().replace(/^www\./,"");
-    const platformHosts=["app.expressdelivery.pro","jorge2610g.github.io","localhost","127.0.0.1"];
+    const platformHosts=["app.expressdelivery.pro","menu.yummypro.online","jorge2610g.github.io","localhost","127.0.0.1"];
     let query=db.from("restaurants").select("*").eq("active",true).in("subscription_status",["trial","active"]).gt("subscription_expires_at",new Date().toISOString());
     if(requestedSlug){
       query=query.eq("slug",requestedSlug);
