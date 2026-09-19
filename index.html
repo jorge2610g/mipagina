@@ -913,7 +913,7 @@ fieldset.field{border:0;padding:0}
       ...lines, "",
       ...(f.type==="Delivery"?["Subtotal: "+fmt(totals().subtotal),"Delivery: "+fmt(totals().fee)+(deliveryDistance!=null?" ("+deliveryDistance.toFixed(1)+" km)":"")]:[]),
       "*Total: " + fmt(totals().t) + "*", "",
-      "Nombre: " + f.name,
+      "Nombre: " + f.name,\n      "Teléfono: " + f.phone,
       f.type === "Delivery" ? "Entrega: Delivery a " + f.addr : "Entrega: Retiro en el local",
       "Pago: " + f.pay
     ];
@@ -941,7 +941,7 @@ fieldset.field{border:0;padding:0}
     const orderCode = "WEB-" + Date.now().toString(36).toUpperCase();
     const items=[...cart.values()].map(v=>({name:lineName(v),qty:v.qty,unit_price:unitOf(v),extras:v.ex.map(x=>x.name),note:v.note||""}));
     const { error } = await db.from("restaurant_orders").insert({
-      restaurant_id:window.__restaurantId||null, order_code:orderCode, customer_name:f.name, order_type:f.type,
+      restaurant_id:window.__restaurantId||null, order_code:orderCode, customer_name:f.name, customer_phone:f.phone, order_type:f.type,
       delivery_address:f.type === "Delivery" ? f.addr : null, payment_method:f.pay,
       notes:f.notes || null,items,total:totals().t,delivery_fee:f.type==="Delivery"?totals().fee:0,delivery_distance_km:f.type==="Delivery"?deliveryDistance:null,delivery_latitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lat:null,delivery_longitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lng:null,status:"nuevo"
     });
@@ -953,11 +953,11 @@ fieldset.field{border:0;padding:0}
   send.onclick = async e => {
     const f = form();
     if(!isOpen){e.preventDefault();$("#err").textContent="El local está cerrado. No se pueden enviar pedidos en este momento.";return;}
-    if(f.pay==="Mercado Pago"){e.preventDefault();$("#err").textContent="Conectando con Mercado Pago…";let msg="";if(!cart.size)msg="Agregá al menos un producto.";else if(!f.name)msg="Escribí tu nombre.";else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";if(msg){$("#err").textContent=msg;return;}send.textContent="Abriendo Mercado Pago…";let resp;try{resp=await fetch(SUPABASE_URL+"/functions/v1/create-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,title:"Pedido — "+CONFIG.name,amount:totals().t})});const data=await resp.json();send.textContent="Pagar con Mercado Pago";if(!resp.ok||!data?.init_point){$("#err").textContent=data?.error||"No se pudo iniciar Mercado Pago.";return;}window.location.assign(data.init_point);return;}catch(err){send.textContent="Pagar con Mercado Pago";$("#err").textContent="No se pudo conectar con Mercado Pago: "+err.message;return;}}
+    if(f.pay==="Mercado Pago"){e.preventDefault();$("#err").textContent="Conectando con Mercado Pago…";let msg="";if(!cart.size)msg="Agregá al menos un producto.";else if(!f.name)msg="Escribí tu nombre.";else if(!f.phone)msg="Ingresa tu número de teléfono.";else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";else if(f.type==="Delivery"&&!deliveryCoords)msg="Usa el botón de ubicación para confirmar dónde entregar.";if(msg){$("#err").textContent=msg;return;}send.textContent="Abriendo Mercado Pago…";let resp;try{resp=await fetch(SUPABASE_URL+"/functions/v1/create-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,title:"Pedido — "+CONFIG.name,amount:totals().t})});const data=await resp.json();send.textContent="Pagar con Mercado Pago";if(!resp.ok||!data?.init_point){$("#err").textContent=data?.error||"No se pudo iniciar Mercado Pago.";return;}window.location.assign(data.init_point);return;}catch(err){send.textContent="Pagar con Mercado Pago";$("#err").textContent="No se pudo conectar con Mercado Pago: "+err.message;return;}}
 
     let msg = "";
     if (!cart.size) msg = "Agregá al menos un producto.";
-    else if (!f.name){ msg = "Escribí tu nombre para saber a quién entregarle el pedido."; $("#f-name").focus(); }
+    else if (!f.name){ msg = "Escribí tu nombre para saber a quién entregarle el pedido."; $("#f-name").focus(); }\n    else if(!f.phone){msg="Ingresa tu número de teléfono.";$("#f-phone").focus();}
     else if(f.type==="Delivery"&&!f.addr){msg="Escribí la dirección de entrega.";$("#f-addr").focus();}
     else if(f.type==="Delivery"&&CONFIG.delivery.mode==="distance"&&!deliveryCoords){msg="Usa tu ubicación para calcular el costo del delivery.";}
     else if(f.type==="Delivery"&&deliveryUnavailable){msg="Tu ubicación está fuera de la zona de delivery.";}
@@ -975,12 +975,12 @@ fieldset.field{border:0;padding:0}
   const savedTheme = localStorage.getItem("menu_theme");
   document.documentElement.dataset.theme=savedTheme==="dark"?"dark":"light";
   $("#clear-cart").addEventListener("click",()=>{ if(cart.size && confirm("¿Vaciar todo el pedido?")){ cart.clear(); saveCart(); update(); } });
-  try{ const c=JSON.parse(localStorage.getItem(CUSTOMER_KEY)||"{}"); $("#f-name").value=c.name||""; $("#f-addr").value=c.addr||""; }catch(e){}
-  ["#f-name","#f-addr"].forEach(sel=>$(sel).addEventListener("change",()=>{try{localStorage.setItem(CUSTOMER_KEY,JSON.stringify({name:$("#f-name").value.trim(),addr:$("#f-addr").value.trim()}));}catch(e){}}));
+  try{ const c=JSON.parse(localStorage.getItem(CUSTOMER_KEY)||"{}"); $("#f-name").value=c.name||""; $("#f-phone").value=c.phone||""; $("#f-addr").value=c.addr||""; }catch(e){}
+  ["#f-name","#f-phone","#f-addr"].forEach(sel=>$(sel).addEventListener("change",()=>{try{localStorage.setItem(CUSTOMER_KEY,JSON.stringify({name:$("#f-name").value.trim(),phone:$("#f-phone").value.trim(),addr:$("#f-addr").value.trim()}));}catch(e){}}));
   restoreCart();
   toggleDelivery();
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.3.3</footer></body>
+<footer class="site-version">Versión v1.3.4</footer></body>
 </html>
