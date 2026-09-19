@@ -82,6 +82,12 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .uploadBox{display:grid;gap:10px;margin-top:8px}.uploadBox input[type=file]{display:none}.uploadPreview{width:96px;height:96px;object-fit:cover;border-radius:14px;border:1px solid var(--border)}@media(max-width:600px){.uploadBox button{width:100%}}
 .subscription-trial{color:#ffb703}.subscription-active{color:#2dd4bf}.subscription-expired,.subscription-suspended{color:#fb7185}.sub-progress{height:8px;background:var(--ghost);border-radius:999px;overflow:hidden;margin:9px 0}.sub-progress>i{display:block;height:100%;background:var(--a)}
+
+/* Selector de mapa: mismo bloqueo modal que la web cliente */
+body:has(#restaurantMapPickerDialog[open]){overflow:hidden!important;overscroll-behavior:none}
+#restaurantMapPickerDialog[open]{position:fixed!important;inset:0!important;margin:auto!important;z-index:100000!important;max-height:92dvh!important;overflow:auto!important;overscroll-behavior:contain}
+#restaurantMapPickerDialog::backdrop{background:rgba(0,0,0,.62)}
+#restaurantMapPickerMap{touch-action:none;overscroll-behavior:contain}
 </style><style id="responsive-v2">
 html,body{max-width:100%;overflow-x:hidden}
 .wrap{width:min(1440px,100%);padding-left:clamp(12px,3vw,32px);padding-right:clamp(12px,3vw,32px)}
@@ -472,21 +478,19 @@ function openRestaurantMapPicker(){
   }catch(err){console.error(err);document.getElementById("smapstatus").textContent="No se pudo cargar el mapa del restaurante."}
  },300);
 }
-document.getElementById("restaurant-map-picker-close")?.addEventListener("click",()=>document.getElementById("restaurantMapPickerDialog").close());
-document.getElementById("restaurant-map-picker-gps")?.addEventListener("click",()=>{
+function restaurantPickerUseGpsV2(){
  const btn=document.getElementById("restaurant-map-picker-gps"),address=document.getElementById("restaurantMapPickerAddress");
- if(!navigator.geolocation){address.textContent="Este dispositivo no permite obtener tu ubicación.";return}
- const original=btn.textContent;btn.disabled=true;btn.textContent="⏳ Buscando ubicación…";address.textContent="⏳ Obteniendo tu ubicación actual…";
- navigator.geolocation.getCurrentPosition(async p=>{try{await setRestaurantPickerPoint(p.coords.latitude,p.coords.longitude);btn.textContent="✅ Ubicación encontrada";setTimeout(()=>btn.textContent=original,1600)}finally{btn.disabled=false}},()=>{btn.disabled=false;btn.textContent="📍 Intentar nuevamente";address.textContent="No se pudo obtener tu ubicación."},{enableHighAccuracy:true,timeout:12000});
-});
-document.getElementById("restaurant-map-picker-confirm")?.addEventListener("click",async()=>{
- if(!restaurantPickerPoint)return;
+ if(!navigator.geolocation){if(address)address.textContent="Este dispositivo no permite obtener tu ubicación.";return}
+ btn.disabled=true;btn.textContent="⏳ Buscando ubicación…";if(address)address.textContent="⏳ Obteniendo tu ubicación actual…";
+ navigator.geolocation.getCurrentPosition(async p=>{try{await setRestaurantPickerPoint(p.coords.latitude,p.coords.longitude);btn.textContent="✅ Ubicación encontrada";setTimeout(()=>btn.textContent="📍 Mi ubicación",1600)}finally{btn.disabled=false}},()=>{btn.disabled=false;btn.textContent="📍 Intentar nuevamente";if(address)address.textContent="No se pudo obtener tu ubicación."},{enableHighAccuracy:true,timeout:12000});
+}
+async function confirmRestaurantMapPickerV2(){
+ if(!restaurantPickerPoint){const a=document.getElementById("restaurantMapPickerAddress");if(a)a.textContent="Selecciona primero un punto en el mapa.";return}
  document.getElementById("slat").value=restaurantPickerPoint.lat;document.getElementById("slng").value=restaurantPickerPoint.lng;
  try{const g=new google.maps.Geocoder(),r=await g.geocode({location:restaurantPickerPoint});const addr=r.results?.[0]?.formatted_address||"";if(addr){document.getElementById("saddress").value=addr;document.getElementById("smapaddress").value=addr}}catch(_){}
- document.getElementById("smapstatus").textContent="✅ Ubicación seleccionada en el mapa. Guarda la configuración.";document.getElementById("restaurantMapPickerDialog").close();
-});
-function restaurantPickerUseGpsV2(){const btn=document.getElementById("restaurant-map-picker-gps"),address=document.getElementById("restaurantMapPickerAddress");if(!navigator.geolocation){if(address)address.textContent="Este dispositivo no permite obtener tu ubicación.";return}btn.disabled=true;btn.textContent="⏳ Buscando ubicación…";if(address)address.textContent="⏳ Obteniendo tu ubicación actual…";navigator.geolocation.getCurrentPosition(async p=>{try{await setRestaurantPickerPoint(p.coords.latitude,p.coords.longitude);btn.textContent="✅ Ubicación encontrada";setTimeout(()=>btn.textContent="📍 Mi ubicación",1600)}finally{btn.disabled=false}},()=>{btn.disabled=false;btn.textContent="📍 Intentar nuevamente";if(address)address.textContent="No se pudo obtener tu ubicación."},{enableHighAccuracy:true,timeout:12000})}
-async function confirmRestaurantMapPickerV2(){if(!restaurantPickerPoint){const a=document.getElementById("restaurantMapPickerAddress");if(a)a.textContent="Selecciona primero un punto en el mapa.";return}document.getElementById("slat").value=restaurantPickerPoint.lat;document.getElementById("slng").value=restaurantPickerPoint.lng;try{const g=new google.maps.Geocoder(),r=await g.geocode({location:restaurantPickerPoint});const addr=r.results?.[0]?.formatted_address||"";if(addr){document.getElementById("saddress").value=addr;document.getElementById("smapaddress").value=addr}}catch(_){}document.getElementById("smapstatus").textContent="✅ Ubicación seleccionada en el mapa. Guarda la configuración.";document.getElementById("restaurantMapPickerDialog").close()}
+ document.getElementById("smapstatus").textContent="✅ Ubicación seleccionada en el mapa. Guarda la configuración.";
+ document.getElementById("restaurantMapPickerDialog").close();
+}
 function useRestaurantCurrentLocation(){
  const st=document.getElementById("smapstatus");if(!navigator.geolocation){if(st)st.textContent="❌ Este navegador no permite obtener la ubicación.";return}
  if(st)st.textContent="📍 Obteniendo ubicación…";
@@ -521,7 +525,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.4.56</footer><script>
+</script><footer class="admin-version">Versión v1.4.57</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
