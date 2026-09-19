@@ -238,7 +238,9 @@ fieldset.field{border:0;padding:0}
 .order-list{display:grid;gap:12px;max-height:60vh;overflow:auto}.order-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--surface)}.order-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.order-code{font-weight:800}.order-status{font-size:12px;font-weight:800;padding:6px 9px;border-radius:999px;background:var(--mustard);color:var(--on-mustard)}.order-meta{font-size:13px;color:var(--muted);margin-top:7px}.order-items{font-size:13px;margin-top:8px}.account-user{font-size:13px;color:var(--muted);margin:0 0 12px}
 .order-card{cursor:pointer}.order-card:hover{transform:translateY(-1px)}.tracking-step{display:flex;gap:12px;align-items:flex-start;padding:10px 0}.tracking-dot{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);flex:0 0 auto;margin-top:2px}.tracking-step.done .tracking-dot,.tracking-step.current .tracking-dot{background:var(--mustard);border-color:var(--mustard)}.tracking-step.current{font-weight:800}.pickup-box{margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}.pickup-box b{display:block;margin-bottom:5px}.pending-order-banner{margin:14px auto 4px;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:var(--shadow)}.pending-order-banner[hidden]{display:none}.pending-order-banner strong{display:block}.pending-order-banner .muted{font-size:13px;color:var(--muted);margin-top:3px}.pending-order-banner button{border:0;border-radius:12px;padding:10px 13px;background:var(--mustard);color:var(--on-mustard);font-weight:800;cursor:pointer}</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>(function(){try{document.documentElement.setAttribute("data-theme",localStorage.getItem("menu_theme")==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}})();</script></head>
+<script>(function(){try{document.documentElement.setAttribute("data-theme",localStorage.getItem("menu_theme")==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}})();</script><script>window.initExpressGooglePlaces=function(){window.__expressGoogleMapsReady=true;window.dispatchEvent(new Event("express-google-maps-ready"));};</script>
+<script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDYPUksIeTAdBu5yU85VjOzy3ILx9NmTgc&loading=async&libraries=places&callback=initExpressGooglePlaces"></script>
+</head>
 <body class="menu-loading">
 
 <header class="hero">
@@ -370,7 +372,7 @@ fieldset.field{border:0;padding:0}
 
     <div class="field" id="addr-wrap" hidden>
       <label for="f-addr">Dirección de entrega</label>
-      <input type="text" id="f-addr" autocomplete="street-address">
+      <input type="text" id="f-addr" autocomplete="off" placeholder="Escribe tu dirección y selecciónala de Google Maps">
       <button type="button" id="gps-btn" style="margin-top:8px;width:100%">Usar mi ubicación para calcular el delivery</button>
       <small id="gps-status" style="display:block;margin-top:6px"></small>
     </div>
@@ -1085,6 +1087,33 @@ fieldset.field{border:0;padding:0}
     $("#ship-hint").hidden = !d;
   }
   $$('input[name="tipo"]').forEach(r=>r.addEventListener("change",()=>{applyDeliveryFee();toggleDelivery();update();refreshLink()}));
+  function initRestaurantAddressAutocomplete(){
+    const input=$("#f-addr");
+    if(!input||input.dataset.mapsReady==="1"||!window.google?.maps?.places?.Autocomplete)return;
+    input.dataset.mapsReady="1";
+    const opts={fields:["formatted_address","geometry","name"],types:["address"],strictBounds:false};
+    if(CONFIG.delivery.lat!=null&&CONFIG.delivery.lng!=null){
+      opts.bounds=new google.maps.LatLngBounds(
+        new google.maps.LatLng(CONFIG.delivery.lat-0.18,CONFIG.delivery.lng-0.18),
+        new google.maps.LatLng(CONFIG.delivery.lat+0.18,CONFIG.delivery.lng+0.18)
+      );
+    }
+    const ac=new google.maps.places.Autocomplete(input,opts);
+    ac.addListener("place_changed",()=>{
+      const place=ac.getPlace();
+      if(!place?.geometry?.location)return;
+      deliveryCoords={lat:place.geometry.location.lat(),lng:place.geometry.location.lng()};
+      input.value=place.formatted_address||place.name||input.value;
+      applyDeliveryFee();
+      $("#gps-status").textContent=deliveryUnavailable?"Fuera de la zona de delivery.":"Dirección ubicada en Google Maps"+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":"");
+      update();refreshLink();
+    });
+    input.addEventListener("input",()=>{deliveryCoords=null;deliveryDistance=null;deliveryFee=0;deliveryUnavailable=false;$("#gps-status").textContent="Selecciona una dirección de las sugerencias de Google Maps.";applyDeliveryFee();update();refreshLink();});
+  }
+  if(window.__expressGoogleMapsReady)initRestaurantAddressAutocomplete();
+  else window.addEventListener("express-google-maps-ready",initRestaurantAddressAutocomplete,{once:true});
+  let mapsTries=0;const mapsTimer=setInterval(()=>{mapsTries++;initRestaurantAddressAutocomplete();if($("#f-addr")?.dataset.mapsReady==="1"||mapsTries>30)clearInterval(mapsTimer)},500);
+
   $("#gps-btn").addEventListener("click",()=>{
     const st=$("#gps-status");
     if(!navigator.geolocation){st.textContent="Este dispositivo no permite obtener la ubicación.";return}
@@ -1159,5 +1188,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.40</footer></body>
+<footer class="site-version">Versión v1.4.41</footer></body>
 </html>
