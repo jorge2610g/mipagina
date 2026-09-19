@@ -1155,7 +1155,23 @@ fieldset.field{border:0;padding:0}
   $("#search-location-btn").textContent="🗺️ Seleccionar en mapa";
   $("#search-location-btn").addEventListener("click",openDeliveryMapPicker);
   $("#map-picker-close").addEventListener("click",()=>$("#map-picker-dialog").close());
-  $("#map-picker-gps").addEventListener("click",()=>navigator.geolocation?.getCurrentPosition(p=>setDeliveryMapPoint(p.coords.latitude,p.coords.longitude),()=>{$("#map-picker-address").textContent="No se pudo obtener tu ubicación."},{enableHighAccuracy:true,timeout:12000}));
+  $("#map-picker-gps").addEventListener("click",()=>{
+    const btn=$("#map-picker-gps"),address=$("#map-picker-address");
+    if(!navigator.geolocation){address.textContent="Este dispositivo no permite obtener tu ubicación.";return}
+    const original=btn.textContent;
+    btn.disabled=true;btn.textContent="⏳ Buscando ubicación…";
+    address.textContent="⏳ Obteniendo tu ubicación actual…";
+    navigator.geolocation.getCurrentPosition(async p=>{
+      try{
+        await setDeliveryMapPoint(p.coords.latitude,p.coords.longitude);
+        btn.textContent="✅ Ubicación encontrada";
+        setTimeout(()=>{btn.textContent=original},1600);
+      }finally{btn.disabled=false}
+    },()=>{
+      btn.disabled=false;btn.textContent="📍 Intentar nuevamente";
+      address.textContent="No se pudo obtener tu ubicación.";
+    },{enableHighAccuracy:true,timeout:12000});
+  });
   $("#map-picker-confirm").addEventListener("click",async()=>{if(!deliveryPicked)return;deliveryCoords={...deliveryPicked};try{const g=new google.maps.Geocoder(),r=await g.geocode({location:deliveryCoords});const a=r.results?.[0]?.formatted_address||"";if(a)$("#f-addr").value=a;}catch(_){}applyDeliveryFee();update();refreshLink();$("#gps-status").textContent=deliveryUnavailable?"Fuera de la zona de delivery.":"Ubicación seleccionada"+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":"");$("#map-picker-dialog").close();});
   $("#gps-btn").addEventListener("click",()=>{
     const st=$("#gps-status");
@@ -1266,5 +1282,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.47</footer></body>
+<footer class="site-version">Versión v1.4.48</footer></body>
 </html>
