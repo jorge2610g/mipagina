@@ -456,8 +456,10 @@ fieldset.field{border:0;padding:0}
   document.getElementById("orders-close").addEventListener("click",()=>document.getElementById("orders-dialog").close());
   document.getElementById("orders-btn").addEventListener("click",async()=>{await enableOrderNotifications();document.getElementById("orders-dialog").showModal();await loadCustomerOrders();});
   document.getElementById("pending-order-open").addEventListener("click",()=>openOrderDetail(window.__pendingCustomerOrder));
+  let openedOrderId=null;
   function openOrderDetail(o){
     if(!o)return;
+    openedOrderId=o.id;
     const raw=String(o.status||"nuevo").toLowerCase(), normalized=raw==="recibido"?"nuevo":raw;
     const steps=o.order_type==="Delivery"?["nuevo","preparando","listo","en_camino","entregado"]:["nuevo","preparando","listo","entregado"];
     const labels=o.order_type==="Delivery"?["Pedido recibido","Preparando tu pedido","Pedido listo","En camino","Entregado"]:["Pedido recibido","Preparando tu pedido","Listo para recoger","Pedido entregado"];
@@ -468,7 +470,7 @@ fieldset.field{border:0;padding:0}
   }
   document.getElementById("orders-list").addEventListener("click",e=>{const card=e.target.closest("[data-order-index]");if(card)openOrderDetail(window.__customerOrders?.[Number(card.dataset.orderIndex)]);});
   document.getElementById("orders-list").addEventListener("keydown",e=>{if(e.key==="Enter"){const card=e.target.closest("[data-order-index]");if(card)openOrderDetail(window.__customerOrders?.[Number(card.dataset.orderIndex)]);}});
-  document.getElementById("order-detail-close").addEventListener("click",()=>document.getElementById("order-detail-dialog").close());
+  document.getElementById("order-detail-close").addEventListener("click",()=>{openedOrderId=null;document.getElementById("order-detail-dialog").close();});
 
   document.getElementById("tab-login").addEventListener("click",()=>setAccountTab(false));
   document.getElementById("tab-register").addEventListener("click",()=>setAccountTab(true));
@@ -490,15 +492,14 @@ fieldset.field{border:0;padding:0}
         notifyCustomerOrder(row);
         await refreshPendingOrder();
         if(document.getElementById("orders-dialog").open)await loadCustomerOrders();
-        if(document.getElementById("order-detail-dialog").open){
-          const shown=window.__pendingCustomerOrder?.id===row.id?window.__pendingCustomerOrder:(window.__customerOrders||[]).find(o=>o.id===row.id);
-          if(shown){Object.assign(shown,row);openOrderDetail(shown);}
+        if(document.getElementById("order-detail-dialog").open&&openedOrderId===row.id){
+          openOrderDetail(row);
         }
       }).subscribe();
   }
   startOrderRealtime();
   // Respaldo cada 10 s por si la conexión en tiempo real se interrumpe.
-  setInterval(async()=>{if(!currentCustomer)return;await refreshPendingOrder();if(document.getElementById("orders-dialog").open)await loadCustomerOrders();},10000);
+  setInterval(async()=>{if(!currentCustomer)return;await refreshPendingOrder();if(document.getElementById("orders-dialog").open)await loadCustomerOrders();if(document.getElementById("order-detail-dialog").open&&openedOrderId){const {data:o}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address,payment_status").eq("id",openedOrderId).eq("customer_id",currentCustomer.id).maybeSingle();if(o)openOrderDetail(o);}},5000);
   /* =====================  EDITÁ ESTO  ===================== */
   const CONFIG = {
     name: "Hamburguesería Demo",
@@ -1156,5 +1157,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.5.8</footer></body>
+<footer class="site-version">Versión v1.5.9</footer></body>
 </html>
