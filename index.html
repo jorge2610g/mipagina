@@ -474,7 +474,7 @@ fieldset.field{border:0;padding:0}
     if(!r) throw new Error(requestedSlug ? "Este restaurante no está disponible. Su suscripción puede estar vencida o suspendida." : "No se encontró un restaurante activo con suscripción vigente para este enlace.");
     CONFIG.name=r.name||CONFIG.name; CONFIG.logo=r.logo_url||""; CONFIG.whatsapp=r.whatsapp||CONFIG.whatsapp; CONFIG.address=r.address||CONFIG.address;
     CONFIG.open=(r.open_time||CONFIG.open).slice(0,5); CONFIG.close=(r.close_time||CONFIG.close).slice(0,5);
-    CONFIG.instagram=r.instagram||""; CONFIG.eta={pickup:r.pickup_eta||CONFIG.eta.pickup,delivery:r.delivery_eta||CONFIG.eta.delivery};
+    CONFIG.instagram=r.instagram||""; CONFIG.mercadopagoPublicKey=r.mercadopago_public_key||""; CONFIG.eta={pickup:r.pickup_eta||CONFIG.eta.pickup,delivery:r.delivery_eta||CONFIG.eta.delivery};
     CONFIG.delivery={mode:r.delivery_pricing_mode||"fixed",fixed:Number(r.delivery_fixed_price||0),zones:Array.isArray(r.delivery_zones)?r.delivery_zones:[],lat:r.latitude==null?null:Number(r.latitude),lng:r.longitude==null?null:Number(r.longitude)};
     const [{data:cats},{data:prods}]=await Promise.all([
       db.from("restaurant_categories").select("*").eq("restaurant_id",r.id).eq("active",true).order("sort_order"),
@@ -666,7 +666,7 @@ fieldset.field{border:0;padding:0}
   $("#eta-p").textContent = CONFIG.eta.pickup;
   $("#eta-d").textContent = CONFIG.eta.delivery;
   $("#hero-art").innerHTML = CONFIG.logo ? '<img src="'+CONFIG.logo+'" alt="'+esc(CONFIG.name)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : svg({ k:"burger", patties:2, cheese:1, bacon:1, tomato:1, lettuce:1, sauce:"#e5533d" });
-  $("#f-pay").innerHTML = CONFIG.payments.map(p => `<option>${p}</option>`).join("");
+  $("#f-pay").innerHTML = CONFIG.payments.map(p => `<option>${p}</option>`).join(""); $("#f-pay").addEventListener("change",()=>{send.textContent=$("#f-pay").value==="Mercado Pago"?"Pagar con Mercado Pago":"Enviar pedido por WhatsApp";refreshLink()});
 
   const toMin = s => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
   const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
@@ -675,7 +675,7 @@ fieldset.field{border:0;padding:0}
   pill.textContent = isOpen ? "Abierto hasta las " + CONFIG.close + "hs"
     : nowMin < toMin(CONFIG.open) ? "Cerrado, abre hoy a las " + CONFIG.open + "hs"
     : "Cerrado, abre mañana a las " + CONFIG.open + "hs";
-  if (isOpen) pill.classList.add("open"); else $("#closed-note").hidden = false;
+  if (isOpen) pill.classList.add("open"); else { $("#closed-note").hidden = false; $("#closed-note").textContent="El local está cerrado. No se pueden enviar pedidos hasta que vuelva a abrir."; }
 
   /* ---------- Menú ---------- */
   function priceHTML(it){
@@ -954,6 +954,9 @@ fieldset.field{border:0;padding:0}
 
   send.addEventListener("click", async e => {
     const f = form();
+    if(!isOpen){e.preventDefault();$("#err").textContent="El local está cerrado. No se pueden enviar pedidos en este momento.";return;}
+    if(f.pay==="Mercado Pago"){e.preventDefault();let msg="";if(!cart.size)msg="Agregá al menos un producto.";else if(!f.name)msg="Escribí tu nombre.";else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";if(msg){$("#err").textContent=msg;return;}send.textContent="Abriendo Mercado Pago…";const {data,error}=await db.functions.invoke("create-restaurant-payment",{body:{restaurant_id:window.__restaurantId,title:"Pedido — "+CONFIG.name,amount:totals().t}});send.textContent="Pagar con Mercado Pago";if(error||!data?.init_point){$("#err").textContent=data?.error||error?.message||"Mercado Pago no está configurado.";return;}location.href=data.init_point;return;}
+
     let msg = "";
     if (!cart.size) msg = "Agregá al menos un producto.";
     else if (!f.name){ msg = "Escribí tu nombre para saber a quién entregarle el pedido."; $("#f-name").focus(); }
