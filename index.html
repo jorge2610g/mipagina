@@ -432,14 +432,14 @@ fieldset.field{border:0;padding:0}
     document.getElementById("tab-login").classList.toggle("active",!register); document.getElementById("tab-register").classList.toggle("active",register);
     document.getElementById("account-msg").textContent="";
   }
-  function statusLabel(s){return ({nuevo:"Recibido",recibido:"Recibido",preparando:"Preparando",listo:"Listo",en_camino:"En camino",entregado:"Entregado",cancelado:"Cancelado"}[s]||String(s||"Recibido").replaceAll("_"," "));}
+  function statusLabel(s){return ({nuevo:"Recibido",recibido:"Recibido",preparando:"Preparando",preparacion:"Preparación",listo:"Listo",en_camino:"En camino",entregado:"Entregado",cancelado:"Cancelado"}[s]||String(s||"Recibido").replaceAll("_"," "));}
   async function enableOrderNotifications(){
     if(!("Notification" in window))return;
     if(Notification.permission==="default")await Notification.requestPermission();
   }
   function notifyCustomerOrder(row){
     if(!("Notification" in window)||Notification.permission!=="granted")return;
-    const messages={nuevo:"Tu pedido fue recibido.",preparando:"🍳 Tu pedido está siendo preparado.",listo:row.order_type==="Delivery"?"✅ Tu pedido está listo.":"✅ Tu pedido está listo para recoger.",en_camino:"🛵 Tu pedido va en camino.",entregado:"🎉 Tu pedido fue entregado.",cancelado:"Tu pedido fue cancelado."};
+    const messages={nuevo:"Tu pedido fue recibido.",recibido:"Tu pedido fue recibido.",preparando:"🍳 Tu pedido está siendo preparado.",preparacion:"🍳 Tu pedido está siendo preparado.",listo:row.order_type==="Delivery"?"✅ Tu pedido está listo.":"✅ Tu pedido está listo para recoger.",en_camino:"🛵 Tu pedido va en camino.",entregado:"🎉 Tu pedido fue entregado.",cancelado:"Tu pedido fue cancelado."};
     try{new Notification("Express · "+statusLabel(row.status),{body:messages[row.status]||"Tu pedido cambió de estado.",tag:"order-"+row.id,renotify:true});}catch(e){}
   }
   async function loadCustomerOrders(){
@@ -1158,5 +1158,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.6.4</footer></body>
+<footer class="site-version">Versión v1.6.5</footer></body>
 </html>
