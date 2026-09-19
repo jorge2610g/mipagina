@@ -634,6 +634,9 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     const requestedSlug=params.get("r") || pathSlug || null;
     const host=location.hostname.toLowerCase().replace(/^www\./,"");
     const platformHosts=["app.expressdelivery.pro","menu.yummypro.online","jorge2610g.github.io","localhost","127.0.0.1"];
+    if(host==="menu.yummypro.online"&&!requestedSlug){
+      window.__demoMode=true;MENU=DEMO_MENU;CONFIG.name="Restaurante Demo";CONFIG.whatsapp="";CONFIG.address="Vista demostración";CONFIG.payments=["Efectivo","Transferencia","Mercado Pago"];window.__restaurantId="demo";return;
+    }
     let query=db.from("restaurants").select("*").eq("active",true).in("subscription_status",["trial","active"]).gt("subscription_expires_at",new Date().toISOString());
     if(requestedSlug){
       query=query.eq("slug",requestedSlug);
@@ -1244,11 +1247,17 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     if(currentCustomer){await db.from("customer_profiles").upsert({user_id:currentCustomer.id,full_name:f.name,phone:f.phone,default_address:f.type==="Delivery"?f.addr:null,updated_at:new Date().toISOString()});}
     const orderCode = "WEB-" + Date.now().toString(36).toUpperCase();
     const items=[...cart.values()].map(v=>({name:lineName(v),qty:v.qty,unit_price:unitOf(v),extras:v.ex.map(x=>x.name),note:v.note||""}));
-    const { data, error } = await db.from("restaurant_orders").insert({
+    const orderRow={
       restaurant_id:window.__restaurantId||null, order_code:orderCode, customer_name:f.name, customer_phone:f.phone, customer_id:currentCustomer?.id||null, customer_email:currentCustomer?.email||null, order_type:f.type,
       delivery_address:f.type === "Delivery" ? f.addr : null, payment_method:f.pay,
       notes:f.notes || null,items,total:totals().t,delivery_fee:f.type==="Delivery"?totals().fee:0,delivery_distance_km:f.type==="Delivery"?deliveryDistance:null,delivery_latitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lat:null,delivery_longitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lng:null,status:"recibido",payment_status:f.pay==="Mercado Pago"?"pending":"not_applicable"
-    }).select("id").single();
+    };
+    let data=null,error=null;
+    if(f.pay==="Mercado Pago"){
+      ({data,error}=await db.from("restaurant_orders").insert(orderRow).select("id").single());
+    }else{
+      ({error}=await db.from("restaurant_orders").insert(orderRow));
+    }
     if(error){ console.error("No se pudo guardar el pedido", error); throw error; }
     localStorage.setItem("last_order_code",orderCode);
     return data?.id||orderCode;
