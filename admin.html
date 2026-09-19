@@ -127,7 +127,7 @@ img,svg,video{max-width:100%;height:auto}
 
 <div id="app" class="wrap hidden">
 <div id="subscriptionBanner" class="card" style="margin-bottom:14px;display:none"></div>
-<div class="top"><div><h1>Panel Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><a href="index.html"><button class="ghost">Ver menú</button></a><button class="ghost" id="themeBtn" type="button" onclick="toggleAdminTheme()">☀️ Modo claro</button><button class="ghost" onclick="logout()">Salir</button></div></div>
+<div class="top"><div><h1>Panel Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost">Ver menú</button></a><button class="ghost" id="themeBtn" type="button" onclick="toggleAdminTheme()">☀️ Modo claro</button><button class="ghost" onclick="logout()">Salir</button></div></div>
 <div class="tabs">
 <button class="tab active" data-tab="restaurants">🏪 Restaurantes</button><button class="tab" data-tab="subscriptions">💳 Suscripciones</button><button class="tab" data-tab="users">👥 Personal</button><button class="tab" data-tab="dashboard">📊 Métricas</button><button class="tab" data-tab="products">🍔 Productos</button><button class="tab" data-tab="categories">📚 Categorías</button><button class="tab" data-tab="qr">▦ Código QR</button><button class="tab" data-tab="plans">💳 Planes</button><button class="tab" data-tab="settings">⚙️ Configuración</button>
 </div>
@@ -205,7 +205,7 @@ async function enter(user){
     const {data,error}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle(); isSuperAdmin=!!data; let membership=[]; if(!isSuperAdmin){const mr=await sb.from("restaurant_staff").select("restaurant_id,role,permissions").eq("user_id",user.id).eq("active",true);if(mr.error){msg.textContent="Error al verificar restaurante: "+mr.error.message;return}membership=mr.data||[];currentRole=membership[0]?.role||"";}
     if(error){msg.textContent="Error al verificar permisos: "+error.message;return}
     if(!isSuperAdmin && !membership.length){await sb.auth.signOut();msg.textContent="Esta cuenta no tiene acceso a ningún restaurante.";return} if(!isSuperAdmin&&membership.length){
- currentRestaurant=membership[0].restaurant_id;
+ currentRestaurant=membership[0].restaurant_id; const menuRestaurant=(restaurants||[]).find(x=>x.id===currentRestaurant); const menuLink=document.getElementById("viewMenuLink"); if(menuLink&&menuRestaurant){menuLink.href=location.origin+"/index.html?r="+encodeURIComponent(menuRestaurant.slug);menuLink.style.display="";}
  currentRole=membership[0].role||"restaurant";
  const p=membership[0].permissions||{};
  document.querySelectorAll(".tab").forEach(x=>x.style.display="");
@@ -227,7 +227,7 @@ async function enter(user){
     document.getElementById("app").classList.remove("hidden");
     document.body.classList.remove("auth-loading");
     document.getElementById("who").textContent=user.email;
-    if(isSuperAdmin){document.getElementById("subscriptionBanner").style.display="none";document.querySelector('[data-tab="plans"]').style.display="none";document.getElementById("mpCredentialsCard").style.display="block";document.getElementById("planCreatorCard").style.display="block";}else{document.getElementById("mpCredentialsCard").style.display="none";document.getElementById("planCreatorCard").style.display="none";document.querySelector('[data-tab="plans"]').style.display="";}
+    if(isSuperAdmin){document.getElementById("viewMenuLink").style.display="none";document.getElementById("subscriptionBanner").style.display="none";document.querySelector('[data-tab="plans"]').style.display="none";document.getElementById("mpCredentialsCard").style.display="block";document.getElementById("planCreatorCard").style.display="block";}else{document.getElementById("mpCredentialsCard").style.display="none";document.getElementById("planCreatorCard").style.display="none";document.querySelector('[data-tab="plans"]').style.display="";}
     msg.textContent="";
     await refreshAll();
   }catch(e){msg.textContent=e.message||"No se pudo abrir el panel."}
@@ -346,4 +346,4 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.2.0</footer></body></html>
+</script><footer class="admin-version">Versión v1.2.1</footer></body></html>
