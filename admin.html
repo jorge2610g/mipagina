@@ -118,7 +118,7 @@ img,svg,video{max-width:100%;height:auto}
  .top .row{grid-template-columns:1fr}.card{padding:13px!important}
  .tabs{gap:7px}.tab{padding-left:13px!important;padding-right:13px!important}
 }
-</style></head>
+</style><script>window.initAdminGoogleMaps=function(){window.__adminGoogleMapsReady=true;window.dispatchEvent(new Event("admin-google-maps-ready"));};</script><script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDYPUksIeTAdBu5yU85VjOzy3ILx9NmTgc&loading=async&libraries=places&callback=initAdminGoogleMaps"></script></head>
 <body class="auth-loading">
 <style>.auth-loading #login,.auth-loading #app{display:none!important}</style>
 <div id="login" class="wrap login hidden"><div class="card"><h1>Panel de administración</h1><p class="mut">Gestiona menú, precios, disponibilidad y datos del negocio.</p>
@@ -171,6 +171,8 @@ img,svg,video{max-width:100%;height:auto}
 <div class="span12"><h3 style="margin-bottom:6px">Costo de Delivery</h3><p class="mut">Elige un precio fijo o cobro por distancia usando la ubicación GPS del cliente.</p></div>
 <div class="span4"><label>Modalidad</label><select id="sdeliverymode"><option value="fixed">Precio fijo</option><option value="distance">Por distancia / GPS</option></select></div>
 <div class="span4"><label>Precio fijo</label><input id="sdeliveryprice" type="number" min="0" step="1" placeholder="Ej: 2000"></div>
+<div class="span8"><label>Ubicación del restaurante</label><input id="smapaddress" autocomplete="off" placeholder="Escribe la dirección y selecciónala de Google Maps"><p class="mut" id="smapstatus">La latitud y longitud se completarán automáticamente.</p></div>
+<div class="span4" style="align-self:end"><button type="button" class="ghost" style="width:100%" onclick="useRestaurantCurrentLocation()">📍 Usar mi ubicación actual</button></div>
 <div class="span4"><label>Latitud del restaurante</label><input id="slat" type="number" step="any" placeholder="-20.2"></div>
 <div class="span4"><label>Longitud del restaurante</label><input id="slng" type="number" step="any" placeholder="-70.1"></div>
 <div class="span8"><label>Zonas por distancia</label><textarea id="sdeliveryzones" rows="4" placeholder="2=1500&#10;5=2500&#10;8=3500"></textarea><p class="mut">Una zona por línea: distancia máxima en km = precio. Ej.: 2=1500 significa hasta 2 km cuesta $1.500.</p></div>
@@ -417,7 +419,23 @@ async function setOrderStatus(id,status){
  }
  await loadOrders();
 }
-async function loadSettings(){if(!currentRestaurant)return;const {data,error}=await sb.from("restaurants").select("*").eq("id",currentRestaurant).single();if(error)return toast(error.message);sname.value=data.name||"";swhatsapp.value=data.whatsapp||"";saddress.value=data.address||"";sopen.value=(data.open_time||"").slice(0,5);sclose.value=(data.close_time||"").slice(0,5);sinstagram.value=data.instagram||"";spickup.value=data.pickup_eta||"";sdelivery.value=data.delivery_eta||"";sdeliverynote.value=data.delivery_note||"";sdeliverymode.value=data.delivery_pricing_mode||"fixed";sdeliveryprice.value=Number(data.delivery_fixed_price||0);slat.value=data.latitude??"";slng.value=data.longitude??"";sdeliveryzones.value=(Array.isArray(data.delivery_zones)?data.delivery_zones:[]).map(z=>String(z.max_km)+"="+String(z.price)).join("\n");const mst=document.getElementById("manualOpenStatusText");if(mst)mst.textContent=data.manual_open_status==="open"?"🟢 Forzado ABIERTO":data.manual_open_status==="closed"?"🔴 Forzado CERRADO":"🕒 Usando horario predeterminado"}
+function initAdminRestaurantLocation(){
+ const input=document.getElementById("smapaddress"); if(!input||input.dataset.mapsReady==="1"||!window.google?.maps?.places?.Autocomplete)return;
+ input.dataset.mapsReady="1";
+ const ac=new google.maps.places.Autocomplete(input,{fields:["formatted_address","geometry","name"],types:["address"]});
+ ac.addListener("place_changed",()=>{const p=ac.getPlace();if(!p?.geometry?.location)return;slat.value=p.geometry.location.lat();slng.value=p.geometry.location.lng();saddress.value=p.formatted_address||p.name||input.value;input.value=saddress.value;const st=document.getElementById("smapstatus");if(st)st.textContent="✅ Ubicación encontrada. Coordenadas cargadas automáticamente.";});
+}
+async function reverseRestaurantLocation(lat,lng){
+ try{const geocoder=new google.maps.Geocoder();const r=await geocoder.geocode({location:{lat,lng}});const addr=r.results?.[0]?.formatted_address||"";if(addr){saddress.value=addr;const x=document.getElementById("smapaddress");if(x)x.value=addr}return addr}catch(e){return ""}
+}
+function useRestaurantCurrentLocation(){
+ const st=document.getElementById("smapstatus");if(!navigator.geolocation){if(st)st.textContent="❌ Este navegador no permite obtener la ubicación.";return}
+ if(st)st.textContent="📍 Obteniendo ubicación…";
+ navigator.geolocation.getCurrentPosition(async pos=>{const lat=pos.coords.latitude,lng=pos.coords.longitude;slat.value=lat;slng.value=lng;if(window.google?.maps)await reverseRestaurantLocation(lat,lng);if(st)st.textContent="✅ Ubicación cargada automáticamente."},e=>{if(st)st.textContent="❌ No se pudo obtener la ubicación. Revisa el permiso de ubicación del navegador."},{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+}
+if(window.__adminGoogleMapsReady)initAdminRestaurantLocation();else window.addEventListener("admin-google-maps-ready",initAdminRestaurantLocation);
+setInterval(initAdminRestaurantLocation,1200);
+async function loadSettings(){if(!currentRestaurant)return;const {data,error}=await sb.from("restaurants").select("*").eq("id",currentRestaurant).single();if(error)return toast(error.message);sname.value=data.name||"";swhatsapp.value=data.whatsapp||"";saddress.value=data.address||"";const sma=document.getElementById("smapaddress");if(sma)sma.value=data.address||"";sopen.value=(data.open_time||"").slice(0,5);sclose.value=(data.close_time||"").slice(0,5);sinstagram.value=data.instagram||"";spickup.value=data.pickup_eta||"";sdelivery.value=data.delivery_eta||"";sdeliverynote.value=data.delivery_note||"";sdeliverymode.value=data.delivery_pricing_mode||"fixed";sdeliveryprice.value=Number(data.delivery_fixed_price||0);slat.value=data.latitude??"";slng.value=data.longitude??"";sdeliveryzones.value=(Array.isArray(data.delivery_zones)?data.delivery_zones:[]).map(z=>String(z.max_km)+"="+String(z.price)).join("\n");const mst=document.getElementById("manualOpenStatusText");if(mst)mst.textContent=data.manual_open_status==="open"?"🟢 Forzado ABIERTO":data.manual_open_status==="closed"?"🔴 Forzado CERRADO":"🕒 Usando horario predeterminado"}
 async function saveSettings(){if(!currentRestaurant)return toast("No hay restaurante seleccionado");const row={name:sname.value.trim(),whatsapp:swhatsapp.value.trim(),address:saddress.value.trim(),open_time:sopen.value,close_time:sclose.value,instagram:sinstagram.value.trim(),pickup_eta:spickup.value.trim(),delivery_eta:sdelivery.value.trim(),delivery_note:sdeliverynote.value.trim(),delivery_pricing_mode:sdeliverymode.value,delivery_fixed_price:Number(sdeliveryprice.value||0),latitude:slat.value===""?null:Number(slat.value),longitude:slng.value===""?null:Number(slng.value),delivery_zones:sdeliveryzones.value.split(/\n+/).map(x=>x.trim()).filter(Boolean).map(x=>{const p=x.split("=");return {max_km:Number(p[0]),price:Number(p[1])}}).filter(z=>Number.isFinite(z.max_km)&&z.max_km>0&&Number.isFinite(z.price)&&z.price>=0).sort((x,y)=>x.max_km-y.max_km),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurants").update(row).eq("id",currentRestaurant);if(error)return toast(error.message);await loadRestaurants();toast("Datos del restaurante actualizados")}
 async function setManualOpenStatus(status){if(!currentRestaurant)return;const {error}=await sb.from("restaurants").update({manual_open_status:status,updated_at:new Date().toISOString()}).eq("id",currentRestaurant);if(error)return toast(error.message);await loadSettings();toast(status==="open"?"Local forzado como ABIERTO":status==="closed"?"Local forzado como CERRADO":"Se volvió al horario predeterminado")}
 function renderStats(){const valid=orders.filter(o=>o.status!=="cancelado"),sales=valid.reduce((a,o)=>a+Number(o.total||0),0);statProducts.textContent=products.filter(p=>p.available).length;statOrders.textContent=orders.length;statSales.textContent=money(sales);const av=document.getElementById("statAverage");if(av)av.textContent=money(valid.length?sales/valid.length:0);renderAnalytics(valid)}
@@ -444,7 +462,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.4.43</footer><script>
+</script><footer class="admin-version">Versión v1.4.44</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
