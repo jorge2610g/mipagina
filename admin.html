@@ -197,7 +197,6 @@ async function login(){
     await enter(data.user);
   }catch(e){msg.textContent=e.message||"Error de conexión. Intenta nuevamente."}
 }
-async function saveMercadoPagoCredentials(){const msg=document.getElementById("mpCredentialMsg");if(!isSuperAdmin)return toast("Solo el administrador puede configurar Mercado Pago");const pk=mpPublicKey.value.trim(),at=mpAccessToken.value.trim();if(!pk||!at){msg.textContent="Completa Public Key y Access Token.";return}msg.textContent="Por seguridad, las credenciales de Mercado Pago deben guardarse como Secrets de Supabase. No se almacenaron en esta página.";toast("No se guardó el Access Token en el navegador")}
 async function logout(){await sb.auth.signOut();location.reload()}
 async function enter(user){
   const msg=document.getElementById("loginMsg");
@@ -347,4 +346,4 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.1.9</footer></body></html>
+</script><footer class="admin-version">Versión v1.2.0</footer></body></html>
