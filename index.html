@@ -670,11 +670,9 @@ fieldset.field{border:0;padding:0}
 
   const toMin = s => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
   const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
-  const isOpen = nowMin >= toMin(CONFIG.open) && nowMin < toMin(CONFIG.close);
+  const openMin=toMin(CONFIG.open), closeMin=toMin(CONFIG.close); const isOpen = openMin===closeMin ? true : (closeMin<=openMin ? (nowMin>=openMin || nowMin<closeMin) : (nowMin>=openMin && nowMin<closeMin));
   const pill = $("#status");
-  pill.textContent = isOpen ? "Abierto hasta las " + CONFIG.close + "hs"
-    : nowMin < toMin(CONFIG.open) ? "Cerrado, abre hoy a las " + CONFIG.open + "hs"
-    : "Cerrado, abre mañana a las " + CONFIG.open + "hs";
+  pill.textContent = isOpen ? "Abierto hasta las " + CONFIG.close + "hs" : "Cerrado, abre a las " + CONFIG.open + "hs";
   if (isOpen) pill.classList.add("open"); else { $("#closed-note").hidden = false; $("#closed-note").textContent="El local está cerrado. No se pueden enviar pedidos hasta que vuelva a abrir."; }
 
   /* ---------- Menú ---------- */
