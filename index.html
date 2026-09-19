@@ -396,8 +396,11 @@ fieldset.field{border:0;padding:0}
     </div>
 
     <div class="field">
-      <label for="f-pay">Forma de pago</label>
-      <select id="f-pay"></select>
+      <label>Forma de pago</label>
+      <div id="payment-buttons" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px"></div>
+      <select id="f-pay" aria-label="Forma de pago" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px"></select>
+      <div id="payment-selected" style="margin-top:8px;font-size:13px;font-weight:700"></div>
+      <div id="mp-safe-note" hidden style="margin-top:8px;padding:10px 12px;border-radius:12px;background:#e8f3ff;color:#174a7e;font-size:13px;font-weight:700">🔒 Checkout de pago seguro con Mercado Pago</div>
     </div>
 
     <div class="field">
@@ -838,7 +841,19 @@ fieldset.field{border:0;padding:0}
   $("#eta-p").textContent = CONFIG.eta.pickup;
   $("#eta-d").textContent = CONFIG.eta.delivery;
   $("#hero-art").innerHTML = CONFIG.logo ? '<img src="'+CONFIG.logo+'" alt="'+esc(CONFIG.name)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : svg({ k:"burger", patties:2, cheese:1, bacon:1, tomato:1, lettuce:1, sauce:"#e5533d" });
-  $("#f-pay").innerHTML = CONFIG.payments.map(p => `<option>${p}</option>`).join(""); $("#f-pay").addEventListener("change",()=>{send.textContent=$("#f-pay").value==="Mercado Pago"?"Pagar con Mercado Pago":"Enviar pedido por WhatsApp";refreshLink()});
+  $("#f-pay").innerHTML = CONFIG.payments.map(p => `<option>${p}</option>`).join("");
+  const paymentIcons={"Efectivo":"💵","Transferencia":"🏦","Mercado Pago":"💳"};
+  const payBox=$("#payment-buttons"),paySelected=$("#payment-selected"),mpSafe=$("#mp-safe-note");
+  function renderPaymentButtons(){
+    const selected=$("#f-pay").value;
+    payBox.innerHTML=CONFIG.payments.map(p=>`<button type="button" data-pay="${esc(p)}" aria-pressed="${p===selected}" style="min-height:70px;border:2px solid ${p===selected?"var(--mustard)":"#ddd"};background:${p===selected?"#fff7d6":"#fff"};color:#171717;border-radius:14px;padding:8px;font-weight:800;cursor:pointer"><span style="display:block;font-size:23px;margin-bottom:3px">${paymentIcons[p]||"💳"}</span>${esc(p)}</button>`).join("");
+    paySelected.textContent=selected?"Seleccionaste: "+selected:"";
+    mpSafe.hidden=selected!=="Mercado Pago";
+    send.textContent=selected==="Mercado Pago"?"Pagar con Mercado Pago":"Enviar pedido por WhatsApp";
+  }
+  payBox.addEventListener("click",e=>{const b=e.target.closest("button[data-pay]");if(!b)return;$("#f-pay").value=b.dataset.pay;renderPaymentButtons();refreshLink()});
+  $("#f-pay").addEventListener("change",()=>{renderPaymentButtons();refreshLink()});
+  renderPaymentButtons();
 
   const toMin = s => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
   const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
@@ -1287,5 +1302,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.51</footer></body>
+<footer class="site-version">Versión v1.4.52</footer></body>
 </html>
