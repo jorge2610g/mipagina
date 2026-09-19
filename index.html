@@ -934,7 +934,7 @@ fieldset.field{border:0;padding:0}
     $("#addr-wrap").hidden = !d;
     $("#ship-hint").hidden = !d;
   }
-  $('input[name="tipo"]').forEach(r=>r.addEventListener("change",()=>{applyDeliveryFee();toggleDelivery();update();refreshLink()}));
+  $$('input[name="tipo"]').forEach(r=>r.addEventListener("change",()=>{applyDeliveryFee();toggleDelivery();update();refreshLink()}));
   $("#gps-btn").addEventListener("click",()=>{
     const st=$("#gps-status");
     if(!navigator.geolocation){st.textContent="Este dispositivo no permite obtener la ubicación.";return}
@@ -990,5 +990,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.1</footer></body>
+<footer class="site-version">Versión v1.4.2</footer></body>
 </html>
