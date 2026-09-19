@@ -340,9 +340,9 @@ function startRestaurantOrderRealtime(){
  if(restaurantOrdersChannel){sb.removeChannel(restaurantOrdersChannel);restaurantOrdersChannel=null;}
  if(!currentRestaurant||isSuperAdmin)return;
  restaurantOrdersChannel=sb.channel("restaurant-orders-"+currentRestaurant)
-  .on("postgres_changes",{event:"UPDATE",schema:"public",table:"restaurant_orders",filter:"restaurant_id=eq."+currentRestaurant},async p=>{
+  .on("postgres_changes",{event:"*",schema:"public",table:"restaurant_orders",filter:"restaurant_id=eq."+currentRestaurant},async p=>{
    const row=p.new||{},old=p.old||{};
-   if(row.payment_method==="Mercado Pago"&&row.payment_status==="approved"&&old.payment_status!=="approved"){restaurantOrderAlert(row);await loadOrders();}
+   if(row.payment_method==="Mercado Pago"&&row.payment_status==="approved"&&(p.eventType==="INSERT"||old.payment_status!=="approved"))restaurantOrderAlert(row); if(row.payment_method==="Mercado Pago")await loadOrders();
   }).subscribe();
 }
 function filterOrdersView(f){document.querySelectorAll("#orderList .item").forEach(el=>{const d=new Date(el.dataset.created),n=new Date(),same=d.toDateString()===n.toDateString(),y=new Date(n);y.setDate(n.getDate()-1);let show=f==="all"||(f==="today"&&same)||(f==="yesterday"&&d.toDateString()===y.toDateString())||(f==="week"&&(n-d)<=604800000)||(f==="month"&&d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear());el.style.display=show?"":"none"})}
@@ -408,4 +408,4 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.4.22</footer></body></html>
+</script><footer class="admin-version">Versión v1.4.23</footer></body></html>
