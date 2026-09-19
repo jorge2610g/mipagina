@@ -950,10 +950,10 @@ fieldset.field{border:0;padding:0}
     return true;
   }
 
-  send.addEventListener("click", async e => {
+  send.onclick = async e => {
     const f = form();
     if(!isOpen){e.preventDefault();$("#err").textContent="El local está cerrado. No se pueden enviar pedidos en este momento.";return;}
-    if(f.pay==="Mercado Pago"){e.preventDefault();let msg="";if(!cart.size)msg="Agregá al menos un producto.";else if(!f.name)msg="Escribí tu nombre.";else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";if(msg){$("#err").textContent=msg;return;}send.textContent="Abriendo Mercado Pago…";let resp;try{resp=await fetch(SUPABASE_URL+"/functions/v1/create-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,title:"Pedido — "+CONFIG.name,amount:totals().t})});const data=await resp.json();send.textContent="Pagar con Mercado Pago";if(!resp.ok||!data?.init_point){$("#err").textContent=data?.error||"No se pudo iniciar Mercado Pago.";return;}window.location.assign(data.init_point);return;}catch(err){send.textContent="Pagar con Mercado Pago";$("#err").textContent="No se pudo conectar con Mercado Pago: "+err.message;return;}}
+    if(f.pay==="Mercado Pago"){e.preventDefault();$("#err").textContent="Conectando con Mercado Pago…";let msg="";if(!cart.size)msg="Agregá al menos un producto.";else if(!f.name)msg="Escribí tu nombre.";else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";if(msg){$("#err").textContent=msg;return;}send.textContent="Abriendo Mercado Pago…";let resp;try{resp=await fetch(SUPABASE_URL+"/functions/v1/create-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,title:"Pedido — "+CONFIG.name,amount:totals().t})});const data=await resp.json();send.textContent="Pagar con Mercado Pago";if(!resp.ok||!data?.init_point){$("#err").textContent=data?.error||"No se pudo iniciar Mercado Pago.";return;}window.location.assign(data.init_point);return;}catch(err){send.textContent="Pagar con Mercado Pago";$("#err").textContent="No se pudo conectar con Mercado Pago: "+err.message;return;}}
 
     let msg = "";
     if (!cart.size) msg = "Agregá al menos un producto.";
@@ -969,7 +969,7 @@ fieldset.field{border:0;padding:0}
     refreshLink();
     window.open(whatsappOrderUrl,"_blank","noopener");
     setTimeout(()=>{ cart.clear(); saveCart(); update(); },250);
-  });
+  };
 
   // Preferencias y persistencia
   const savedTheme = localStorage.getItem("menu_theme");
@@ -982,5 +982,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.3.1</footer></body>
+<footer class="site-version">Versión v1.3.3</footer></body>
 </html>
