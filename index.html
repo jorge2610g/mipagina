@@ -466,8 +466,29 @@ fieldset.field{border:0;padding:0}
   document.getElementById("login-form").addEventListener("submit",async e=>{e.preventDefault();const msg=document.getElementById("account-msg");msg.className="account-msg";msg.textContent="Ingresando…";const {error}=await db.auth.signInWithPassword({email:document.getElementById("login-email").value.trim(),password:document.getElementById("login-password").value});if(error){msg.className="account-msg error";msg.textContent="No pudimos iniciar sesión. Revisa correo y contraseña.";return;}msg.textContent="Sesión iniciada.";await syncCustomerUI();setTimeout(()=>document.getElementById("account-dialog").close(),500);});
   document.getElementById("register-form").addEventListener("submit",async e=>{e.preventDefault();const msg=document.getElementById("account-msg");msg.className="account-msg";msg.textContent="Creando cuenta…";const name=document.getElementById("register-name").value.trim(),phone=document.getElementById("register-phone").value.trim(),email=document.getElementById("register-email").value.trim(),password=document.getElementById("register-password").value;const {data,error}=await db.auth.signUp({email,password,options:{data:{full_name:name,phone}}});if(error){msg.className="account-msg error";msg.textContent=error.message;return;}if(data.session){await db.from("customer_profiles").upsert({user_id:data.user.id,full_name:name,phone});msg.textContent="Cuenta creada correctamente.";await syncCustomerUI();}else{msg.textContent="Cuenta creada. Revisa tu correo para confirmar el acceso.";}});
   document.getElementById("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();await syncCustomerUI();document.getElementById("account-dialog").close();});
-  db.auth.onAuthStateChange(()=>setTimeout(syncCustomerUI,0));
+  db.auth.onAuthStateChange(()=>setTimeout(async()=>{await syncCustomerUI();startOrderRealtime();},0));
   await syncCustomerUI();
+
+  // Actualización automática del seguimiento sin recargar la página.
+  let orderRealtimeChannel=null;
+  function startOrderRealtime(){
+    if(orderRealtimeChannel){db.removeChannel(orderRealtimeChannel);orderRealtimeChannel=null;}
+    if(!currentCustomer)return;
+    orderRealtimeChannel=db.channel("customer-orders-"+currentCustomer.id)
+      .on("postgres_changes",{event:"UPDATE",schema:"public",table:"restaurant_orders",filter:"customer_id=eq."+currentCustomer.id},async payload=>{
+        const row=payload.new||{};
+        if(row.payment_method!=="Mercado Pago")return;
+        await refreshPendingOrder();
+        if(document.getElementById("orders-dialog").open)await loadCustomerOrders();
+        if(document.getElementById("order-detail-dialog").open){
+          const shown=window.__pendingCustomerOrder?.id===row.id?window.__pendingCustomerOrder:(window.__customerOrders||[]).find(o=>o.id===row.id);
+          if(shown){Object.assign(shown,row);openOrderDetail(shown);}
+        }
+      }).subscribe();
+  }
+  startOrderRealtime();
+  // Respaldo cada 10 s por si la conexión en tiempo real se interrumpe.
+  setInterval(async()=>{if(!currentCustomer)return;await refreshPendingOrder();if(document.getElementById("orders-dialog").open)await loadCustomerOrders();},10000);
   /* =====================  EDITÁ ESTO  ===================== */
   const CONFIG = {
     name: "Hamburguesería Demo",
@@ -1125,5 +1146,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.5.6</footer></body>
+<footer class="site-version">Versión v1.5.7</footer></body>
 </html>
