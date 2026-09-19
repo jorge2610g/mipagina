@@ -369,21 +369,16 @@ function renderOrderHistory(){
 async function loadOrders(){
  if(!currentRestaurant)return;
  try{
-  const {data:{session}}=await sb.auth.getSession();
-  if(!session?.access_token)throw new Error("Sesión vencida");
-  const res=await fetch(SB_URL+"/functions/v1/get-restaurant-paid-orders",{
-   method:"POST",
-   headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},
-   body:JSON.stringify({restaurant_id:currentRestaurant})
-  });
-  const payload=await res.json();
-  if(!res.ok)throw new Error(payload.error||"No se pudieron cargar los pedidos");
-  orders=payload.orders||[];
+  const {data,error}=await sb.rpc("get_restaurant_paid_orders",{p_restaurant_id:Number(currentRestaurant)});
+  if(error)throw error;
+  orders=Array.isArray(data)?data:[];
   renderOrderHistory();
+  if(!orders.length)toast("No se encontraron pedidos aprobados para este restaurante.");
  }catch(e){
   orders=[];
   renderOrderHistory();
-  toast("Error cargando pedidos: "+e.message);
+  toast("Error cargando pedidos: "+(e.message||e));
+  console.error("loadOrders",e);
  }
 }
 async function setOrderStatus(id,status){
@@ -431,4 +426,4 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.4.6</footer></body></html>
+</script><footer class="admin-version">Versión v1.4.7</footer></body></html>
