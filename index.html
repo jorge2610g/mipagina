@@ -659,6 +659,15 @@ fieldset.field{border:0;padding:0}
       opts:[{l:"",p:Number(p.price)||0}],was:p.compare_price?Number(p.compare_price):null,art:{k:"burger"}
     }))}));if(uncategorized.length)MENU.push({id:"general",name:"General",tone:"warm",items:uncategorized.map(p=>({id:p.id,name:p.name,desc:p.description||"",price:Number(p.price||0),img:p.image_url||"",badge:p.badge||"",featured:!!p.featured}))});
     window.__restaurantId=r.id;
+    // Mercado Pago solo se ofrece cuando la conexión del restaurante fue validada.
+    try{
+      const {data:mpStatus,error:mpStatusError}=await db.rpc("restaurant_mp_connection_status",{rid:r.id});
+      const mpRow=Array.isArray(mpStatus)?mpStatus[0]:mpStatus;
+      const mpValidated=!mpStatusError && !!mpRow?.configured && !!mpRow?.mp_user_id;
+      if(!mpValidated) CONFIG.payments=CONFIG.payments.filter(p=>p!=="Mercado Pago");
+    }catch(_){
+      CONFIG.payments=CONFIG.payments.filter(p=>p!=="Mercado Pago");
+    }
   }
     /* =====================  FIN DE LA CONFIGURACIÓN  ===================== */
 
@@ -1302,5 +1311,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.53</footer></body>
+<footer class="site-version">Versión v1.4.54</footer></body>
 </html>
