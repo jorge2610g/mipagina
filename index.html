@@ -849,6 +849,11 @@ fieldset.field{border:0;padding:0}
   $("#i-addr").textContent = CONFIG.address;
   $("#i-pay").textContent = CONFIG.payments.join(", ");
   $("#i-wa").href = "https://wa.me/" + CONFIG.whatsapp;
+  if(window.__demoMode){
+    $("#i-wa").removeAttribute("target");
+    $("#i-wa").href="https://admin.yummypro.online/";
+    $("#i-wa").textContent="Crear mi cuenta";
+  }
   if (CONFIG.instagram){ const ig = $("#i-ig"); ig.hidden = false; ig.href = "https://instagram.com/" + CONFIG.instagram.replace("@", ""); }
   $("#eta-p").textContent = CONFIG.eta.pickup;
   $("#eta-d").textContent = CONFIG.eta.delivery;
@@ -1318,5 +1323,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.56</footer></body>
+<footer class="site-version">Versión v1.4.57</footer></body>
 </html>
