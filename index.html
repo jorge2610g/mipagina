@@ -339,7 +339,7 @@ fieldset.field{border:0;padding:0}
     </div>
 
     <p class="err" id="err" role="alert"></p>
-    <a class="send" id="send" href="https://wa.me/" target="_blank" rel="noopener">Enviar pedido por WhatsApp</a>
+    <button type="button" class="send" id="send">Enviar pedido por WhatsApp</button>
   </div>
 </dialog>
 
@@ -923,7 +923,7 @@ fieldset.field{border:0;padding:0}
     return out.join("\n");
   }
   const send = $("#send");
-  function refreshLink(){ send.href = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(buildMessage()); }
+  let whatsappOrderUrl=""; function refreshLink(){ whatsappOrderUrl = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(buildMessage()); }
   function toggleDelivery(){
     const d = form().type === "Delivery";
     $("#addr-wrap").hidden = !d;
@@ -969,6 +969,7 @@ fieldset.field{border:0;padding:0}
     // El enlace de WhatsApp ya contiene el detalle completo. Vaciar el carrito
     // después de registrar el pedido evita que reaparezca al volver al menú.
     refreshLink();
+    window.open(whatsappOrderUrl,"_blank","noopener");
     setTimeout(()=>{ cart.clear(); saveCart(); update(); },250);
   });
 
