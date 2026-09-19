@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script>
+/* URL pública limpia: oculta /index.html sin recargar ni alterar ?r= */
+(function () {
+  if (location.pathname.endsWith('/index.html')) {
+    const cleanPath = location.pathname.slice(0, -'index.html'.length) || '/';
+    history.replaceState(null, '', cleanPath + location.search + location.hash);
+  }
+})();
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#ffc21a">
