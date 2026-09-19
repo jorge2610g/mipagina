@@ -212,7 +212,7 @@ async function enter(user){
     const {data,error}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle(); isSuperAdmin=!!data; let membership=[]; if(!isSuperAdmin){const mr=await sb.from("restaurant_staff").select("restaurant_id,role,permissions").eq("user_id",user.id).eq("active",true);if(mr.error){msg.textContent="Error al verificar restaurante: "+mr.error.message;return}membership=mr.data||[];currentRole=membership[0]?.role||"";}
     if(error){msg.textContent="Error al verificar permisos: "+error.message;return}
     if(!isSuperAdmin && !membership.length){await sb.auth.signOut();msg.textContent="Esta cuenta no tiene acceso a ningún restaurante.";return} if(!isSuperAdmin&&membership.length){
- currentRestaurant=membership[0].restaurant_id; const menuLink=document.getElementById("viewMenuLink"); if(menuLink){const {data:menuRestaurant}=await sb.from("restaurants").select("slug").eq("id",currentRestaurant).single();const menuSlug=menuRestaurant?.slug||currentRestaurant;menuLink.href=location.origin+"/index.html?r="+encodeURIComponent(menuSlug);menuLink.style.display="";}
+ currentRestaurant=membership[0].restaurant_id;enableRestaurantNotifications();setTimeout(startRestaurantOrderRealtime,0); const menuLink=document.getElementById("viewMenuLink"); if(menuLink){const {data:menuRestaurant}=await sb.from("restaurants").select("slug").eq("id",currentRestaurant).single();const menuSlug=menuRestaurant?.slug||currentRestaurant;menuLink.href=location.origin+"/index.html?r="+encodeURIComponent(menuSlug);menuLink.style.display="";}
  currentRole=membership[0].role||"restaurant";const rms=document.getElementById("restaurantMpSettings");if(rms)rms.style.display="";
  const p=membership[0].permissions||{};
  document.querySelectorAll(".tab").forEach(x=>x.style.display="");
@@ -325,6 +325,26 @@ async function addDemoProducts(){
 }
 async function removeDemoProducts(){if(!currentRestaurant)return toast("Selecciona un restaurante");if(!confirm("¿Quitar todos los productos y categorías demo de este restaurante?"))return;const {error:e1}=await sb.from("restaurant_products").delete().eq("restaurant_id",currentRestaurant).eq("is_demo",true);if(e1)return toast(e1.message);const {error:e2}=await sb.from("restaurant_categories").delete().eq("restaurant_id",currentRestaurant).eq("is_demo",true);if(e2)return toast(e2.message);await Promise.all([loadCategories(),loadProducts()]);toast("Productos demo eliminados")}
 async function deleteProduct(id){if(!confirm("¿Eliminar este producto?"))return;const {error}=await sb.from("restaurant_products").delete().eq("id",id);if(error)return toast(error.message);await loadProducts();toast("Producto eliminado")}
+async function enableRestaurantNotifications(){
+ if(!("Notification" in window))return;
+ if(Notification.permission==="default")await Notification.requestPermission();
+}
+function restaurantOrderAlert(row){
+ try{
+  if(Notification.permission==="granted")new Notification("🔔 Nuevo pedido Mercado Pago",{body:"#"+row.order_code+" · "+money(row.total),tag:"restaurant-order-"+row.id,renotify:true});
+  const ac=new (window.AudioContext||window.webkitAudioContext)(),o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.value=.08;o.start();setTimeout(()=>{o.stop();ac.close()},350);
+ }catch(e){}
+}
+let restaurantOrdersChannel=null;
+function startRestaurantOrderRealtime(){
+ if(restaurantOrdersChannel){sb.removeChannel(restaurantOrdersChannel);restaurantOrdersChannel=null;}
+ if(!currentRestaurant||isSuperAdmin)return;
+ restaurantOrdersChannel=sb.channel("restaurant-orders-"+currentRestaurant)
+  .on("postgres_changes",{event:"UPDATE",schema:"public",table:"restaurant_orders",filter:"restaurant_id=eq."+currentRestaurant},async p=>{
+   const row=p.new||{},old=p.old||{};
+   if(row.payment_method==="Mercado Pago"&&row.payment_status==="approved"&&old.payment_status!=="approved"){restaurantOrderAlert(row);await loadOrders();}
+  }).subscribe();
+}
 async function loadOrders(){
  if(!currentRestaurant)return;
  const {data,error}=await sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).eq("payment_method","Mercado Pago").eq("payment_status","approved").order("created_at",{ascending:false}).limit(100);
@@ -372,4 +392,4 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.3.9</footer></body></html>
+</script><footer class="admin-version">Versión v1.4.0</footer></body></html>
