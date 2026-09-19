@@ -1118,7 +1118,21 @@ fieldset.field{border:0;padding:0}
     const st=$("#gps-status");
     if(!navigator.geolocation){st.textContent="Este dispositivo no permite obtener la ubicación.";return}
     st.textContent="Obteniendo ubicación…";
-    navigator.geolocation.getCurrentPosition(p=>{deliveryCoords={lat:p.coords.latitude,lng:p.coords.longitude};applyDeliveryFee();st.textContent=deliveryUnavailable?"Fuera de la zona de delivery.":"Ubicación lista"+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":"");update();refreshLink()},()=>{st.textContent="No se pudo obtener la ubicación. Revisa el permiso de GPS."},{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
+    navigator.geolocation.getCurrentPosition(async p=>{
+      deliveryCoords={lat:p.coords.latitude,lng:p.coords.longitude};
+      let resolvedAddress="";
+      try{
+        if(window.google?.maps?.Geocoder){
+          const geocoder=new google.maps.Geocoder();
+          const result=await geocoder.geocode({location:deliveryCoords});
+          resolvedAddress=result.results?.[0]?.formatted_address||"";
+          if(resolvedAddress)$("#f-addr").value=resolvedAddress;
+        }
+      }catch(e){console.warn("No se pudo convertir GPS a dirección",e)}
+      applyDeliveryFee();
+      st.textContent=deliveryUnavailable?"Fuera de la zona de delivery.":resolvedAddress?("Ubicación cargada · "+resolvedAddress+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":"")):("Ubicación lista"+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":""));
+      update();refreshLink();
+    },()=>{st.textContent="No se pudo obtener la ubicación. Revisa el permiso de GPS."},{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
   });
   ["#f-name", "#f-phone", "#f-addr", "#f-pay", "#f-notes"].forEach(s => $(s).addEventListener("input", refreshLink));
   async function saveOrderToCloud(){
@@ -1188,5 +1202,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.41</footer></body>
+<footer class="site-version">Versión v1.4.42</footer></body>
 </html>
