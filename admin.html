@@ -171,8 +171,8 @@ img,svg,video{max-width:100%;height:auto}
 <div class="span12"><h3 style="margin-bottom:6px">Costo de Delivery</h3><p class="mut">Elige un precio fijo o cobro por distancia usando la ubicación GPS del cliente.</p></div>
 <div class="span4"><label>Modalidad</label><select id="sdeliverymode"><option value="fixed">Precio fijo</option><option value="distance">Por distancia / GPS</option></select></div>
 <div class="span4"><label>Precio fijo</label><input id="sdeliveryprice" type="number" min="0" step="1" placeholder="Ej: 2000"></div>
-<div class="span8"><label>Ubicación del restaurante</label><input id="smapaddress" autocomplete="off" placeholder="Escribe la dirección y selecciónala de Google Maps"><p class="mut" id="smapstatus">La latitud y longitud se completarán automáticamente.</p></div>
-<div class="span4" style="align-self:end"><button type="button" class="ghost" style="width:100%" onclick="useRestaurantCurrentLocation()">📍 Usar mi ubicación actual</button></div>
+<div class="span8"><label>Ubicación del restaurante</label><input id="smapaddress" autocomplete="off" placeholder="Escribe una dirección; aparecerán sugerencias de Google Maps"><p class="mut" id="smapstatus">Selecciona una sugerencia o usa Buscar en mapa. La latitud y longitud se completarán automáticamente.</p></div>
+<div class="span4" style="align-self:end"><div class="row" style="gap:8px;flex-wrap:wrap"><button type="button" class="ghost" style="flex:1" onclick="searchRestaurantAddress()">🔎 Buscar en mapa</button><button type="button" class="ghost" style="flex:1" onclick="useRestaurantCurrentLocation()">📍 Usar mi ubicación actual</button></div></div>
 <div class="span4"><label>Latitud del restaurante</label><input id="slat" type="number" step="any" placeholder="-20.2"></div>
 <div class="span4"><label>Longitud del restaurante</label><input id="slng" type="number" step="any" placeholder="-70.1"></div>
 <div class="span8"><label>Zonas por distancia</label><textarea id="sdeliveryzones" rows="4" placeholder="2=1500&#10;5=2500&#10;8=3500"></textarea><p class="mut">Una zona por línea: distancia máxima en km = precio. Ej.: 2=1500 significa hasta 2 km cuesta $1.500.</p></div>
@@ -424,6 +424,24 @@ function initAdminRestaurantLocation(){
  input.dataset.mapsReady="1";
  const ac=new google.maps.places.Autocomplete(input,{fields:["formatted_address","geometry","name"],types:["address"]});
  ac.addListener("place_changed",()=>{const p=ac.getPlace();if(!p?.geometry?.location)return;slat.value=p.geometry.location.lat();slng.value=p.geometry.location.lng();saddress.value=p.formatted_address||p.name||input.value;input.value=saddress.value;const st=document.getElementById("smapstatus");if(st)st.textContent="✅ Ubicación encontrada. Coordenadas cargadas automáticamente.";});
+}
+async function searchRestaurantAddress(){
+ const input=document.getElementById("smapaddress"),st=document.getElementById("smapstatus");
+ const address=input?.value.trim()||"";
+ if(!address){if(st)st.textContent="❌ Escribe una dirección primero.";return}
+ if(!window.google?.maps?.Geocoder){if(st)st.textContent="❌ Google Maps todavía no está disponible.";return}
+ if(st)st.textContent="🔎 Buscando dirección…";
+ try{
+  const geocoder=new google.maps.Geocoder();
+  const r=await geocoder.geocode({address});
+  const place=r.results?.[0];
+  if(!place){if(st)st.textContent="❌ No se encontró esa dirección.";return}
+  const loc=place.geometry.location,lat=loc.lat(),lng=loc.lng();
+  slat.value=lat;slng.value=lng;
+  const addr=place.formatted_address||address;
+  input.value=addr;saddress.value=addr;
+  if(st)st.textContent="✅ Ubicación encontrada. Coordenadas cargadas automáticamente.";
+ }catch(e){if(st)st.textContent="❌ No se pudo buscar la dirección. Revisa la dirección e intenta nuevamente."}
 }
 async function reverseRestaurantLocation(lat,lng){
  try{const geocoder=new google.maps.Geocoder();const r=await geocoder.geocode({location:{lat,lng}});const addr=r.results?.[0]?.formatted_address||"";if(addr){saddress.value=addr;const x=document.getElementById("smapaddress");if(x)x.value=addr}return addr}catch(e){return ""}
