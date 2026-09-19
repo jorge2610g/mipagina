@@ -751,6 +751,7 @@ fieldset.field{border:0;padding:0}
   const cart = new Map();
   const CART_KEY = "menu_cart_v2";
   const CUSTOMER_KEY = "menu_customer_v2";
+  const MP_RETURN_ORDER_KEY = "mp_return_order_id";
   function saveCart(){
     try{ localStorage.setItem(CART_KEY, JSON.stringify([...cart.entries()].map(([k,v])=>[k,{id:v.it.id,opt:v.it.opts.indexOf(v.opt),ex:v.ex.map(x=>x.id),note:v.note,qty:v.qty}]))); }catch(e){}
   }
@@ -1065,7 +1066,7 @@ fieldset.field{border:0;padding:0}
   send.onclick = async e => {
     const f = form();
     if(!isOpen){e.preventDefault();$("#err").textContent="El local está cerrado. No se pueden enviar pedidos en este momento.";return;}
-    if(f.pay==="Mercado Pago"){e.preventDefault();$("#err").textContent="Conectando con Mercado Pago…";let msg="";if(!cart.size)msg="Agregá al menos un producto.";else if(!f.name)msg="Escribí tu nombre.";else if(!f.phone)msg="Ingresa tu número de teléfono.";else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";else if(f.type==="Delivery"&&!deliveryCoords)msg="Usa el botón de ubicación para confirmar dónde entregar.";if(msg){$("#err").textContent=msg;return;}send.textContent="Abriendo Mercado Pago…";let paymentOrderId=null;try{paymentOrderId=await saveOrderToCloud();}catch(err){console.error("No pudimos registrar el pedido antes del pago",err);$("#err").textContent="No pudimos preparar el pedido para el pago.";send.textContent="Pagar con Mercado Pago";return;}let resp;try{resp=await fetch(SUPABASE_URL+"/functions/v1/create-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,title:"Pedido — "+CONFIG.name,amount:totals().t,order_id:paymentOrderId,return_url:location.href})});const data=await resp.json();send.textContent="Pagar con Mercado Pago";if(!resp.ok||!data?.init_point){$("#err").textContent=data?.error||"No se pudo iniciar Mercado Pago.";return;}window.location.assign(data.init_point);return;}catch(err){send.textContent="Pagar con Mercado Pago";$("#err").textContent="No se pudo conectar con Mercado Pago: "+err.message;return;}}
+    if(f.pay==="Mercado Pago"){e.preventDefault();$("#err").textContent="Conectando con Mercado Pago…";let msg="";if(!cart.size)msg="Agregá al menos un producto.";else if(!f.name)msg="Escribí tu nombre.";else if(!f.phone)msg="Ingresa tu número de teléfono.";else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";else if(f.type==="Delivery"&&!deliveryCoords)msg="Usa el botón de ubicación para confirmar dónde entregar.";if(msg){$("#err").textContent=msg;return;}send.textContent="Abriendo Mercado Pago…";let paymentOrderId=null;try{paymentOrderId=await saveOrderToCloud();}catch(err){console.error("No pudimos registrar el pedido antes del pago",err);$("#err").textContent="No pudimos preparar el pedido para el pago.";send.textContent="Pagar con Mercado Pago";return;}let resp;try{resp=await fetch(SUPABASE_URL+"/functions/v1/create-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,title:"Pedido — "+CONFIG.name,amount:totals().t,order_id:paymentOrderId,return_url:location.href})});const data=await resp.json();send.textContent="Pagar con Mercado Pago";if(!resp.ok||!data?.init_point){$("#err").textContent=data?.error||"No se pudo iniciar Mercado Pago.";return;}try{localStorage.setItem(MP_RETURN_ORDER_KEY,String(paymentOrderId));}catch(e){}window.location.assign(data.init_point);return;}catch(err){send.textContent="Pagar con Mercado Pago";$("#err").textContent="No se pudo conectar con Mercado Pago: "+err.message;return;}}
 
     let msg = "";
     if (!cart.size) msg = "Agregá al menos un producto.";
@@ -1091,9 +1092,27 @@ fieldset.field{border:0;padding:0}
   try{ const c=JSON.parse(localStorage.getItem(CUSTOMER_KEY)||"{}"); $("#f-name").value=c.name||""; $("#f-phone").value=c.phone||""; $("#f-addr").value=c.addr||""; }catch(e){}
   ["#f-name","#f-phone","#f-addr"].forEach(sel=>$(sel).addEventListener("change",()=>{try{localStorage.setItem(CUSTOMER_KEY,JSON.stringify({name:$("#f-name").value.trim(),phone:$("#f-phone").value.trim(),addr:$("#f-addr").value.trim()}));}catch(e){}}));
   restoreCart();
+  // Al volver desde Mercado Pago, vacía el carrito únicamente si el backend ya confirmó el pago.
+  try{
+    const returnedOrderId=localStorage.getItem(MP_RETURN_ORDER_KEY);
+    if(returnedOrderId){
+      const {data:paidOrder}=await db.from("restaurant_orders").select("id,payment_status").eq("id",Number(returnedOrderId)).eq("customer_id",currentCustomer?.id||"00000000-0000-0000-0000-000000000000").maybeSingle();
+      if(paidOrder?.payment_status==="approved"){
+        cart.clear();saveCart();localStorage.removeItem(MP_RETURN_ORDER_KEY);
+        $("#err").textContent="✅ Pago acreditado. Tu pedido fue recibido correctamente.";
+      }else{
+        // El webhook puede tardar unos segundos; vuelve a comprobar sin borrar el carrito antes de tiempo.
+        for(let n=0;n<5;n++){
+          await new Promise(r=>setTimeout(r,1500));
+          const {data:check}=await db.from("restaurant_orders").select("payment_status").eq("id",Number(returnedOrderId)).maybeSingle();
+          if(check?.payment_status==="approved"){cart.clear();saveCart();localStorage.removeItem(MP_RETURN_ORDER_KEY);$("#err").textContent="✅ Pago acreditado. Tu pedido fue recibido correctamente.";break;}
+        }
+      }
+    }
+  }catch(e){console.error("No se pudo verificar el retorno de Mercado Pago",e);}
   toggleDelivery();
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.5.3</footer></body>
+<footer class="site-version">Versión v1.5.4</footer></body>
 </html>
