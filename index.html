@@ -621,8 +621,11 @@ fieldset.field{border:0;padding:0}
     ]}
   ];
   async function loadMenuFromCloud(){
-    if(!db) throw new Error("No se pudo conectar con el servicio de datos.");
     const params=new URLSearchParams(location.search);
+    if(params.get("demo")==="1"){
+      window.__demoMode=true; MENU=DEMO_MENU; CONFIG.name="Restaurante Demo"; CONFIG.whatsapp=""; CONFIG.address="Vista demostración"; CONFIG.payments=["Efectivo","Transferencia","Mercado Pago"]; window.__restaurantId="demo"; return;
+    }
+    if(!db) throw new Error("No se pudo conectar con el servicio de datos.");
     const cleanPath=decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g,""));
     const pathSlug=(cleanPath.split("/").filter(Boolean).pop()||"").replace(/^index\.html$/i,"");
     const requestedSlug=params.get("r") || pathSlug || null;
@@ -1245,6 +1248,10 @@ fieldset.field{border:0;padding:0}
 
   send.onclick = async e => {
     e.preventDefault();
+    if(window.__demoMode){
+      $("#err").innerHTML='Esta es una demostración. <a href="https://admin.yummypro.online/" style="font-weight:900;text-decoration:underline">Crea tu cuenta y tu restaurante para recibir pedidos y pagos.</a>';
+      return;
+    }
     const f=form();
     if(!isOpen){$("#err").textContent="El local está cerrado. No se pueden enviar pedidos en este momento.";return;}
     let msg="";
@@ -1311,5 +1318,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.55</footer></body>
+<footer class="site-version">Versión v1.4.56</footer></body>
 </html>
