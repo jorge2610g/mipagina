@@ -1193,24 +1193,6 @@ fieldset.field{border:0;padding:0}
       update();refreshLink();
     },()=>{st.textContent="No se pudo obtener la ubicación. Revisa el permiso de GPS."},{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
   });
-  $("#legacy-search-location-btn").addEventListener("click",async()=>{
-    const input=$("#f-addr"),st=$("#gps-status");
-    const address=input.value.trim();
-    if(!address){st.textContent="Escribe una dirección para buscarla.";return}
-    if(!window.google?.maps?.Geocoder){st.textContent="Google Maps todavía no está disponible.";return}
-    st.textContent="Buscando dirección…";
-    try{
-      const geocoder=new google.maps.Geocoder();
-      const result=await geocoder.geocode({address});
-      const place=result.results?.[0];
-      if(!place){st.textContent="No encontramos esa dirección.";return}
-      const loc=place.geometry.location;
-      deliveryCoords={lat:loc.lat(),lng:loc.lng()};
-      input.value=place.formatted_address||address;
-      applyDeliveryFee();update();refreshLink();
-      st.textContent=deliveryUnavailable?"La dirección está fuera de la zona de delivery.":"Dirección encontrada"+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":"");
-    }catch(e){st.textContent="No se pudo buscar la dirección. Intenta nuevamente."}
-  });
     ["#f-name", "#f-phone", "#f-addr", "#f-pay", "#f-notes"].forEach(s => $(s).addEventListener("input", refreshLink));
   async function saveOrderToCloud(){
     if (!db || !cart.size) return false;
@@ -1296,5 +1278,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.49</footer></body>
+<footer class="site-version">Versión v1.4.50</footer></body>
 </html>
