@@ -236,7 +236,7 @@ fieldset.field{border:0;padding:0}
 .account-form{display:grid;gap:12px}.account-form input{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit}.account-form .primary{border:0;border-radius:12px;padding:13px 16px;background:var(--mustard);color:var(--on-mustard);font-weight:800;cursor:pointer}
 .account-msg{min-height:20px;font-size:13px;color:var(--muted);margin:8px 0 0}.account-msg.error{color:#d72f3f}
 .order-list{display:grid;gap:12px;max-height:60vh;overflow:auto}.order-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--surface)}.order-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.order-code{font-weight:800}.order-status{font-size:12px;font-weight:800;padding:6px 9px;border-radius:999px;background:var(--mustard);color:var(--on-mustard)}.order-meta{font-size:13px;color:var(--muted);margin-top:7px}.order-items{font-size:13px;margin-top:8px}.account-user{font-size:13px;color:var(--muted);margin:0 0 12px}
-.order-card{cursor:pointer}.order-card:hover{transform:translateY(-1px)}.tracking-step{display:flex;gap:12px;align-items:flex-start;padding:10px 0}.tracking-dot{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);flex:0 0 auto;margin-top:2px}.tracking-step.done .tracking-dot,.tracking-step.current .tracking-dot{background:var(--mustard);border-color:var(--mustard)}.tracking-step.current{font-weight:800}.pickup-box{margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}.pickup-box b{display:block;margin-bottom:5px}</style>
+.order-card{cursor:pointer}.order-card:hover{transform:translateY(-1px)}.tracking-step{display:flex;gap:12px;align-items:flex-start;padding:10px 0}.tracking-dot{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);flex:0 0 auto;margin-top:2px}.tracking-step.done .tracking-dot,.tracking-step.current .tracking-dot{background:var(--mustard);border-color:var(--mustard)}.tracking-step.current{font-weight:800}.pickup-box{margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}.pickup-box b{display:block;margin-bottom:5px}.pending-order-banner{margin:14px auto 4px;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:var(--shadow)}.pending-order-banner[hidden]{display:none}.pending-order-banner strong{display:block}.pending-order-banner .muted{font-size:13px;color:var(--muted);margin-top:3px}.pending-order-banner button{border:0;border-radius:12px;padding:10px 13px;background:var(--mustard);color:var(--on-mustard);font-weight:800;cursor:pointer}</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>(function(){try{document.documentElement.setAttribute("data-theme",localStorage.getItem("menu_theme")==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}})();</script></head>
 <body class="menu-loading">
@@ -269,6 +269,7 @@ fieldset.field{border:0;padding:0}
   </div>
 </div>
 
+<div class="wrap"><div id="pending-order-banner" class="pending-order-banner" hidden><div><strong>📦 Tienes un pedido pendiente</strong><div class="muted" id="pending-order-text">Tu pedido todavía no ha sido entregado.</div></div><button type="button" id="pending-order-open">Ver seguimiento</button></div></div>
 <main class="wrap" id="menu"></main>
 
 <section class="wrap" aria-label="Ventajas"><div class="trust"><div>✓ Pedido fácil por WhatsApp</div><div>✓ Retiro o delivery</div><div>✓ Personalizá tu pedido</div><div>✓ Total calculado al instante</div></div></section>
@@ -412,9 +413,18 @@ fieldset.field{border:0;padding:0}
       if(p?.full_name && document.getElementById("f-name")) document.getElementById("f-name").value=p.full_name;
       if(p?.phone && document.getElementById("f-phone")) document.getElementById("f-phone").value=p.phone;
       if(p?.default_address && document.getElementById("f-addr")) document.getElementById("f-addr").value=p.default_address;
+      await refreshPendingOrder();
     }else{
-      accountBtn.textContent="👤 Iniciar sesión"; ordersBtn.hidden=true; guest.hidden=false; auth.hidden=true; userText.textContent="Crea una cuenta para guardar tus datos y seguir tus pedidos.";
+      accountBtn.textContent="👤 Iniciar sesión"; ordersBtn.hidden=true; guest.hidden=false; auth.hidden=true; userText.textContent="Crea una cuenta para guardar tus datos y seguir tus pedidos.";document.getElementById("pending-order-banner").hidden=true;
     }
+  }
+  async function refreshPendingOrder(){
+    const banner=document.getElementById("pending-order-banner"),txt=document.getElementById("pending-order-text");
+    window.__pendingCustomerOrder=null;
+    if(!currentCustomer){banner.hidden=true;return;}
+    const {data,error}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address").eq("customer_id",currentCustomer.id).eq("payment_method","Mercado Pago").eq("payment_status","approved").not("status","in","(entregado,cancelado)").order("created_at",{ascending:false}).limit(1).maybeSingle();
+    if(error||!data){banner.hidden=true;return;}
+    window.__pendingCustomerOrder=data;banner.hidden=false;txt.textContent="Pedido "+data.order_code+" · "+statusLabel(data.status)+". Toca para ver el seguimiento.";
   }
   function setAccountTab(register){
     document.getElementById("login-form").hidden=register; document.getElementById("register-form").hidden=!register;
@@ -436,6 +446,7 @@ fieldset.field{border:0;padding:0}
   document.getElementById("account-close").addEventListener("click",()=>document.getElementById("account-dialog").close());
   document.getElementById("orders-close").addEventListener("click",()=>document.getElementById("orders-dialog").close());
   document.getElementById("orders-btn").addEventListener("click",async()=>{document.getElementById("orders-dialog").showModal();await loadCustomerOrders();});
+  document.getElementById("pending-order-open").addEventListener("click",()=>openOrderDetail(window.__pendingCustomerOrder));
   function openOrderDetail(o){
     if(!o)return;
     const raw=String(o.status||"nuevo").toLowerCase(), normalized=raw==="recibido"?"nuevo":raw;
@@ -1114,5 +1125,5 @@ fieldset.field{border:0;padding:0}
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.5.5</footer></body>
+<footer class="site-version">Versión v1.5.6</footer></body>
 </html>
