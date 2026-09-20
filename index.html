@@ -826,9 +826,10 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     return;
   }
   if(window.__demoMode){
-    const accountBtn=document.getElementById("account-btn"),ordersBtn=document.getElementById("orders-btn"),pending=document.getElementById("pending-order-banner");
+    const accountBtn=document.getElementById("account-btn"),ordersBtn=document.getElementById("orders-btn"),pending=document.getElementById("pending-order-banner"),clearCart=document.getElementById("clear-cart");
     if(accountBtn)accountBtn.hidden=true;
     if(ordersBtn)ordersBtn.hidden=true;
+    if(clearCart)clearCart.hidden=true;
     if(pending)pending.hidden=true;
   }
   const ITEMS = {};
@@ -865,7 +866,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   if(window.__demoMode){
     $("#i-wa").removeAttribute("target");
     $("#i-wa").href="https://web.yummypro.online/";
-    $("#i-wa").textContent="Crear mi cuenta";
+    $("#i-wa").textContent="💬 Crear mi cuenta para usar el menú completo";
   }
   if (CONFIG.instagram){ const ig = $("#i-ig"); ig.hidden = false; ig.href = "https://instagram.com/" + CONFIG.instagram.replace("@", ""); }
   $("#eta-p").textContent = CONFIG.eta.pickup;
@@ -1342,5 +1343,5 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.60</footer></body>
+<footer class="site-version">Versión v1.4.61</footer></body>
 </html>
