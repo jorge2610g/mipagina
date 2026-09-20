@@ -451,7 +451,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     const guest=document.getElementById("account-guest"), auth=document.getElementById("account-auth"), userText=document.getElementById("account-user");
     if(currentCustomer){
       accountBtn.textContent="👤 Mi cuenta"; ordersBtn.hidden=false; guest.hidden=true; auth.hidden=false;
-      if(Notification.permission==="granted") ordersBtn.textContent="🔔 Mis pedidos";
+      if("Notification" in window&&Notification.permission==="granted") ordersBtn.textContent="🔔 Mis pedidos";
       const {data:p}=await db.from("customer_profiles").select("*").eq("user_id",currentCustomer.id).maybeSingle();
       userText.textContent=p?.full_name ? p.full_name+" · "+currentCustomer.email : currentCustomer.email;
       if(p?.full_name && document.getElementById("f-name")) document.getElementById("f-name").value=p.full_name;
@@ -526,14 +526,17 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
 
   // Actualización automática del seguimiento sin recargar la página.
   let orderRealtimeChannel=null;
+  const notifiedCustomerOrderStates=new Map();
   function startOrderRealtime(){
     if(orderRealtimeChannel){db.removeChannel(orderRealtimeChannel);orderRealtimeChannel=null;}
     if(!currentCustomer)return;
     orderRealtimeChannel=db.channel("customer-orders-"+currentCustomer.id)
       .on("postgres_changes",{event:"UPDATE",schema:"public",table:"restaurant_orders",filter:"customer_id=eq."+currentCustomer.id},async payload=>{
-        const row=payload.new||{};
-        if(row.payment_method!=="Mercado Pago")return;
-        notifyCustomerOrder(row);
+        const row=payload.new||{},old=payload.old||{};
+        if(String(row.payment_method||"").trim().toLowerCase()!=="mercado pago"||String(row.payment_status||"").trim().toLowerCase()!=="approved")return;
+        const previousStatus=String(old.status||notifiedCustomerOrderStates.get(String(row.id))||"");
+        const nextStatus=String(row.status||"");
+        if(nextStatus&&nextStatus!==previousStatus){notifiedCustomerOrderStates.set(String(row.id),nextStatus);notifyCustomerOrder(row)}
         await refreshPendingOrder();
         if(document.getElementById("orders-dialog").open)await loadCustomerOrders();
         if(document.getElementById("order-detail-dialog").open&&String(openedOrderId)===String(row.id)){
