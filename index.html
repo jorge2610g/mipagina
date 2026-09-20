@@ -917,8 +917,21 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     mpSafe.hidden=selected!=="Mercado Pago";
     const sendBtn=$("#send");if(sendBtn)sendBtn.textContent=selected==="Mercado Pago"?"Pagar con Mercado Pago":"Enviar pedido por WhatsApp";
   }
-  payBox.addEventListener("click",e=>{const b=e.target.closest("button[data-pay]");if(!b)return;$("#f-pay").value=b.dataset.pay;renderPaymentButtons();refreshLink()});
-  $("#f-pay").addEventListener("change",()=>{renderPaymentButtons();refreshLink()});
+  function syncPaymentMethodUI(){
+    const selected=$("#f-pay").value;
+    // Los avisos de Mercado Pago pertenecen solo a ese método. Al cambiar a otro,
+    // se limpia el estado visual sin borrar el pedido pendiente guardado para una posible verificación posterior.
+    if(selected!=="Mercado Pago"){
+      const err=$("#err");
+      if(err)err.textContent="";
+      const sendBtn=$("#send");
+      if(sendBtn){sendBtn.disabled=false;sendBtn.textContent="Enviar pedido por WhatsApp";}
+    }
+    renderPaymentButtons();
+    refreshLink();
+  }
+  payBox.addEventListener("click",e=>{const b=e.target.closest("button[data-pay]");if(!b)return;$("#f-pay").value=b.dataset.pay;syncPaymentMethodUI()});
+  $("#f-pay").addEventListener("change",syncPaymentMethodUI);
   renderPaymentButtons();
 
   const toMin = s => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
@@ -1364,21 +1377,24 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   async function verifyMercadoPagoReturn(){
     const returnedOrderId=localStorage.getItem(MP_RETURN_ORDER_KEY);
     if(!returnedOrderId)return;
-    send.disabled=false;send.textContent="Pagar con Mercado Pago";
+    // La verificación puede continuar en segundo plano, pero nunca debe contaminar
+    // la interfaz si el cliente ya eligió Efectivo o Transferencia.
+    const isMercadoPagoSelected=()=>$("#f-pay").value==="Mercado Pago";
+    if(isMercadoPagoSelected()){send.disabled=false;send.textContent="Pagar con Mercado Pago";}
     try{
       for(let n=0;n<6;n++){
         const {data:check}=await db.from("restaurant_orders").select("id,payment_status").eq("id",Number(returnedOrderId)).eq("customer_id",currentCustomer?.id||"00000000-0000-0000-0000-000000000000").maybeSingle();
         if(check?.payment_status==="approved"){
           cart.clear();saveCart();localStorage.removeItem(MP_RETURN_ORDER_KEY);update();
-          $("#err").textContent="✅ Pago acreditado. Tu pedido fue recibido correctamente.";
+          if(isMercadoPagoSelected())$("#err").textContent="✅ Pago acreditado. Tu pedido fue recibido correctamente.";
           return;
         }
         if(n<5)await new Promise(r=>setTimeout(r,1500));
       }
-      $("#err").textContent="El pago todavía no aparece acreditado. Puedes volver a Mercado Pago o intentar nuevamente; no se realizará un cobro desde esta pantalla.";
+      if(isMercadoPagoSelected())$("#err").textContent="El pago todavía no aparece acreditado. Puedes volver a Mercado Pago o intentar nuevamente; no se realizará un cobro desde esta pantalla.";
     }catch(e){
       console.error("No se pudo verificar el retorno de Mercado Pago",e);
-      $("#err").textContent="No pudimos confirmar el pago todavía. Puedes intentar verificar nuevamente.";
+      if(isMercadoPagoSelected())$("#err").textContent="No pudimos confirmar el pago todavía. Puedes intentar verificar nuevamente.";
     }
   }
   await verifyMercadoPagoReturn();
@@ -1388,5 +1404,5 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.5.0</footer></body>
+<footer class="site-version">Versión v1.5.1</footer></body>
 </html>
