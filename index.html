@@ -425,9 +425,10 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
   let currentCustomer=null;
   async function syncCustomerUI(){
+    const accountBtn=document.getElementById("account-btn"), ordersBtn=document.getElementById("orders-btn");
+    if(window.__demoMode){currentCustomer=null;if(accountBtn)accountBtn.hidden=true;if(ordersBtn)ordersBtn.hidden=true;document.getElementById("pending-order-banner").hidden=true;return;}
     const {data:{session}}=await db.auth.getSession();
     currentCustomer=session?.user||null;
-    const accountBtn=document.getElementById("account-btn"), ordersBtn=document.getElementById("orders-btn");
     const guest=document.getElementById("account-guest"), auth=document.getElementById("account-auth"), userText=document.getElementById("account-user");
     if(currentCustomer){
       accountBtn.textContent="👤 Mi cuenta"; ordersBtn.hidden=false; guest.hidden=true; auth.hidden=false;
@@ -475,10 +476,10 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   }
 
 
-  document.getElementById("account-btn").addEventListener("click",()=>document.getElementById("account-dialog").showModal());
+  document.getElementById("account-btn").addEventListener("click",()=>{if(window.__demoMode)return;document.getElementById("account-dialog").showModal()});
   document.getElementById("account-close").addEventListener("click",()=>document.getElementById("account-dialog").close());
   document.getElementById("orders-close").addEventListener("click",()=>document.getElementById("orders-dialog").close());
-  document.getElementById("orders-btn").addEventListener("click",async()=>{await enableOrderNotifications();document.getElementById("orders-dialog").showModal();await loadCustomerOrders();});
+  document.getElementById("orders-btn").addEventListener("click",async()=>{if(window.__demoMode)return;await enableOrderNotifications();document.getElementById("orders-dialog").showModal();await loadCustomerOrders();});
   document.getElementById("pending-order-open").addEventListener("click",()=>openOrderDetail(window.__pendingCustomerOrder));
   let openedOrderId=null;
   function openOrderDetail(o){
@@ -823,6 +824,12 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     document.body.innerHTML = `<main style="max-width:620px;margin:12vh auto;padding:28px;font-family:system-ui;text-align:center"><h1>No pudimos cargar este restaurante</h1><p>Revisa que el enlace sea correcto e inténtalo nuevamente.</p><button onclick="location.reload()" style="padding:12px 20px;border:0;border-radius:999px;font-weight:700;cursor:pointer">Reintentar</button></main>`;
     document.body.classList.remove("menu-loading");document.body.classList.add("menu-ready");
     return;
+  }
+  if(window.__demoMode){
+    const accountBtn=document.getElementById("account-btn"),ordersBtn=document.getElementById("orders-btn"),pending=document.getElementById("pending-order-banner");
+    if(accountBtn)accountBtn.hidden=true;
+    if(ordersBtn)ordersBtn.hidden=true;
+    if(pending)pending.hidden=true;
   }
   const ITEMS = {};
   const popItems = [];
@@ -1266,7 +1273,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   send.onclick = async e => {
     e.preventDefault();
     if(window.__demoMode){
-      $("#err").innerHTML='Esta es una demostración. <a href="https://web.yummypro.online/" style="font-weight:900;text-decoration:underline">Crea tu cuenta y tu restaurante para recibir pedidos y pagos.</a>';
+      $("#err").innerHTML='Esta es una demostración: puedes explorar el menú, carrito y métodos de pago, pero las acciones reales están desactivadas. <a href="https://web.yummypro.online/" style="font-weight:900;text-decoration:underline">Crea tu restaurante para obtener acceso completo.</a>';
       return;
     }
     const f=form();
@@ -1335,5 +1342,5 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.59</footer></body>
+<footer class="site-version">Versión v1.4.60</footer></body>
 </html>
