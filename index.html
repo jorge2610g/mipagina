@@ -857,7 +857,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   $("#i-wa").href = "https://wa.me/" + CONFIG.whatsapp;
   if(window.__demoMode){
     $("#i-wa").removeAttribute("target");
-    $("#i-wa").href="https://admin.yummypro.online/";
+    $("#i-wa").href="https://web.yummypro.online/";
     $("#i-wa").textContent="Crear mi cuenta";
   }
   if (CONFIG.instagram){ const ig = $("#i-ig"); ig.hidden = false; ig.href = "https://instagram.com/" + CONFIG.instagram.replace("@", ""); }
@@ -1266,7 +1266,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   send.onclick = async e => {
     e.preventDefault();
     if(window.__demoMode){
-      $("#err").innerHTML='Esta es una demostración. <a href="https://admin.yummypro.online/" style="font-weight:900;text-decoration:underline">Crea tu cuenta y tu restaurante para recibir pedidos y pagos.</a>';
+      $("#err").innerHTML='Esta es una demostración. <a href="https://web.yummypro.online/" style="font-weight:900;text-decoration:underline">Crea tu cuenta y tu restaurante para recibir pedidos y pagos.</a>';
       return;
     }
     const f=form();
@@ -1335,5 +1335,5 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.58</footer></body>
+<footer class="site-version">Versión v1.4.59</footer></body>
 </html>
