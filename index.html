@@ -1302,6 +1302,10 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
         const data=await resp.json();
         if(!resp.ok||!data?.init_point)throw new Error(data?.error||"No se pudo iniciar Mercado Pago.");
         try{localStorage.setItem(MP_RETURN_ORDER_KEY,String(paymentOrderId));}catch(_){}
+        const resetMpButton=()=>{send.disabled=false;send.textContent="Pagar con Mercado Pago";if($("#err").textContent==="Conectando con Mercado Pago…")$("#err").textContent="Volviste desde Mercado Pago. Puedes continuar o intentar el pago nuevamente.";};
+        window.addEventListener("pageshow",resetMpButton,{once:true});
+        document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")resetMpButton();},{once:true});
+        setTimeout(resetMpButton,8000);
         window.location.href=data.init_point;
       }catch(err){send.disabled=false;send.textContent="Pagar con Mercado Pago";$("#err").textContent="No se pudo conectar con Mercado Pago: "+(err.message||err);}
       return;
@@ -1327,27 +1331,33 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   // Sincroniza inmediatamente la barra con el carrito restaurado al recargar.
   // Antes solo se restauraban los datos; la barra seguía oculta hasta modificar el carrito.
   update();
-  // Al volver desde Mercado Pago, vacía el carrito únicamente si el backend ya confirmó el pago.
-  try{
+  // Al volver desde Mercado Pago, consulta el estado real del pedido y nunca deja el checkout bloqueado.
+  async function verifyMercadoPagoReturn(){
     const returnedOrderId=localStorage.getItem(MP_RETURN_ORDER_KEY);
-    if(returnedOrderId){
-      const {data:paidOrder}=await db.from("restaurant_orders").select("id,payment_status").eq("id",Number(returnedOrderId)).eq("customer_id",currentCustomer?.id||"00000000-0000-0000-0000-000000000000").maybeSingle();
-      if(paidOrder?.payment_status==="approved"){
-        cart.clear();saveCart();localStorage.removeItem(MP_RETURN_ORDER_KEY);
-        $("#err").textContent="✅ Pago acreditado. Tu pedido fue recibido correctamente.";
-      }else{
-        // El webhook puede tardar unos segundos; vuelve a comprobar sin borrar el carrito antes de tiempo.
-        for(let n=0;n<5;n++){
-          await new Promise(r=>setTimeout(r,1500));
-          const {data:check}=await db.from("restaurant_orders").select("payment_status").eq("id",Number(returnedOrderId)).maybeSingle();
-          if(check?.payment_status==="approved"){cart.clear();saveCart();localStorage.removeItem(MP_RETURN_ORDER_KEY);$("#err").textContent="✅ Pago acreditado. Tu pedido fue recibido correctamente.";break;}
+    if(!returnedOrderId)return;
+    send.disabled=false;send.textContent="Pagar con Mercado Pago";
+    try{
+      for(let n=0;n<6;n++){
+        const {data:check}=await db.from("restaurant_orders").select("id,payment_status").eq("id",Number(returnedOrderId)).eq("customer_id",currentCustomer?.id||"00000000-0000-0000-0000-000000000000").maybeSingle();
+        if(check?.payment_status==="approved"){
+          cart.clear();saveCart();localStorage.removeItem(MP_RETURN_ORDER_KEY);update();
+          $("#err").textContent="✅ Pago acreditado. Tu pedido fue recibido correctamente.";
+          return;
         }
+        if(n<5)await new Promise(r=>setTimeout(r,1500));
       }
+      $("#err").textContent="El pago todavía no aparece acreditado. Puedes volver a Mercado Pago o intentar nuevamente; no se realizará un cobro desde esta pantalla.";
+    }catch(e){
+      console.error("No se pudo verificar el retorno de Mercado Pago",e);
+      $("#err").textContent="No pudimos confirmar el pago todavía. Puedes intentar verificar nuevamente.";
     }
-  }catch(e){console.error("No se pudo verificar el retorno de Mercado Pago",e);}
+  }
+  await verifyMercadoPagoReturn();
+  window.addEventListener("pageshow",()=>{verifyMercadoPagoReturn();});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")verifyMercadoPagoReturn();});
   toggleDelivery();
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.4.62</footer></body>
+<footer class="site-version">Versión v1.4.63</footer></body>
 </html>
