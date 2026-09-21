@@ -467,9 +467,9 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     const banner=document.getElementById("pending-order-banner"),txt=document.getElementById("pending-order-text");
     window.__pendingCustomerOrder=null;
     if(!currentCustomer){banner.hidden=true;return;}
-    const {data,error}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address,payment_status,payment_verification_status,currency_code").eq("customer_id",currentCustomer.id).eq("restaurant_id",window.__restaurantId).eq("order_source","online").or("payment_status.eq.approved,payment_verification_status.eq.pending").not("status","in","(entregado,cancelado)").order("created_at",{ascending:false}).limit(1).maybeSingle();
+    const {data,error}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address,payment_status,payment_verification_status,currency_code").eq("customer_id",currentCustomer.id).eq("restaurant_id",window.__restaurantId).eq("order_source","online").eq("payment_method","Mercado Pago").eq("payment_status","approved").not("status","in","(entregado,cancelado)").order("created_at",{ascending:false}).limit(1).maybeSingle();
     if(error||!data){banner.hidden=true;return;}
-    window.__pendingCustomerOrder=data;banner.hidden=false;txt.textContent=data.payment_verification_status==="pending"?"Pedido "+data.order_code+" · comprobante en revisión.":"Pedido "+data.order_code+" · "+statusLabel(data.status)+". Toca para ver el seguimiento.";
+    window.__pendingCustomerOrder=data;banner.hidden=false;txt.textContent="Pedido "+data.order_code+" · "+statusLabel(data.status)+". Toca para ver el seguimiento.";
   }
   function setAccountTab(register){
     document.getElementById("login-form").hidden=register; document.getElementById("register-form").hidden=!register;
@@ -501,9 +501,9 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   async function loadCustomerOrders(){
     const box=document.getElementById("orders-list"); box.innerHTML="<p>Cargando pedidos…</p>";
     if(!currentCustomer){box.innerHTML="<p>Inicia sesión para ver tus pedidos.</p>";return;}
-    const {data,error}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address,payment_status,payment_verification_status,currency_code").eq("customer_id",currentCustomer.id).eq("restaurant_id",window.__restaurantId).eq("order_source","online").or("payment_status.eq.approved,payment_verification_status.eq.pending").order("created_at",{ascending:false}).limit(50);
+    const {data,error}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address,payment_status,payment_verification_status,currency_code").eq("customer_id",currentCustomer.id).eq("restaurant_id",window.__restaurantId).eq("order_source","online").eq("payment_method","Mercado Pago").eq("payment_status","approved").order("created_at",{ascending:false}).limit(50);
     if(error){box.innerHTML="<p>No pudimos cargar tus pedidos.</p>";return;}
-    if(!data?.length){box.innerHTML="<p>Aún no tienes pedidos pagados o comprobantes en revisión asociados a esta cuenta.</p>";return;}
+    if(!data?.length){box.innerHTML="<p>Aún no tienes pedidos pagados en línea asociados a esta cuenta.</p>";return;}
     window.__customerOrders=data;box.innerHTML=data.map((o,i)=>{const items=Array.isArray(o.items)?o.items:[];return '<article class="order-card" data-order-index="'+i+'" tabindex="0" role="button"><div class="order-top"><div><div class="order-code">'+esc(o.order_code)+'</div><div class="order-meta">'+new Date(o.created_at).toLocaleString("es-CL")+'</div></div><span class="order-status">'+esc(statusLabel(o.status))+'</span></div><div class="order-items">'+items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join("<br>")+'</div><div class="order-meta">'+esc(o.order_type||"")+" · "+esc(o.payment_method||"")+' · <b>'+fmt(Number(o.total||0))+'</b></div><div class="order-meta"><b>Toca para ver seguimiento y lugar de '+(o.order_type==="Delivery"?"entrega":"retiro")+'</b></div></article>'}).join("");
   }
 
@@ -546,7 +546,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     orderRealtimeChannel=db.channel("customer-orders-"+currentCustomer.id)
       .on("postgres_changes",{event:"UPDATE",schema:"public",table:"restaurant_orders",filter:"customer_id=eq."+currentCustomer.id},async payload=>{
         const row=payload.new||{},old=payload.old||{};
-        if(String(row.order_source||"").trim().toLowerCase()!=="online"||(String(row.payment_status||"").trim().toLowerCase()!=="approved"&&String(row.payment_verification_status||"").trim().toLowerCase()!=="pending"))return;
+        if(String(row.order_source||"").trim().toLowerCase()!=="online"||String(row.payment_method||"").trim().toLowerCase()!=="mercado pago"||String(row.payment_status||"").trim().toLowerCase()!=="approved")return;
         const previousStatus=String(old.status||notifiedCustomerOrderStates.get(String(row.id))||"");
         const nextStatus=String(row.status||"");
         if(nextStatus&&nextStatus!==previousStatus){notifiedCustomerOrderStates.set(String(row.id),nextStatus);notifyCustomerOrder(row)}
@@ -919,7 +919,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     payBox.innerHTML=CONFIG.payments.map(p=>`<button type="button" data-pay="${esc(p)}" aria-pressed="${p===selected}" style="min-height:70px;border:2px solid ${p===selected?"var(--mustard)":"#ddd"};background:${p===selected?"#fff7d6":"#fff"};color:#171717;border-radius:14px;padding:8px;font-weight:800;cursor:pointer"><span style="display:block;font-size:23px;margin-bottom:3px">${paymentIcons[p]||"💳"}</span>${esc(p)}</button>`).join("");
     paySelected.textContent=selected?"Seleccionaste: "+selected:"";
     mpSafe.hidden=selected!=="Mercado Pago";
-    const method=CONFIG.paymentMethods.find(m=>m.label===selected);altNote.hidden=!method;altNote.innerHTML=method?`<b>${esc(method.label)}</b>${method.logo_url?`<img src="${esc(method.logo_url)}" alt="Logo de ${esc(method.institution||method.label)}" style="display:block;max-width:100px;max-height:70px;object-fit:contain;margin:10px 0;border-radius:10px;background:#fff;padding:5px">`:""}${method.institution?`<br>Banco / entidad: ${esc(method.institution)}`:""}${method.account_holder?`<br>Titular: ${esc(method.account_holder)}`:""}${method.document_id?`<br>DNI / documento: ${esc(method.document_id)}`:""}${method.account_type?`<br>Tipo de cuenta: ${esc(method.account_type)}`:""}${method.account_identifier?`<br>Cuenta / teléfono: ${esc(method.account_identifier)}`:""}${method.qr_image_url?`<br><img src="${esc(method.qr_image_url)}" alt="QR de pago" style="display:block;max-width:260px;width:100%;margin:12px auto;border-radius:14px;background:#fff;padding:8px">`:""}${method.instructions?`<br><div style="margin-top:10px">${esc(method.instructions)}</div>`:""}<label style="display:block;margin-top:10px">Número de operación<input id="payment-proof-reference" style="width:100%;margin-top:5px" placeholder="Ej: 123456"></label><label style="display:block;margin-top:10px">Comprobante<input id="payment-proof-file" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" style="width:100%;margin-top:5px"></label><small>El restaurante verificará el pago antes de preparar el pedido.</small>`:"";
+    const method=CONFIG.paymentMethods.find(m=>m.label===selected);altNote.hidden=!method;altNote.innerHTML=method?`<b>${esc(method.label)}</b>${method.logo_url?`<img src="${esc(method.logo_url)}" alt="Logo de ${esc(method.institution||method.label)}" style="display:block;max-width:100px;max-height:70px;object-fit:contain;margin:10px 0;border-radius:10px;background:#fff;padding:5px">`:""}${method.institution?`<br>Banco / entidad: ${esc(method.institution)}`:""}${method.account_holder?`<br>Titular: ${esc(method.account_holder)}`:""}${method.document_id?`<br>DNI / documento: ${esc(method.document_id)}`:""}${method.account_type?`<br>Tipo de cuenta: ${esc(method.account_type)}`:""}${method.account_identifier?`<br>Cuenta / teléfono: ${esc(method.account_identifier)}`:""}${method.qr_image_url?`<br><img src="${esc(method.qr_image_url)}" alt="QR de pago" style="display:block;max-width:300px;width:100%;margin:14px auto;border-radius:16px;background:#fff;padding:8px"><div style="margin:12px 0;padding:12px;border-radius:12px;background:#fff;border:1px solid #e6c65d"><b>📱 Guarda una captura del QR antes de continuar</b><br><span>Realiza el pago desde tu aplicación bancaria y luego pulsa “Enviar pedido por WhatsApp”. Si el local solicita el comprobante, envíalo directamente en la conversación de WhatsApp.</span></div>`:""}${method.instructions?`<div style="margin-top:10px">${esc(method.instructions)}</div>`:""}<small>Este pedido se coordina únicamente por WhatsApp y no se registrará como pago en línea.</small>`:"";
     const sendBtn=$("#send");if(sendBtn)sendBtn.textContent=selected==="Mercado Pago"?"Pagar con Mercado Pago":"Enviar pedido por WhatsApp";
   }
   function syncPaymentMethodUI(){
@@ -1311,16 +1311,10 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     const orderRow={
       restaurant_id:window.__restaurantId||null, order_code:orderCode, customer_name:f.name, customer_phone:f.phone, customer_id:currentCustomer?.id||null, customer_email:currentCustomer?.email||null, order_type:f.type,
       delivery_address:f.type === "Delivery" ? f.addr : null, payment_method:f.pay,
-      notes:f.notes || null,items,total:totals().t,currency_code:CONFIG.currency||"CLP",delivery_fee:f.type==="Delivery"?totals().fee:0,delivery_distance_km:f.type==="Delivery"?deliveryDistance:null,delivery_latitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lat:null,delivery_longitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lng:null,status:"recibido",payment_status:f.pay==="Mercado Pago"?"pending":CONFIG.paymentMethods.some(m=>m.label===f.pay)?"pending":"not_applicable",payment_verification_status:CONFIG.paymentMethods.some(m=>m.label===f.pay)?"pending":"not_required",payment_reference:document.getElementById("payment-proof-reference")?.value.trim()||null
+      notes:f.notes || null,items,total:totals().t,currency_code:CONFIG.currency||"CLP",delivery_fee:f.type==="Delivery"?totals().fee:0,delivery_distance_km:f.type==="Delivery"?deliveryDistance:null,delivery_latitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lat:null,delivery_longitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lng:null,status:"recibido",payment_status:"pending",payment_verification_status:"not_required",payment_reference:null
     };
-    let data=null,error=null;const alternativeMethod=CONFIG.paymentMethods.find(m=>m.label===f.pay);
-    if(f.pay==="Mercado Pago"||alternativeMethod){
-      ({data,error}=await db.from("restaurant_orders").insert(orderRow).select("id").single());
-    }else{
-      ({error}=await db.from("restaurant_orders").insert(orderRow));
-    }
+    const {data,error}=await db.from("restaurant_orders").insert(orderRow).select("id").single();
     if(error){ console.error("No se pudo guardar el pedido", error); throw error; }
-    if(alternativeMethod&&data?.id){const file=document.getElementById("payment-proof-file")?.files?.[0],reference=document.getElementById("payment-proof-reference")?.value.trim()||"";if(!currentCustomer||!file||!reference)throw new Error("Inicia sesión y adjunta el comprobante con su número de operación.");const ext=(file.name.split(".").pop()||"jpg").toLowerCase(),path=currentCustomer.id+"/"+data.id+"-"+Date.now()+"."+ext;const up=await db.storage.from("payment-proofs").upload(path,file,{upsert:false});if(up.error)throw up.error;const proof=await db.from("payment_proofs").insert({restaurant_id:window.__restaurantId,order_id:data.id,customer_id:currentCustomer.id,method_id:alternativeMethod.id,reference,proof_path:path,amount:totals().t,currency_code:CONFIG.currency||"CLP"});if(proof.error)throw proof.error}
     localStorage.setItem("last_order_code",orderCode);
     return data?.id||orderCode;
   }
@@ -1341,7 +1335,6 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     else if(f.type==="Delivery"&&CONFIG.delivery.mode==="distance"&&!deliveryCoords)msg="Usa tu ubicación para calcular el costo del delivery.";
     else if(f.type==="Delivery"&&deliveryUnavailable)msg="Tu ubicación está fuera de la zona de delivery.";
     if(msg){$("#err").textContent=msg;return;}
-    const alternativeMethod=CONFIG.paymentMethods.find(m=>m.label===f.pay);if(alternativeMethod&&!currentCustomer){$("#err").textContent="Para enviar un comprobante debes iniciar sesión o crear una cuenta.";document.getElementById("account-dialog").showModal();return}if(alternativeMethod&&(!document.getElementById("payment-proof-reference")?.value.trim()||!document.getElementById("payment-proof-file")?.files?.length)){$("#err").textContent="Ingresa el número de operación y adjunta el comprobante de pago.";return}
     if(f.pay==="Mercado Pago"){
       if(!currentCustomer){$("#err").textContent="Para pagar con Mercado Pago tienes que iniciar sesión o crear una cuenta para poder hacer seguimiento de tu pedido.";document.getElementById("account-dialog").showModal();return;}
       $("#err").textContent="Conectando con Mercado Pago…";send.disabled=true;send.textContent="Abriendo Mercado Pago…";
@@ -1362,7 +1355,6 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     $("#err").textContent="";
     send.disabled=true;
     try{
-      await saveOrderToCloud();
       refreshLink();
       if(!whatsappOrderUrl)throw new Error("No se pudo generar el enlace de WhatsApp.");
       window.location.href=whatsappOrderUrl;
@@ -1411,5 +1403,5 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.6.2</footer></body>
+<footer class="site-version">Versión v1.6.3</footer></body>
 </html>
