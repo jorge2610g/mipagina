@@ -1509,7 +1509,6 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   function notifyTableQrReady(row,ref){
     if(ref?.ready_notified)return;
     playTableReadySound();
-    try{if("Notification" in window&&Notification.permission==="granted")new Notification("🍽️ "+(row.table_name||"Tu mesa")+" · Pedido listo",{body:"Tu pedido #"+row.order_code+" está listo. En breve un mesero lo llevará a tu mesa.",tag:"table-ready-"+row.order_id,renotify:true,requireInteraction:true})}catch(_){}
     updateTableQrOrderRef(row.order_id,{status:"listo",ready_notified:true});
   }
   async function refreshTableQrOrderStatus(){
@@ -1567,7 +1566,11 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   }
   await verifyMercadoPagoReturn();
   await refreshTableQrOrderStatus();
-  if(window.__tableQrContext)setInterval(refreshTableQrOrderStatus,8000);
+  if(window.__tableQrContext){
+    if("Notification" in window&&Notification.permission==="granted")setTimeout(()=>enableTableQrNotifications(false),0);
+    if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data?.type==="yummypro-push"&&String(e.data?.data?.tag||"").startsWith("table-order-"))refreshTableQrOrderStatus()});
+    setInterval(refreshTableQrOrderStatus,8000);
+  }
   window.addEventListener("pageshow",()=>{verifyMercadoPagoReturn();refreshTableQrOrderStatus();});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")verifyMercadoPagoReturn();});
   toggleDelivery();
