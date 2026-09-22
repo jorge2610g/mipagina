@@ -1,17 +1,25 @@
 self.addEventListener("push",event=>{
  let data={};try{data=event.data?.json()||{}}catch{data={body:event.data?.text()||"Tienes una actualización."}}
- const options={
-  body:data.body||"Tienes una actualización.",
-  icon:"/icon-192.png",
-  badge:"/icon-192.png",
-  tag:data.tag||"yummypro-notification",
-  renotify:true,
-  silent:!!data.silent,
-  requireInteraction:!!data.requireInteraction,
-  data:{url:data.url||"/"}
- };
- if(!data.silent)options.vibrate=[220,100,220,100,350];
- event.waitUntil(self.registration.showNotification(data.title||"YummyPro",options));
+ event.waitUntil((async()=>{
+  const windows=await clients.matchAll({type:"window",includeUncontrolled:true});
+  const visible=windows.find(c=>c.visibilityState==="visible");
+  if(data.onlyBackground&&visible){
+   visible.postMessage({type:"yummypro-push",data});
+   return;
+  }
+  const options={
+   body:data.body||"Tienes una actualización.",
+   icon:"/icon-192.png",
+   badge:"/icon-192.png",
+   tag:data.tag||"yummypro-notification",
+   renotify:true,
+   silent:!!data.silent,
+   requireInteraction:!!data.requireInteraction,
+   data:{url:data.url||"/"}
+  };
+  if(!data.silent)options.vibrate=[220,100,220,100,350];
+  await self.registration.showNotification(data.title||"YummyPro",options);
+ })());
 });
 self.addEventListener("notificationclick",event=>{
  event.notification.close();
