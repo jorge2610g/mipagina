@@ -484,7 +484,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
       if(p?.default_address && document.getElementById("f-addr")) document.getElementById("f-addr").value=p.default_address;
       await refreshPendingOrder();
     }else{
-      accountBtn.textContent="👤 Iniciar sesión"; ordersBtn.hidden=true; guest.hidden=false; auth.hidden=true; userText.textContent="Crea una cuenta para guardar tus datos y seguir tus pedidos.";document.getElementById("pending-order-banner").hidden=true;
+      accountBtn.textContent="👤 Iniciar sesión"; ordersBtn.hidden=!window.__tableQrContext;if(window.__tableQrContext)ordersBtn.textContent="🔔 Mis pedidos";guest.hidden=false; auth.hidden=true; userText.textContent=window.__tableQrContext?"Puedes seguir los pedidos de esta mesa sin iniciar sesión.":"Crea una cuenta para guardar tus datos y seguir tus pedidos.";document.getElementById("pending-order-banner").hidden=true;
     }
   }
   async function refreshPendingOrder(){
@@ -565,7 +565,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     const raw=String(o.status||"recibido").toLowerCase(), normalized=raw==="recibido"?"recibido":raw==="preparando"?"preparacion":raw;
     const isTable=String(o.order_source||"").toLowerCase()==="table_qr"||!!o.table_name;
     const steps=isTable?["preparacion","listo","entregado"]:(o.order_type==="Delivery"?["recibido","preparacion","listo","en_camino","entregado"]:["recibido","preparacion","listo","entregado"]);
-    const labels=isTable?["Preparando tu pedido","Listo para servir","Servido / retirado de cocina"]:(o.order_type==="Delivery"?["Pedido recibido","Preparando tu pedido","Pedido listo","En camino","Entregado"]:["Pedido recibido","Preparando tu pedido","Listo para recoger","Pedido entregado"]);
+    const labels=isTable?["Preparando tu pedido","Listo para servir","Retirado de cocina · va hacia tu mesa"]:(o.order_type==="Delivery"?["Pedido recibido","Preparando tu pedido","Pedido listo","En camino","Entregado"]:["Pedido recibido","Preparando tu pedido","Listo para recoger","Pedido entregado"]);
     let idx=steps.indexOf(normalized);if(idx<0)idx=0;
     const location=isTable?(o.table_name||window.__tableQrContext?.name||"Tu mesa"):(o.order_type==="Delivery"?(o.delivery_address||"Dirección de entrega no registrada"):(CONFIG.address||"Dirección del restaurante no disponible"));
     const items=Array.isArray(o.items)?o.items:[];
@@ -1521,7 +1521,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
       if(error)return null;
       const row=Array.isArray(data)?data[0]:data;if(!row)return null;
       row.id=row.order_id;row.order_type="Mesa";row.order_source="table_qr";row.table_reference=row.table_name;
-      const labels={nuevo:"Pedido recibido",recibido:"Pedido recibido",preparacion:"En preparación",listo:"Listo para servir",entregado:"Servido / retirado",cancelado:"Cancelado"};
+      const labels={nuevo:"Pedido recibido",recibido:"Pedido recibido",preparacion:"En preparación",listo:"Listo para servir",entregado:"Retirado de cocina",cancelado:"Cancelado"};
       const title=document.getElementById("table-order-title"),txt=document.getElementById("table-order-text"),pill=document.getElementById("table-order-status"),banner=document.getElementById("table-order-banner");
       if(banner)banner.hidden=false;if(title)title.textContent="🍽️ "+window.__tableQrContext.name+" · #"+row.order_code;
       if(txt)txt.textContent=(labels[row.status]||row.status)+" · "+(row.payment_status==="approved"?"Pago confirmado":"Pago pendiente")+" · "+fmt(row.total)+" · Toca para ver seguimiento";
