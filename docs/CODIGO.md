@@ -43,3 +43,15 @@ No incluir claves privadas en frontend. Supabase service-role, access tokens pri
 
 ## Diagnóstico
 Si “Mis pedidos” pide login después de iniciar sesión, revisar restauración de sesión antes del render. Si Mercado Pago queda en “conectando”, revisar retorno/deep-link y verificación del pago. Si faltan productos, revisar filtro por restaurante/categoría y disponibilidad.
+
+## Tema y colores del restaurante
+La personalización del restaurante se aplica únicamente al **modo claro**. En `applyMenuThemePalette()`:
+- `theme_primary_color` controla la portada/acento principal.
+- `theme_secondary_color` controla el acento secundario.
+- `theme_text_color` solo se usa si mantiene contraste suficiente con el color principal; de lo contrario se calcula blanco/negro automáticamente.
+- El texto general del sitio se mantiene oscuro sobre fondos claros para evitar combinaciones ilegibles.
+
+El **modo oscuro no hereda los colores del restaurante**: usa fondo negro, superficies oscuras y texto blanco como base fija. Esto evita que una configuración de marca vuelva ilegible el menú al cambiar de tema.
+
+Los botones/píldoras de la portada usan `--hero-bg` y `--hero-ink` para mantener contraste, y los botones secundarios usan `--on-secondary`.
+
