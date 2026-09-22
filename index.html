@@ -8,10 +8,29 @@
     const cleanPath = location.pathname.slice(0, -'index.html'.length) || '/';
     history.replaceState(null, '', cleanPath + location.search + location.hash);
   }
+  try{
+    const params=new URLSearchParams(location.search);
+    const standalone=window.matchMedia?.("(display-mode: standalone)")?.matches===true||window.navigator.standalone===true;
+    const platformHost=location.hostname.replace(/^www\./,"")==="menu.yummypro.online";
+    if(platformHost&&(standalone||params.get("source")==="pwa")&&!params.get("r")&&!params.get("table")&&!params.get("demo")&&!params.get("track_order")){
+      const last=localStorage.getItem("yummypro_last_restaurant");
+      if(last){
+        params.set("r",last);params.delete("source");
+        history.replaceState(null,"",location.pathname+"?"+params.toString()+location.hash);
+      }
+    }
+  }catch(_){}
 })();
 </script>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="YummyPro">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" sizes="192x192" href="/icon-192.png" type="image/png">
 <meta name="theme-color" content="#000000">
 <meta name="description" content="Menú digital del restaurante. Pedidos directos por WhatsApp.">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -303,7 +322,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
       <div class="hero-art" id="hero-art"></div>
     </div>
     <h1 id="biz-name">Cargando restaurante…</h1>
-    <p class="lead">Hamburguesas armadas al momento. Elegí, personalizá y enviá tu pedido por WhatsApp.</p><div class="top-actions"><button class="mini-btn" id="theme-toggle" type="button" onclick="toggleMenuTheme()">◐ Cambiar tema</button><script>function toggleMenuTheme(){var h=document.documentElement;var next=h.getAttribute("data-theme")==="dark"?"light":"dark";h.setAttribute("data-theme",next);try{localStorage.setItem("menu_theme",next)}catch(e){}}</script><button class="mini-btn" id="clear-cart" type="button">Vaciar pedido</button><button class="mini-btn" id="account-btn" type="button">👤 Iniciar sesión</button><button class="mini-btn" id="orders-btn" type="button" hidden>📦 Mis pedidos</button></div>
+    <p class="lead">Hamburguesas armadas al momento. Elegí, personalizá y enviá tu pedido por WhatsApp.</p><div class="top-actions"><button class="mini-btn" id="pwa-install-btn" type="button" hidden>📲 Instalar app</button><button class="mini-btn" id="theme-toggle" type="button" onclick="toggleMenuTheme()">◐ Cambiar tema</button><script>function toggleMenuTheme(){var h=document.documentElement;var next=h.getAttribute("data-theme")==="dark"?"light":"dark";h.setAttribute("data-theme",next);try{localStorage.setItem("menu_theme",next)}catch(e){}}</script><button class="mini-btn" id="clear-cart" type="button">Vaciar pedido</button><button class="mini-btn" id="account-btn" type="button">👤 Iniciar sesión</button><button class="mini-btn" id="orders-btn" type="button" hidden>📦 Mis pedidos</button></div>
   </div>
 </header>
 
@@ -739,6 +758,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     const cleanPath=decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g,""));
     const pathSlug=(cleanPath.split("/").filter(Boolean).pop()||"").replace(/^index\.html$/i,"");
     const requestedSlug=params.get("r") || pathSlug || null;
+    if(requestedSlug&&location.hostname.replace(/^www\./,"")==="menu.yummypro.online"){try{localStorage.setItem("yummypro_last_restaurant",requestedSlug)}catch(_){}}
     const host=location.hostname.toLowerCase().replace(/^www\./,"");
     const platformHosts=["app.expressdelivery.pro","menu.yummypro.online","jorge2610g.github.io","localhost","127.0.0.1"];
     if(host==="menu.yummypro.online"&&!requestedSlug){
@@ -1690,5 +1710,30 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.6.13</footer></body>
+<script id="customer-pwa-v1614">
+let yummyCustomerInstallPrompt=null;
+function customerPwaStandalone(){return window.matchMedia?.("(display-mode: standalone)")?.matches===true||window.navigator.standalone===true}
+function refreshCustomerInstallButton(){
+ const btn=document.getElementById("pwa-install-btn");if(!btn)return;
+ const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(/macintosh/i.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+ btn.hidden=customerPwaStandalone()||(!yummyCustomerInstallPrompt&&!ios);
+}
+async function installCustomerPwa(){
+ const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(/macintosh/i.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+ if(customerPwaStandalone())return;
+ if(ios&&!yummyCustomerInstallPrompt){alert("En iPhone/iPad abre esta página en Safari, toca Compartir y luego Añadir a pantalla de inicio.");return}
+ if(!yummyCustomerInstallPrompt){alert("Abre el menú del navegador y elige Instalar aplicación o Añadir a pantalla principal.");return}
+ const prompt=yummyCustomerInstallPrompt;yummyCustomerInstallPrompt=null;
+ try{await prompt.prompt();await prompt.userChoice}catch(_){}
+ refreshCustomerInstallButton();
+}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();yummyCustomerInstallPrompt=e;refreshCustomerInstallButton()});
+window.addEventListener("appinstalled",()=>{yummyCustomerInstallPrompt=null;refreshCustomerInstallButton()});
+window.addEventListener("DOMContentLoaded",async()=>{
+ document.getElementById("pwa-install-btn")?.addEventListener("click",installCustomerPwa);
+ try{if("serviceWorker" in navigator)await navigator.serviceWorker.register("/push-sw.js")}catch(e){console.error("PWA cliente",e)}
+ refreshCustomerInstallButton();
+});
+</script>
+<footer class="site-version">Versión v1.6.14</footer></body>
 </html>

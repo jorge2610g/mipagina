@@ -1,22 +1,20 @@
+const YUMMYPRO_CUSTOMER_CACHE="yummypro-customer-v1614";
+const CUSTOMER_CORE=["/offline.html","/manifest.webmanifest","/icon-192.png","/icon-512.png","/apple-touch-icon.png"];
+self.addEventListener("install",event=>{event.waitUntil(caches.open(YUMMYPRO_CUSTOMER_CACHE).then(c=>c.addAll(CUSTOMER_CORE)).then(()=>self.skipWaiting()))});
+self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith("yummypro-customer-")&&k!==YUMMYPRO_CUSTOMER_CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener("fetch",event=>{
+ const req=event.request;if(req.method!=="GET")return;
+ const url=new URL(req.url);if(url.origin!==self.location.origin)return;
+ if(CUSTOMER_CORE.includes(url.pathname)){event.respondWith(caches.match(req).then(hit=>hit||fetch(req)));return}
+ if(req.mode==="navigate"){event.respondWith(fetch(req).catch(()=>caches.match("/offline.html")))}
+});
 self.addEventListener("push",event=>{
  let data={};try{data=event.data?.json()||{}}catch{data={body:event.data?.text()||"Tienes una actualización."}}
  event.waitUntil((async()=>{
   const windows=await clients.matchAll({type:"window",includeUncontrolled:true});
   const visible=windows.find(c=>c.visibilityState==="visible");
-  if(data.onlyBackground&&visible){
-   visible.postMessage({type:"yummypro-push",data});
-   return;
-  }
-  const options={
-   body:data.body||"Tienes una actualización.",
-   icon:"/icon-192.png",
-   badge:"/icon-192.png",
-   tag:data.tag||"yummypro-notification",
-   renotify:true,
-   silent:!!data.silent,
-   requireInteraction:!!data.requireInteraction,
-   data:{url:data.url||"/"}
-  };
+  if(data.onlyBackground&&visible){visible.postMessage({type:"yummypro-push",data});return}
+  const options={body:data.body||"Tienes una actualización.",icon:"/icon-192.png",badge:"/icon-192.png",tag:data.tag||"yummypro-notification",renotify:true,silent:!!data.silent,requireInteraction:!!data.requireInteraction,data:{url:data.url||"/"}};
   if(!data.silent)options.vibrate=[220,100,220,100,350];
   await self.registration.showNotification(data.title||"YummyPro",options);
  })());
