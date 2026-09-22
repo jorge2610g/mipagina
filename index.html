@@ -754,7 +754,8 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
 
   const $  = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const fmt  = n => new Intl.NumberFormat(CONFIG.locale||"es-CL",{style:"currency",currency:CONFIG.currency||"CLP",maximumFractionDigits:["CLP","COP","PYG"].includes(CONFIG.currency)?0:2}).format(Number(n||0));
+  const currencyDigits=cur=>{try{return new Intl.NumberFormat("en",{style:"currency",currency:String(cur||"USD").toUpperCase()}).resolvedOptions().maximumFractionDigits}catch(_){return 2}};
+  const fmt=n=>{const cur=String(CONFIG.currency||"CLP").toUpperCase(),loc=CONFIG.locale||"es-CL",value=Number(n||0),digits=currencyDigits(cur),fractional=Math.abs(value-Math.trunc(value))>1e-9,shown=fractional?digits:0;return new Intl.NumberFormat(loc,{style:"currency",currency:cur,minimumFractionDigits:shown,maximumFractionDigits:shown}).format(value)};
   const norm = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const esc  = s => String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -1491,5 +1492,5 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.6.7</footer></body>
+<footer class="site-version">Versión v1.6.8</footer></body>
 </html>
