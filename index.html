@@ -320,7 +320,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   </div>
 </div>
 
-<div class="wrap"><div id="table-order-banner" class="pending-order-banner table-order-clickable" hidden role="button" tabindex="0" aria-label="Ver seguimiento del pedido de mesa"><div><strong id="table-order-title">🍽️ Pedido desde mesa</strong><div class="muted" id="table-order-text">Escanea, elige y envía tu pedido directamente a cocina.</div></div><span class="pill" id="table-order-status">Mesa</span></div><div id="pending-order-banner" class="pending-order-banner" hidden><div><strong>📦 Tienes un pedido pendiente</strong><div class="muted" id="pending-order-text">Tu pedido todavía no ha sido entregado.</div></div><button type="button" id="pending-order-open">Ver seguimiento</button></div></div>
+<div class="wrap"><div id="table-order-banner" class="pending-order-banner table-order-clickable" hidden role="button" tabindex="0" aria-label="Ver seguimiento del pedido por QR"><div><strong id="table-order-title">📱 Pedido por QR</strong><div class="muted" id="table-order-text">Escanea, elige y envía tu pedido directamente a cocina.</div></div><span class="pill" id="table-order-status">QR</span></div><div id="pending-order-banner" class="pending-order-banner" hidden><div><strong>📦 Tienes un pedido pendiente</strong><div class="muted" id="pending-order-text">Tu pedido todavía no ha sido entregado.</div></div><button type="button" id="pending-order-open">Ver seguimiento</button></div></div>
 <main class="wrap" id="menu"></main>
 
 <section class="wrap" aria-label="Ventajas"><div class="trust"><div>✓ Pedido fácil por WhatsApp</div><div>✓ Retiro o delivery</div><div>✓ Personalizá tu pedido</div><div>✓ Total calculado al instante</div></div></section>
@@ -524,20 +524,24 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     try{new Notification("Express · "+statusLabel(row.status),{body:messages[row.status]||"Tu pedido cambió de estado.",tag:"order-"+row.id,renotify:true});}catch(e){}
   }
   async function loadTableQrOrders(){
-    const box=document.getElementById("orders-list");box.innerHTML="<p>Cargando pedidos de tu mesa…</p>";
+    const box=document.getElementById("orders-list");box.innerHTML="<p>Cargando pedidos realizados desde este QR…</p>";
     const refs=readTableQrOrderRefs().filter(x=>x.token===window.__tableQrContext?.token);
-    if(!refs.length){box.innerHTML="<p>Aún no has enviado pedidos desde esta mesa.</p>";window.__customerOrders=[];return}
+    if(!refs.length){box.innerHTML="<p>Aún no has enviado pedidos desde este QR.</p>";window.__customerOrders=[];return}
     const rows=[];
     for(const ref of refs){
       try{
-        const {data,error}=await db.rpc("get_table_qr_order_status",{p_order_id:Number(ref.order_id),p_table_token:ref.token});
-        const row=Array.isArray(data)?data[0]:data;if(!error&&row)rows.push({...row,id:row.order_id,order_type:"Mesa",table_name:row.table_name,order_source:"table_qr"});
+        const {data,error}=await db.rpc("get_table_qr_order_status_v2",{p_order_id:Number(ref.order_id),p_table_token:ref.token});
+        const row=Array.isArray(data)?data[0]:data;
+        if(!error&&row)rows.push({...row,id:row.order_id,table_name:row.table_name,table_reference:row.table_name,order_source:"table_qr"});
       }catch(_){}
     }
     rows.sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
     window.__customerOrders=rows;
-    if(!rows.length){box.innerHTML="<p>No pudimos recuperar pedidos anteriores de esta mesa.</p>";return}
-    box.innerHTML=rows.map((o,i)=>{const items=Array.isArray(o.items)?o.items:[];return '<article class="order-card" data-order-index="'+i+'" tabindex="0" role="button"><div class="order-top"><div><div class="order-code">'+esc(o.table_name||"Mesa")+' · #'+esc(o.order_code)+'</div><div class="order-meta">'+new Date(o.created_at).toLocaleString("es-CL")+'</div></div><span class="order-status">'+esc(statusLabel(o.status))+'</span></div><div class="order-items">'+items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join("<br>")+'</div><div class="order-meta">'+esc(o.payment_method||"Pago pendiente")+' · <b>'+fmt(Number(o.total||0))+'</b></div><div class="order-meta"><b>Toca para ver el estado del pedido de '+esc(o.table_name||"tu mesa")+'</b></div></article>'}).join("");
+    if(!rows.length){box.innerHTML="<p>No pudimos recuperar pedidos anteriores de este QR.</p>";return}
+    box.innerHTML=rows.map((o,i)=>{
+      const items=Array.isArray(o.items)?o.items:[],counter=o.order_type==="Retiro",destination=counter?"Retiro en mostrador":(o.table_name||"Mesa");
+      return '<article class="order-card" data-order-index="'+i+'" tabindex="0" role="button"><div class="order-top"><div><div class="order-code">'+esc((counter?"🛍️ ":"🍽️ ")+destination)+' · #'+esc(o.order_code)+'</div><div class="order-meta">'+new Date(o.created_at).toLocaleString("es-CL")+'</div></div><span class="order-status">'+esc(statusLabel(o.status))+'</span></div><div class="order-items">'+items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join("<br>")+'</div><div class="order-meta">'+esc(o.payment_method||"Pago pendiente")+' · <b>'+fmt(Number(o.total||0))+'</b></div><div class="order-meta"><b>Toca para ver seguimiento y '+(counter?"retiro en mostrador":"entrega en mesa")+'</b></div></article>';
+    }).join("");
   }
   async function loadCustomerOrders(){
     const box=document.getElementById("orders-list"); box.innerHTML="<p>Cargando pedidos…</p>";
@@ -559,17 +563,34 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   document.getElementById("pending-order-open").addEventListener("click",()=>openOrderDetail(window.__pendingCustomerOrder));
   const tableBanner=document.getElementById("table-order-banner");if(tableBanner){const openTableTracking=async()=>{await enableTableQrNotifications(true);const row=await refreshTableQrOrderStatus();if(row)openOrderDetail(row)};tableBanner.addEventListener("click",openTableTracking);tableBanner.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openTableTracking()}})}
   let openedOrderId=null;
+  let qrOrderEditTarget=null;
+  let lastQrSaveMode="new";
   function openOrderDetail(o){
     if(!o)return;
     openedOrderId=o.id||o.order_id;
     const raw=String(o.status||"recibido").toLowerCase(), normalized=raw==="recibido"?"recibido":raw==="preparando"?"preparacion":raw;
-    const isTable=String(o.order_source||"").toLowerCase()==="table_qr"||!!o.table_name;
-    const steps=isTable?["preparacion","listo","retirado_mesa","entregado"]:(o.order_type==="Delivery"?["recibido","preparacion","listo","en_camino","entregado"]:["recibido","preparacion","listo","entregado"]);
-    const labels=isTable?["Preparando tu pedido","Listo para servir","Retirado de cocina · va hacia tu mesa","Entregado en tu mesa"]:(o.order_type==="Delivery"?["Pedido recibido","Preparando tu pedido","Pedido listo","En camino","Entregado"]:["Pedido recibido","Preparando tu pedido","Listo para recoger","Pedido entregado"]);
+    const isQr=String(o.order_source||"").toLowerCase()==="table_qr"||!!o.table_name;
+    const isCounter=isQr&&String(o.order_type||"").toLowerCase()==="retiro";
+    const isTable=isQr&&!isCounter;
+    const steps=isTable?["preparacion","listo","retirado_mesa","entregado"]:(isCounter?["preparacion","listo","entregado"]:(o.order_type==="Delivery"?["recibido","preparacion","listo","en_camino","entregado"]:["recibido","preparacion","listo","entregado"]));
+    const labels=isTable?["Preparando tu pedido","Listo para servir","Retirado de cocina · va hacia tu mesa","Entregado en tu mesa"]:(isCounter?["Preparando tu pedido","Listo para retirar en mostrador","Retirado en mostrador"]:(o.order_type==="Delivery"?["Pedido recibido","Preparando tu pedido","Pedido listo","En camino","Entregado"]:["Pedido recibido","Preparando tu pedido","Listo para recoger","Pedido entregado"]));
     let idx=steps.indexOf(normalized);if(idx<0)idx=0;
-    const location=isTable?(o.table_name||window.__tableQrContext?.name||"Tu mesa"):(o.order_type==="Delivery"?(o.delivery_address||"Dirección de entrega no registrada"):(CONFIG.address||"Dirección del restaurante no disponible"));
+    const location=isTable?(o.table_name||window.__tableQrContext?.name||"Tu mesa"):(isCounter?(CONFIG.address||"Mostrador del restaurante"):(o.order_type==="Delivery"?(o.delivery_address||"Dirección de entrega no registrada"):(CONFIG.address||"Dirección del restaurante no disponible")));
     const items=Array.isArray(o.items)?o.items:[];
-    document.getElementById("order-detail-content").innerHTML='<div class="order-code">'+esc((isTable?(location+" · #"):"")+o.order_code)+'</div><div class="order-meta">'+new Date(o.created_at||Date.now()).toLocaleString("es-CL")+'</div>'+(items.length?'<div class="order-items" style="margin-top:12px">'+items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join("<br>")+'</div>':'')+'<div style="margin-top:14px">'+steps.map((s,i)=>'<div class="tracking-step '+(i<idx?"done":i===idx?"current":"")+'"><span class="tracking-dot"></span><div>'+esc(labels[i])+(i===idx?'<div class="order-meta">Estado actual</div>':'')+'</div></div>').join("")+'</div><div class="pickup-box"><b>'+(isTable?"🍽️ Mesa asignada":(o.order_type==="Delivery"?"📍 Lugar de entrega":"📍 Dónde recogerlo"))+'</b>'+esc(location)+'</div>';
+    const canAdd=isQr&&!["entregado","cancelado"].includes(raw);
+    const appendable=canAdd&&["recibido","preparacion"].includes(raw)&&String(o.payment_method||"").trim().toLowerCase()!=="mercado pago"&&String(o.payment_status||"").trim().toLowerCase()!=="approved";
+    const action=canAdd?'<button type="button" id="qr-add-products" class="primary" style="width:100%;margin-top:14px">'+(appendable?"＋ Agregar productos a este pedido":"＋ Hacer un pedido adicional")+'</button>':"";
+    document.getElementById("order-detail-content").innerHTML='<div class="order-code">'+esc((isQr?((isCounter?"Retiro mostrador":location)+" · #"):"")+o.order_code)+'</div><div class="order-meta">'+new Date(o.created_at||Date.now()).toLocaleString("es-CL")+'</div>'+(items.length?'<div class="order-items" style="margin-top:12px">'+items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join("<br>")+'</div>':'')+'<div style="margin-top:14px">'+steps.map((s,i)=>'<div class="tracking-step '+(i<idx?"done":i===idx?"current":"")+'"><span class="tracking-dot"></span><div>'+esc(labels[i])+(i===idx?'<div class="order-meta">Estado actual</div>':'')+'</div></div>').join("")+'</div><div class="pickup-box"><b>'+(isTable?"🍽️ Mesa asignada":isCounter?"🛍️ Retiro en mostrador":(o.order_type==="Delivery"?"📍 Lugar de entrega":"📍 Dónde recogerlo"))+'</b>'+esc(location)+'</div>'+action;
+    const addBtn=document.getElementById("qr-add-products");
+    if(addBtn)addBtn.onclick=()=>{
+      qrOrderEditTarget={order_id:Number(openedOrderId),order_code:o.order_code||String(openedOrderId),mode:appendable?"append":"new",order_type:isCounter?"Retiro":"Mesa",payment_method:o.payment_method||""};
+      const radio=document.querySelector('input[name="tipo"][value="'+qrOrderEditTarget.order_type+'"]');if(radio)radio.checked=true;
+      if(qrOrderEditTarget.payment_method&&[...document.getElementById("f-pay").options].some(x=>x.value===qrOrderEditTarget.payment_method)){document.getElementById("f-pay").value=qrOrderEditTarget.payment_method;renderPaymentButtons();syncPaymentMethodUI();}
+      document.getElementById("order-detail-dialog").close();
+      if(document.getElementById("orders-dialog")?.open)document.getElementById("orders-dialog").close();
+      const live=document.getElementById("live");if(live)live.textContent=appendable?"Agrega los productos que faltaron y vuelve a enviar el pedido.":"Este pedido ya no se puede modificar; los productos nuevos se enviarán como pedido adicional.";
+      document.getElementById("menu")?.scrollIntoView({behavior:"smooth",block:"start"});
+    };
     document.getElementById("order-detail-dialog").showModal();
   }
   document.getElementById("orders-list").addEventListener("click",e=>{const card=e.target.closest("[data-order-index]");if(card)openOrderDetail(window.__customerOrders?.[Number(card.dataset.orderIndex)]);});
@@ -929,9 +950,18 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   }
   if(window.__tableQrContext){
     const banner=document.getElementById("table-order-banner"),title=document.getElementById("table-order-title"),status=document.getElementById("table-order-status"),field=document.getElementById("order-type-field"),phone=document.getElementById("f-phone");
-    if(banner)banner.hidden=false;if(title)title.textContent="🍽️ Pedido desde "+window.__tableQrContext.name;if(status)status.textContent=window.__tableQrContext.name;if(field)field.hidden=true;if(phone)phone.required=false;const ordersBtn=document.getElementById("orders-btn");if(ordersBtn){ordersBtn.hidden=false;ordersBtn.textContent="🔔 Mis pedidos"}
-    const lead=document.querySelector(".lead");if(lead)lead.textContent="Elige tus productos y envía el pedido directamente a cocina desde "+window.__tableQrContext.name+".";
-    const trust=document.querySelector(".trust");if(trust)trust.innerHTML="<div>✓ Pedido directo a cocina</div><div>✓ Mesa identificada automáticamente</div><div>✓ Efectivo, POS o pago en línea</div><div>✓ Estado del pedido desde tu teléfono</div>";
+    if(banner)banner.hidden=false;
+    if(title)title.textContent="📱 Pedido por QR · "+window.__tableQrContext.name;
+    if(status)status.textContent="QR";
+    if(field){
+      field.hidden=false;
+      const legend=field.querySelector("legend");if(legend)legend.textContent="¿Dónde quieres recibir tu pedido?";
+      const seg=field.querySelector(".seg");if(seg)seg.innerHTML='<label class="segopt"><input type="radio" name="tipo" value="Mesa" checked><span class="box"><b>🍽️ En la mesa</b><small>'+esc(window.__tableQrContext.name)+'</small></span></label><label class="segopt"><input type="radio" name="tipo" value="Retiro"><span class="box"><b>🛍️ Retiro en mostrador</b><small>Lo recoges cuando esté listo</small></span></label>';
+    }
+    if(phone)phone.required=false;
+    const ordersBtn=document.getElementById("orders-btn");if(ordersBtn){ordersBtn.hidden=false;ordersBtn.textContent="🔔 Mis pedidos"}
+    const lead=document.querySelector(".lead");if(lead)lead.textContent="Elige tus productos, decide si los quieres en "+window.__tableQrContext.name+" o para retirar en mostrador y envíalos directamente a cocina.";
+    const trust=document.querySelector(".trust");if(trust)trust.innerHTML="<div>✓ Agrega productos a un pedido en preparación</div><div>✓ Mesa o retiro en mostrador</div><div>✓ Efectivo, POS o pago en línea</div><div>✓ Seguimiento desde tu teléfono</div>";
   }
   const ITEMS = {};
   const popItems = [];
@@ -1227,7 +1257,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   dlgD.addEventListener("close", () => { cur = null; });
 
   /* ---------- Ventana del pedido ---------- */
-  $("#open-cart").addEventListener("click", () => { renderCart(); $("#err").textContent = ""; sheet.showModal(); sheet.scrollTop = 0; });
+  $("#open-cart").addEventListener("click", () => { renderCart(); $("#err").textContent = ""; $("#sheet-title").textContent=qrOrderEditTarget?.mode==="append"?"Agregar al pedido #"+qrOrderEditTarget.order_code:(qrOrderEditTarget?.mode==="new"?"Pedido adicional":"Tu pedido"); sheet.showModal(); sheet.scrollTop = 0; });
   $("#close").addEventListener("click", () => sheet.close());
   sheet.addEventListener("click", e => { if (e.target === sheet) sheet.close(); });
   linesEl.addEventListener("click", e => {
@@ -1248,7 +1278,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   const form = () => ({
     name: $("#f-name").value.trim(),
     phone: $("#f-phone").value.trim(),
-    type: window.__tableQrContext?"Mesa":document.querySelector('input[name="tipo"]:checked').value,
+    type: document.querySelector('input[name="tipo"]:checked')?.value||(window.__tableQrContext?"Mesa":"Retiro"),
     addr: $("#f-addr").value.trim(),
     pay: $("#f-pay").value,
     notes: $("#f-notes").value.trim()
@@ -1388,19 +1418,31 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     if(currentCustomer&&!window.__tableQrContext){await db.from("customer_profiles").upsert({user_id:currentCustomer.id,full_name:f.name,phone:f.phone,default_address:f.type==="Delivery"?f.addr:null,updated_at:new Date().toISOString()});}
     const items=[...cart.values()].map(v=>({product_id:String(v.it.id||"").startsWith("db-")?Number(String(v.it.id).slice(3)):null,option_id:v.opt?.optionId||null,extra_option_ids:v.ex.map(x=>String(x.id||"").startsWith("dbopt-")?Number(String(x.id).slice(6)):null).filter(Number.isFinite),name:lineName(v),qty:v.qty,unit_price:unitOf(v),extras:v.ex.map(x=>x.name),note:v.note||""}));
     if(window.__tableQrContext){
-      const {data,error}=await db.rpc("create_table_qr_order",{
+      if(qrOrderEditTarget?.mode==="append"){
+        const target={...qrOrderEditTarget};
+        const {data,error}=await db.rpc("add_table_qr_order_items",{p_order_id:Number(target.order_id),p_table_token:window.__tableQrContext.token,p_items:items});
+        if(error){console.error("No se pudieron agregar productos al pedido QR",error);throw error;}
+        const row=Array.isArray(data)?data[0]:data;
+        const existing=readTableQrOrderRefs().find(x=>Number(x.order_id)===Number(target.order_id))||{};
+        saveTableQrOrderRef({...existing,order_id:Number(target.order_id),order_code:row?.order_code||target.order_code,token:window.__tableQrContext.token,table_name:window.__tableQrContext.name,order_type:row?.order_type||target.order_type,status:row?.status||"preparacion",ready_notified:false,created_at:row?.created_at||existing.created_at||new Date().toISOString()});
+        lastQrSaveMode="append";qrOrderEditTarget=null;
+        return Number(target.order_id);
+      }
+      const {data,error}=await db.rpc("create_table_qr_order_v2",{
         p_table_token:window.__tableQrContext.token,
         p_customer_name:f.name,
         p_customer_phone:f.phone,
         p_payment_method:f.pay,
         p_notes:f.notes,
         p_items:items,
+        p_order_type:f.type,
         p_currency_code:CONFIG.currency||"CLP"
       });
       if(error){console.error("No se pudo crear el pedido QR",error);throw error;}
       const row=Array.isArray(data)?data[0]:data;
-      if(!row?.order_id)throw new Error("No se pudo registrar el pedido de la mesa.");
-      const qrRef={order_id:Number(row.order_id),order_code:row.order_code,token:window.__tableQrContext.token,table_name:window.__tableQrContext.name,status:"preparacion",ready_notified:false,created_at:new Date().toISOString()};saveTableQrOrderRef(qrRef);if("Notification" in window&&Notification.permission==="granted")setTimeout(()=>registerTableQrOrderPush(Number(row.order_id)),0);
+      if(!row?.order_id)throw new Error("No se pudo registrar el pedido QR.");
+      const qrRef={order_id:Number(row.order_id),order_code:row.order_code,token:window.__tableQrContext.token,table_name:window.__tableQrContext.name,order_type:row.order_type||f.type,status:"preparacion",ready_notified:false,created_at:new Date().toISOString()};saveTableQrOrderRef(qrRef);if("Notification" in window&&Notification.permission==="granted")setTimeout(()=>registerTableQrOrderPush(Number(row.order_id)),0);
+      lastQrSaveMode=qrOrderEditTarget?.mode==="new"?"additional":"new";qrOrderEditTarget=null;
       return Number(row.order_id);
     }
     const orderCode = "WEB-" + Date.now().toString(36).toUpperCase();
@@ -1456,7 +1498,10 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
         const orderId=await saveOrderToCloud();
         cart.clear();saveCart();update();
         send.disabled=false;send.textContent="Enviar pedido a cocina";
-        $("#err").textContent="✅ Pedido enviado desde "+window.__tableQrContext.name+". "+(f.pay==="Efectivo"?"Paga en efectivo cuando te atiendan.":f.pay==="Tarjeta POS"?"Paga con la máquina POS cuando te atiendan.":"Pago seleccionado: "+f.pay+".")+" Pedido #"+orderId;
+        const destination=f.type==="Retiro"?"retiro en mostrador":window.__tableQrContext.name;
+        $("#err").textContent=lastQrSaveMode==="append"
+          ?"✅ Productos agregados al pedido #"+orderId+". Cocina ya recibió la actualización."
+          :"✅ "+(lastQrSaveMode==="additional"?"Pedido adicional":"Pedido")+" enviado para "+destination+". "+(f.pay==="Efectivo"?"Paga en efectivo cuando te atiendan.":f.pay==="Tarjeta POS"?"Paga con la máquina POS cuando te atiendan.":"Pago seleccionado: "+f.pay+".")+" Pedido #"+orderId;
         await refreshTableQrOrderStatus();
         return;
       }
@@ -1516,18 +1561,22 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     let saved=readTableQrOrderRefs().find(x=>x.token===window.__tableQrContext.token);
     if(!saved||!saved.order_id)return null;
     try{
-      const {data,error}=await db.rpc("get_table_qr_order_status",{p_order_id:Number(saved.order_id),p_table_token:window.__tableQrContext.token});
+      const {data,error}=await db.rpc("get_table_qr_order_status_v2",{p_order_id:Number(saved.order_id),p_table_token:window.__tableQrContext.token});
       if(error)return null;
       const row=Array.isArray(data)?data[0]:data;if(!row)return null;
-      row.id=row.order_id;row.order_type="Mesa";row.order_source="table_qr";row.table_reference=row.table_name;
-      const labels={nuevo:"Pedido recibido",recibido:"Pedido recibido",preparacion:"En preparación",listo:"Listo para servir",retirado_mesa:"Retirado de cocina · va hacia tu mesa",entregado:"Entregado en tu mesa",cancelado:"Cancelado"};
+      row.id=row.order_id;row.order_source="table_qr";row.table_reference=row.table_name;
+      const counter=row.order_type==="Retiro";
+      const labels=counter
+        ? {nuevo:"Pedido recibido",recibido:"Pedido recibido",preparacion:"En preparación",listo:"Listo para retirar en mostrador",entregado:"Retirado en mostrador",cancelado:"Cancelado"}
+        : {nuevo:"Pedido recibido",recibido:"Pedido recibido",preparacion:"En preparación",listo:"Listo para servir",retirado_mesa:"Retirado de cocina · va hacia tu mesa",entregado:"Entregado en tu mesa",cancelado:"Cancelado"};
       const title=document.getElementById("table-order-title"),txt=document.getElementById("table-order-text"),pill=document.getElementById("table-order-status"),banner=document.getElementById("table-order-banner");
-      if(banner)banner.hidden=false;if(title)title.textContent="🍽️ "+window.__tableQrContext.name+" · #"+row.order_code;
+      if(banner)banner.hidden=false;
+      if(title)title.textContent=(counter?"🛍️ Retiro en mostrador":"🍽️ "+window.__tableQrContext.name)+" · #"+row.order_code;
       if(txt)txt.textContent=(labels[row.status]||row.status)+" · "+(row.payment_status==="approved"?"Pago confirmado":"Pago pendiente")+" · "+fmt(row.total)+" · Toca para ver seguimiento";
-      if(pill)pill.textContent=labels[row.status]||row.status;
+      if(pill)pill.textContent=counter?"Mostrador":(labels[row.status]||row.status);
       const ref=readTableQrOrderRefs().find(x=>Number(x.order_id)===Number(row.order_id));
       if(String(row.status)==="listo")notifyTableQrReady(row,ref);
-      updateTableQrOrderRef(row.order_id,{order_code:row.order_code,status:row.status,table_name:row.table_name,created_at:row.created_at,ready_notified:ref?.ready_notified||String(row.status)==="listo"});
+      updateTableQrOrderRef(row.order_id,{order_code:row.order_code,status:row.status,table_name:row.table_name,order_type:row.order_type,created_at:row.created_at,ready_notified:ref?.ready_notified||String(row.status)==="listo"});
       if(document.getElementById("orders-dialog")?.open)await loadTableQrOrders();
       if(document.getElementById("order-detail-dialog")?.open&&String(openedOrderId)===String(row.order_id))openOrderDetail(row);
       return row;
@@ -1544,7 +1593,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
       for(let n=0;n<6;n++){
         let check=null;
         if(window.__tableQrContext){
-          const {data}=await db.rpc("get_table_qr_order_status",{p_order_id:Number(returnedOrderId),p_table_token:window.__tableQrContext.token});
+          const {data}=await db.rpc("get_table_qr_order_status_v2",{p_order_id:Number(returnedOrderId),p_table_token:window.__tableQrContext.token});
           check=Array.isArray(data)?data[0]:data;
         }else{
           const result=await db.from("restaurant_orders").select("id,payment_status").eq("id",Number(returnedOrderId)).eq("customer_id",currentCustomer?.id||"00000000-0000-0000-0000-000000000000").maybeSingle();
@@ -1552,7 +1601,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
         }
         if(check?.payment_status==="approved"){
           cart.clear();saveCart();localStorage.removeItem(MP_RETURN_ORDER_KEY);update();
-          if(isMercadoPagoSelected())$("#err").textContent=window.__tableQrContext?"✅ Pago acreditado. Tu pedido de mesa ya fue enviado a cocina.":"✅ Pago acreditado. Tu pedido fue recibido correctamente.";
+          if(isMercadoPagoSelected())$("#err").textContent=window.__tableQrContext?"✅ Pago acreditado. Tu pedido por QR ya fue enviado a cocina.":"✅ Pago acreditado. Tu pedido fue recibido correctamente.";
           if(window.__tableQrContext)await refreshTableQrOrderStatus();
           return;
         }
@@ -1577,5 +1626,5 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.6.10</footer></body>
+<footer class="site-version">Versión v1.6.11</footer></body>
 </html>
