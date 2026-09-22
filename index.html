@@ -296,7 +296,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   </div>
 </div>
 
-<div class="wrap"><div id="pending-order-banner" class="pending-order-banner" hidden><div><strong>📦 Tienes un pedido pendiente</strong><div class="muted" id="pending-order-text">Tu pedido todavía no ha sido entregado.</div></div><button type="button" id="pending-order-open">Ver seguimiento</button></div></div>
+<div class="wrap"><div id="table-order-banner" class="pending-order-banner" hidden><div><strong id="table-order-title">🍽️ Pedido desde mesa</strong><div class="muted" id="table-order-text">Escanea, elige y envía tu pedido directamente a cocina.</div></div><span class="pill" id="table-order-status">Mesa</span></div><div id="pending-order-banner" class="pending-order-banner" hidden><div><strong>📦 Tienes un pedido pendiente</strong><div class="muted" id="pending-order-text">Tu pedido todavía no ha sido entregado.</div></div><button type="button" id="pending-order-open">Ver seguimiento</button></div></div>
 <main class="wrap" id="menu"></main>
 
 <section class="wrap" aria-label="Ventajas"><div class="trust"><div>✓ Pedido fácil por WhatsApp</div><div>✓ Retiro o delivery</div><div>✓ Personalizá tu pedido</div><div>✓ Total calculado al instante</div></div></section>
@@ -382,7 +382,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     <div class="totalrow"><span>Total</span><strong id="total">$0</strong></div>
     <p class="hint" id="ship-hint" hidden>El costo de envío se confirma por WhatsApp.</p>
 
-    <fieldset class="field">
+    <fieldset class="field" id="order-type-field">
       <legend>¿Cómo lo querés?</legend>
       <div class="seg">
         <label class="segopt"><input type="radio" name="tipo" value="Retiro" checked><span class="box"><b>Retiro</b><small id="eta-p"></small></span></label>
@@ -662,6 +662,8 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   ];
   async function loadMenuFromCloud(){
     const params=new URLSearchParams(location.search);
+    const tableToken=(params.get("table")||"").trim();
+    window.__tableQrContext=null;
     if(params.get("demo")==="1"){
       window.__demoMode=true; MENU=DEMO_MENU; CONFIG.name="Restaurante Demo"; CONFIG.whatsapp=""; CONFIG.address="Vista demostración"; CONFIG.payments=["Efectivo","Transferencia","Mercado Pago"]; window.__restaurantId="demo"; return;
     }
@@ -691,6 +693,12 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
       r=fallback.data;
     }
     if(!r) throw new Error(requestedSlug ? "Este restaurante no está disponible. Su suscripción puede estar vencida o suspendida." : "No se encontró un restaurante activo con suscripción vigente para este enlace.");
+    if(tableToken){
+      const {data:tableData,error:tableError}=await db.rpc("get_table_qr_context",{p_table_token:tableToken});
+      const tableRow=Array.isArray(tableData)?tableData[0]:tableData;
+      if(tableError||!tableRow||Number(tableRow.restaurant_id)!==Number(r.id))throw new Error("Este QR de mesa no está disponible o no está incluido en el plan del restaurante.");
+      window.__tableQrContext={token:tableToken,id:Number(tableRow.table_id),name:tableRow.table_name};
+    }
     CONFIG.name=r.name||CONFIG.name; CONFIG.logo=r.logo_url||""; CONFIG.whatsapp=r.whatsapp||CONFIG.whatsapp; CONFIG.address=r.address||CONFIG.address;
     const root=document.documentElement;if(r.theme_primary_color)root.style.setProperty("--restaurant-primary",r.theme_primary_color);if(r.theme_text_color)root.style.setProperty("--restaurant-text",r.theme_text_color);applyMenuThemePalette(root.getAttribute("data-theme")||"light");
     CONFIG.open=(r.open_time||CONFIG.open).slice(0,5); CONFIG.close=(r.close_time||CONFIG.close).slice(0,5);
@@ -707,7 +715,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     const activeCats=(cats||[]),visibleProds=(prods||[]),groups=optionGroups||[],allOptions=productOptions||[];
     const mapCloudProduct=p=>{const base=Number(p.price)||0,productGroups=groups.filter(g=>g.product_id===p.id),single=productGroups.find(g=>g.selection_type==="single"),multiple=productGroups.filter(g=>g.selection_type==="multiple"),singleOptions=single?allOptions.filter(o=>o.group_id===single.id):[],opts=singleOptions.length?singleOptions.map(o=>({l:o.name,p:base+Number(o.price_delta||0),optionId:o.id})).concat(single.required?[]:[{l:"Sin "+single.name.toLowerCase(),p:base}]):[{l:"",p:base}],extras=multiple.flatMap(g=>allOptions.filter(o=>o.group_id===g.id).map(o=>({id:"dbopt-"+o.id,name:o.name,p:Number(o.price_delta||0),group:g.name})));return{id:"db-"+p.id,name:p.name,desc:p.description||"",badge:p.badge||"",pop:!!p.featured,img:p.image_url||"",opts,extras,was:p.compare_price?Number(p.compare_price):null,art:{k:"burger"}}};
     const uncategorized=visibleProds.filter(p=>!p.category_id||!activeCats.some(cat=>cat.id===p.category_id));MENU=activeCats.map(cat=>({id:cat.slug,name:cat.name,tone:"warm",items:visibleProds.filter(p=>p.category_id===cat.id).map(mapCloudProduct)}));if(uncategorized.length)MENU.push({id:"general",name:"General",tone:"warm",items:uncategorized.map(mapCloudProduct)});
-    CONFIG.paymentMethods=paymentMethods||[];const methodNames=CONFIG.paymentMethods.map(m=>m.label);CONFIG.payments=["Efectivo",...methodNames];if(countryConfig?.mercadopago_enabled)CONFIG.payments.push("Mercado Pago");window.__restaurantId=r.id;
+    CONFIG.paymentMethods=paymentMethods||[];const methodNames=CONFIG.paymentMethods.map(m=>m.label);CONFIG.payments=["Efectivo",...methodNames];if(window.__tableQrContext&&!CONFIG.payments.includes("Tarjeta POS"))CONFIG.payments.splice(1,0,"Tarjeta POS");if(countryConfig?.mercadopago_enabled)CONFIG.payments.push("Mercado Pago");window.__restaurantId=r.id;
     // Mercado Pago solo se ofrece cuando la conexión del restaurante fue validada.
     try{
       const {data:mpStatus,error:mpStatusError}=await db.rpc("restaurant_mp_public_status",{rid:r.id});
@@ -871,6 +879,12 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     if(clearCart)clearCart.hidden=true;
     if(pending)pending.hidden=true;
   }
+  if(window.__tableQrContext){
+    const banner=document.getElementById("table-order-banner"),title=document.getElementById("table-order-title"),status=document.getElementById("table-order-status"),field=document.getElementById("order-type-field"),phone=document.getElementById("f-phone");
+    if(banner)banner.hidden=false;if(title)title.textContent="🍽️ Pedido desde "+window.__tableQrContext.name;if(status)status.textContent=window.__tableQrContext.name;if(field)field.hidden=true;if(phone)phone.required=false;
+    const lead=document.querySelector(".lead");if(lead)lead.textContent="Elige tus productos y envía el pedido directamente a cocina desde "+window.__tableQrContext.name+".";
+    const trust=document.querySelector(".trust");if(trust)trust.innerHTML="<div>✓ Pedido directo a cocina</div><div>✓ Mesa identificada automáticamente</div><div>✓ Efectivo, POS o pago en línea</div><div>✓ Estado del pedido desde tu teléfono</div>";
+  }
   const ITEMS = {};
   const popItems = [];
   MENU.forEach(cat => cat.items.forEach(it => {
@@ -882,6 +896,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   const CART_KEY = "menu_cart_v2";
   const CUSTOMER_KEY = "menu_customer_v2";
   const MP_RETURN_ORDER_KEY = "mp_return_order_id";
+  const TABLE_QR_ORDER_KEY = "table_qr_last_order";
   function saveCart(){
     try{ localStorage.setItem(CART_KEY, JSON.stringify([...cart.entries()].map(([k,v])=>[k,{id:v.it.id,opt:v.it.opts.indexOf(v.opt),ex:v.ex.map(x=>x.id),note:v.note,qty:v.qty}]))); }catch(e){}
   }
@@ -920,7 +935,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     paySelected.textContent=selected?"Seleccionaste: "+selected:"";
     mpSafe.hidden=selected!=="Mercado Pago";
     const method=CONFIG.paymentMethods.find(m=>m.label===selected);altNote.hidden=!method;altNote.innerHTML=method?`<b>${esc(method.label)}</b>${method.logo_url?`<img src="${esc(method.logo_url)}" alt="Logo de ${esc(method.institution||method.label)}" style="display:block;max-width:100px;max-height:70px;object-fit:contain;margin:10px 0;border-radius:10px;background:#fff;padding:5px">`:""}${method.institution?`<br>Banco / entidad: ${esc(method.institution)}`:""}${method.account_holder?`<br>Titular: ${esc(method.account_holder)}`:""}${method.document_id?`<br>DNI / documento: ${esc(method.document_id)}`:""}${method.account_type?`<br>Tipo de cuenta: ${esc(method.account_type)}`:""}${method.account_identifier?`<br>Cuenta / teléfono: ${esc(method.account_identifier)}`:""}${method.qr_image_url?`<br><img src="${esc(method.qr_image_url)}" alt="QR de pago" style="display:block;max-width:300px;width:100%;margin:14px auto;border-radius:16px;background:#fff;padding:8px"><div style="margin:12px 0;padding:12px;border-radius:12px;background:#fff;border:1px solid #e6c65d"><b>📱 Guarda una captura del QR antes de continuar</b><br><span>Realiza el pago desde tu aplicación bancaria y luego pulsa “Enviar pedido por WhatsApp”. Si el local solicita el comprobante, envíalo directamente en la conversación de WhatsApp.</span></div>`:""}${method.instructions?`<div style="margin-top:10px">${esc(method.instructions)}</div>`:""}<small>Este pedido se coordina únicamente por WhatsApp y no se registrará como pago en línea.</small>`:"";
-    const sendBtn=$("#send");if(sendBtn)sendBtn.textContent=selected==="Mercado Pago"?"Pagar con Mercado Pago":"Enviar pedido por WhatsApp";
+    const sendBtn=$("#send");if(sendBtn)sendBtn.textContent=selected==="Mercado Pago"?"Pagar con Mercado Pago":(window.__tableQrContext?"Enviar pedido a cocina":"Enviar pedido por WhatsApp");
   }
   function syncPaymentMethodUI(){
     const selected=$("#f-pay").value;
@@ -930,7 +945,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
       const err=$("#err");
       if(err)err.textContent="";
       const sendBtn=$("#send");
-      if(sendBtn){sendBtn.disabled=false;sendBtn.textContent="Enviar pedido por WhatsApp";}
+      if(sendBtn){sendBtn.disabled=false;sendBtn.textContent=window.__tableQrContext?"Enviar pedido a cocina":"Enviar pedido por WhatsApp";}
     }
     renderPaymentButtons();
     refreshLink();
@@ -1168,7 +1183,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   const form = () => ({
     name: $("#f-name").value.trim(),
     phone: $("#f-phone").value.trim(),
-    type: document.querySelector('input[name="tipo"]:checked').value,
+    type: window.__tableQrContext?"Mesa":document.querySelector('input[name="tipo"]:checked').value,
     addr: $("#f-addr").value.trim(),
     pay: $("#f-pay").value,
     notes: $("#f-notes").value.trim()
@@ -1305,9 +1320,25 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   async function saveOrderToCloud(){
     if (!db || !cart.size) return false;
     const f=form();
-    if(currentCustomer){await db.from("customer_profiles").upsert({user_id:currentCustomer.id,full_name:f.name,phone:f.phone,default_address:f.type==="Delivery"?f.addr:null,updated_at:new Date().toISOString()});}
-    const orderCode = "WEB-" + Date.now().toString(36).toUpperCase();
+    if(currentCustomer&&!window.__tableQrContext){await db.from("customer_profiles").upsert({user_id:currentCustomer.id,full_name:f.name,phone:f.phone,default_address:f.type==="Delivery"?f.addr:null,updated_at:new Date().toISOString()});}
     const items=[...cart.values()].map(v=>({product_id:String(v.it.id||"").startsWith("db-")?Number(String(v.it.id).slice(3)):null,name:lineName(v),qty:v.qty,unit_price:unitOf(v),extras:v.ex.map(x=>x.name),note:v.note||""}));
+    if(window.__tableQrContext){
+      const {data,error}=await db.rpc("create_table_qr_order",{
+        p_table_token:window.__tableQrContext.token,
+        p_customer_name:f.name,
+        p_customer_phone:f.phone,
+        p_payment_method:f.pay,
+        p_notes:f.notes,
+        p_items:items,
+        p_currency_code:CONFIG.currency||"CLP"
+      });
+      if(error){console.error("No se pudo crear el pedido QR",error);throw error;}
+      const row=Array.isArray(data)?data[0]:data;
+      if(!row?.order_id)throw new Error("No se pudo registrar el pedido de la mesa.");
+      try{localStorage.setItem(TABLE_QR_ORDER_KEY,JSON.stringify({order_id:Number(row.order_id),order_code:row.order_code,token:window.__tableQrContext.token,table_name:window.__tableQrContext.name}));}catch(_){}
+      return Number(row.order_id);
+    }
+    const orderCode = "WEB-" + Date.now().toString(36).toUpperCase();
     const orderRow={
       restaurant_id:window.__restaurantId||null, order_code:orderCode, customer_name:f.name, customer_phone:f.phone, customer_id:currentCustomer?.id||null, customer_email:currentCustomer?.email||null, order_type:f.type,
       delivery_address:f.type === "Delivery" ? f.addr : null, payment_method:f.pay,
@@ -1330,13 +1361,13 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     let msg="";
     if(!cart.size)msg="Agregá al menos un producto.";
     else if(!f.name)msg="Escribí tu nombre.";
-    else if(!f.phone)msg="Ingresa tu número de teléfono.";
+    else if(!f.phone&&!window.__tableQrContext)msg="Ingresa tu número de teléfono.";
     else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";
     else if(f.type==="Delivery"&&CONFIG.delivery.mode==="distance"&&!deliveryCoords)msg="Usa tu ubicación para calcular el costo del delivery.";
     else if(f.type==="Delivery"&&deliveryUnavailable)msg="Tu ubicación está fuera de la zona de delivery.";
     if(msg){$("#err").textContent=msg;return;}
     if(f.pay==="Mercado Pago"){
-      if(!currentCustomer){$("#err").textContent="Para pagar con Mercado Pago tienes que iniciar sesión o crear una cuenta para poder hacer seguimiento de tu pedido.";document.getElementById("account-dialog").showModal();return;}
+      if(!currentCustomer&&!window.__tableQrContext){$("#err").textContent="Para pagar con Mercado Pago tienes que iniciar sesión o crear una cuenta para poder hacer seguimiento de tu pedido.";document.getElementById("account-dialog").showModal();return;}
       $("#err").textContent="Conectando con Mercado Pago…";send.disabled=true;send.textContent="Abriendo Mercado Pago…";
       try{
         const paymentOrderId=await saveOrderToCloud();
@@ -1355,11 +1386,19 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     $("#err").textContent="";
     send.disabled=true;
     try{
+      if(window.__tableQrContext){
+        const orderId=await saveOrderToCloud();
+        cart.clear();saveCart();update();
+        send.disabled=false;send.textContent="Enviar pedido a cocina";
+        $("#err").textContent="✅ Pedido enviado desde "+window.__tableQrContext.name+". "+(f.pay==="Efectivo"?"Paga en efectivo cuando te atiendan.":f.pay==="Tarjeta POS"?"Paga con la máquina POS cuando te atiendan.":"Pago seleccionado: "+f.pay+".")+" Pedido #"+orderId;
+        await refreshTableQrOrderStatus();
+        return;
+      }
       refreshLink();
       if(!whatsappOrderUrl)throw new Error("No se pudo generar el enlace de WhatsApp.");
       window.location.href=whatsappOrderUrl;
       setTimeout(()=>{cart.clear();saveCart();update();send.disabled=false;},500);
-    }catch(err){send.disabled=false;send.textContent="Enviar pedido por WhatsApp";$("#err").textContent="No se pudo enviar el pedido: "+(err.message||err);}
+    }catch(err){send.disabled=false;send.textContent=window.__tableQrContext?"Enviar pedido a cocina":"Enviar pedido por WhatsApp";$("#err").textContent="No se pudo enviar el pedido: "+(err.message||err);}
   };
 
   // Preferencias y persistencia
@@ -1372,20 +1411,43 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   // Sincroniza inmediatamente la barra con el carrito restaurado al recargar.
   // Antes solo se restauraban los datos; la barra seguía oculta hasta modificar el carrito.
   update();
+  async function refreshTableQrOrderStatus(){
+    if(!window.__tableQrContext)return;
+    let saved=null;try{saved=JSON.parse(localStorage.getItem(TABLE_QR_ORDER_KEY)||"null")}catch(_){}
+    if(!saved||saved.token!==window.__tableQrContext.token||!saved.order_id)return;
+    try{
+      const {data,error}=await db.rpc("get_table_qr_order_status",{p_order_id:Number(saved.order_id),p_table_token:window.__tableQrContext.token});
+      if(error)return;
+      const row=Array.isArray(data)?data[0]:data;if(!row)return;
+      const labels={recibido:"Pedido recibido",preparacion:"En preparación",listo:"Listo para servir",entregado:"Entregado",cancelado:"Cancelado"};
+      const title=document.getElementById("table-order-title"),txt=document.getElementById("table-order-text"),pill=document.getElementById("table-order-status"),banner=document.getElementById("table-order-banner");
+      if(banner)banner.hidden=false;if(title)title.textContent="🍽️ "+window.__tableQrContext.name+" · #"+row.order_code;
+      if(txt)txt.textContent=(labels[row.status]||row.status)+" · "+(row.payment_status==="approved"?"Pago confirmado":"Pago pendiente")+" · "+fmt(row.total);
+      if(pill)pill.textContent=labels[row.status]||row.status;
+      if(["entregado","cancelado"].includes(row.status))setTimeout(()=>{try{localStorage.removeItem(TABLE_QR_ORDER_KEY)}catch(_){}},1500);
+    }catch(e){console.warn("No se pudo actualizar el estado del pedido QR",e)}
+  }
+
   // Al volver desde Mercado Pago, consulta el estado real del pedido y nunca deja el checkout bloqueado.
   async function verifyMercadoPagoReturn(){
     const returnedOrderId=localStorage.getItem(MP_RETURN_ORDER_KEY);
     if(!returnedOrderId)return;
-    // La verificación puede continuar en segundo plano, pero nunca debe contaminar
-    // la interfaz si el cliente ya eligió Efectivo o Transferencia.
     const isMercadoPagoSelected=()=>$("#f-pay").value==="Mercado Pago";
     if(isMercadoPagoSelected()){send.disabled=false;send.textContent="Pagar con Mercado Pago";}
     try{
       for(let n=0;n<6;n++){
-        const {data:check}=await db.from("restaurant_orders").select("id,payment_status").eq("id",Number(returnedOrderId)).eq("customer_id",currentCustomer?.id||"00000000-0000-0000-0000-000000000000").maybeSingle();
+        let check=null;
+        if(window.__tableQrContext){
+          const {data}=await db.rpc("get_table_qr_order_status",{p_order_id:Number(returnedOrderId),p_table_token:window.__tableQrContext.token});
+          check=Array.isArray(data)?data[0]:data;
+        }else{
+          const result=await db.from("restaurant_orders").select("id,payment_status").eq("id",Number(returnedOrderId)).eq("customer_id",currentCustomer?.id||"00000000-0000-0000-0000-000000000000").maybeSingle();
+          check=result.data;
+        }
         if(check?.payment_status==="approved"){
           cart.clear();saveCart();localStorage.removeItem(MP_RETURN_ORDER_KEY);update();
-          if(isMercadoPagoSelected())$("#err").textContent="✅ Pago acreditado. Tu pedido fue recibido correctamente.";
+          if(isMercadoPagoSelected())$("#err").textContent=window.__tableQrContext?"✅ Pago acreditado. Tu pedido de mesa ya fue enviado a cocina.":"✅ Pago acreditado. Tu pedido fue recibido correctamente.";
+          if(window.__tableQrContext)await refreshTableQrOrderStatus();
           return;
         }
         if(n<5)await new Promise(r=>setTimeout(r,1500));
@@ -1397,11 +1459,13 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     }
   }
   await verifyMercadoPagoReturn();
-  window.addEventListener("pageshow",()=>{verifyMercadoPagoReturn();});
+  await refreshTableQrOrderStatus();
+  if(window.__tableQrContext)setInterval(refreshTableQrOrderStatus,8000);
+  window.addEventListener("pageshow",()=>{verifyMercadoPagoReturn();refreshTableQrOrderStatus();});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")verifyMercadoPagoReturn();});
   toggleDelivery();
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.6.3</footer></body>
+<footer class="site-version">Versión v1.6.4</footer></body>
 </html>
