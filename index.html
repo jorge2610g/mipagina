@@ -564,8 +564,8 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     openedOrderId=o.id||o.order_id;
     const raw=String(o.status||"recibido").toLowerCase(), normalized=raw==="recibido"?"recibido":raw==="preparando"?"preparacion":raw;
     const isTable=String(o.order_source||"").toLowerCase()==="table_qr"||!!o.table_name;
-    const steps=isTable?["preparacion","listo","entregado"]:(o.order_type==="Delivery"?["recibido","preparacion","listo","en_camino","entregado"]:["recibido","preparacion","listo","entregado"]);
-    const labels=isTable?["Preparando tu pedido","Listo para servir","Retirado de cocina · va hacia tu mesa"]:(o.order_type==="Delivery"?["Pedido recibido","Preparando tu pedido","Pedido listo","En camino","Entregado"]:["Pedido recibido","Preparando tu pedido","Listo para recoger","Pedido entregado"]);
+    const steps=isTable?["preparacion","listo","retirado_mesa","entregado"]:(o.order_type==="Delivery"?["recibido","preparacion","listo","en_camino","entregado"]:["recibido","preparacion","listo","entregado"]);
+    const labels=isTable?["Preparando tu pedido","Listo para servir","Retirado de cocina · va hacia tu mesa","Entregado en tu mesa"]:(o.order_type==="Delivery"?["Pedido recibido","Preparando tu pedido","Pedido listo","En camino","Entregado"]:["Pedido recibido","Preparando tu pedido","Listo para recoger","Pedido entregado"]);
     let idx=steps.indexOf(normalized);if(idx<0)idx=0;
     const location=isTable?(o.table_name||window.__tableQrContext?.name||"Tu mesa"):(o.order_type==="Delivery"?(o.delivery_address||"Dirección de entrega no registrada"):(CONFIG.address||"Dirección del restaurante no disponible"));
     const items=Array.isArray(o.items)?o.items:[];
@@ -1520,7 +1520,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
       if(error)return null;
       const row=Array.isArray(data)?data[0]:data;if(!row)return null;
       row.id=row.order_id;row.order_type="Mesa";row.order_source="table_qr";row.table_reference=row.table_name;
-      const labels={nuevo:"Pedido recibido",recibido:"Pedido recibido",preparacion:"En preparación",listo:"Listo para servir",entregado:"Retirado de cocina",cancelado:"Cancelado"};
+      const labels={nuevo:"Pedido recibido",recibido:"Pedido recibido",preparacion:"En preparación",listo:"Listo para servir",retirado_mesa:"Retirado de cocina · va hacia tu mesa",entregado:"Entregado en tu mesa",cancelado:"Cancelado"};
       const title=document.getElementById("table-order-title"),txt=document.getElementById("table-order-text"),pill=document.getElementById("table-order-status"),banner=document.getElementById("table-order-banner");
       if(banner)banner.hidden=false;if(title)title.textContent="🍽️ "+window.__tableQrContext.name+" · #"+row.order_code;
       if(txt)txt.textContent=(labels[row.status]||row.status)+" · "+(row.payment_status==="approved"?"Pago confirmado":"Pago pendiente")+" · "+fmt(row.total)+" · Toca para ver seguimiento";
@@ -1577,5 +1577,5 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   update();
 })();
 </script>
-<footer class="site-version">Versión v1.6.9</footer></body>
+<footer class="site-version">Versión v1.6.10</footer></body>
 </html>
