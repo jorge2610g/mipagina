@@ -853,13 +853,16 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     window.__restaurantId=r.id;
     if(window.__businessType==="professional"){
       window.__tableQrContext=null;
-      const [publicCatalog,bookingCatalog]=await Promise.all([
+      const [publicCatalog,bookingCatalog,mpStatus]=await Promise.all([
         db.rpc("get_public_professional_catalog",{p_slug:r.slug}),
-        db.rpc("get_professional_public_catalog",{p_restaurant_id:r.id})
+        db.rpc("get_professional_public_catalog",{p_restaurant_id:r.id}),
+        db.rpc("restaurant_mp_public_status",{rid:r.id})
       ]);
       if(publicCatalog.error)throw new Error("No se pudo cargar la página de reservas: "+publicCatalog.error.message);
       if(!publicCatalog.data?.restaurant)throw new Error("Este profesional no está disponible para reservas.");
-      window.__professionalCatalog={...publicCatalog.data,booking:bookingCatalog.data?.booking||{timezone:r.timezone,currency_code:r.currency_code,locale:r.locale,max_days:60,min_notice_hours:2}};
+      const mpRow=Array.isArray(mpStatus.data)?mpStatus.data[0]:mpStatus.data;
+      const bookingInfo=bookingCatalog.data?.booking||{timezone:r.timezone,currency_code:r.currency_code,locale:r.locale,max_days:60,min_notice_hours:2};
+      window.__professionalCatalog={...publicCatalog.data,booking:{...bookingInfo,mercadopago_configured:!mpStatus.error&&!!mpRow?.configured}};
       MENU=[];CONFIG.payments=[];return;
     }
     if(["supermarket","minimarket"].includes(window.__businessType)){
