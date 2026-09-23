@@ -2,7 +2,7 @@
   "id": "/",
   "name": "YummyPro Cliente",
   "short_name": "YummyPro Cliente",
-  "description": "Menú digital, pedidos y seguimiento para clientes YummyPro",
+  "description": "Menú digital, tienda online, compras y seguimiento para clientes YummyPro",
   "lang": "es",
   "start_url": "/?source=pwa",
   "scope": "/",
