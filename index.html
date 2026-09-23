@@ -1193,10 +1193,11 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   function addLine(it, oi, exIds, note, qty){
     const key = [it.id, oi, exIds.slice().sort().join("+"), note].join("|");
     const ex = (it.extras || []).filter(x => exIds.includes(x.id));
-    const cur = cart.get(key);
+    const cur = cart.get(key),requested=(cur?.qty||0)+qty;
+    if(["supermarket","minimarket"].includes(window.__businessType||"")&&Number.isFinite(Number(it.stock))&&requested>Number(it.stock)){announce("Solo quedan "+it.stock+" unidades de "+it.name+".");return false}
     if (cur) cur.qty += qty; else cart.set(key, { it, opt: it.opts[oi], ex, note, qty });
     announce("Agregaste " + it.name + (it.opts[oi].l ? " " + it.opts[oi].l : "") + " al pedido.");
-    saveCart(); update(true);
+    saveCart(); update(true);return true;
   }
   let deliveryFee=0, deliveryDistance=null, deliveryCoords=null, deliveryUnavailable=false;
   function deliverySelected(){return document.querySelector('input[name="tipo"]:checked')?.value==="Delivery"}
@@ -1316,7 +1317,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     if (!cur) return;
     if (e.target === dlgD || e.target.closest("[data-close]")){ dlgD.close(); return; }
     const q = e.target.closest("[data-q]");
-    if (q){ cur.qty = Math.max(1, Math.min(20, cur.qty + Number(q.dataset.q))); refreshDetail(false); return; }
+    if (q){ const max=["supermarket","minimarket"].includes(window.__businessType||"")&&Number.isFinite(Number(cur.it.stock))?Math.max(1,Number(cur.it.stock)):20;cur.qty = Math.max(1, Math.min(max, cur.qty + Number(q.dataset.q))); refreshDetail(false); return; }
     if (e.target.closest("#d-add")){
       addLine(cur.it, cur.oi, [...cur.ex], $("#d-note").value.trim(), cur.qty);
       dlgD.close();
@@ -1333,7 +1334,9 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     if (!b) return;
     const v = cart.get(b.dataset.k);
     if (!v) return;
-    v.qty += Number(b.dataset.a);
+    const next=v.qty+Number(b.dataset.a),max=["supermarket","minimarket"].includes(window.__businessType||"")&&Number.isFinite(Number(v.it.stock))?Number(v.it.stock):Infinity;
+    if(next>max){announce("Solo quedan "+max+" unidades de "+v.it.name+".");return}
+    v.qty=next;
     if (v.qty <= 0) cart.delete(b.dataset.k);
     saveCart(); update();
   });
