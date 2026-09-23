@@ -621,19 +621,29 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   function openOrderDetail(o){
     if(!o)return;
     openedOrderId=o.id||o.order_id;
-    const raw=String(o.status||"recibido").toLowerCase(), normalized=raw==="recibido"?"recibido":raw==="preparando"?"preparacion":raw;
-    const isQr=String(o.order_source||"").toLowerCase()==="table_qr"||!!o.table_name;
+    const raw=String(o.status||"recibido").toLowerCase(), normalized=({received:"recibido",preparing:"preparacion",ready:"listo",delivered:"entregado",cancelled:"cancelado",pending_payment:"pendiente_pago",preparando:"preparacion"}[raw]||raw);
+    const isQr=String(o.order_source||"").toLowerCase()==="table_qr"||!!o.table_name,isRetail=String(o.order_source||"").toLowerCase()==="retail_online"||["supermarket","minimarket"].includes(window.__businessType||"");
     const isCounter=isQr&&String(o.order_type||"").toLowerCase()==="retiro";
     const isTable=isQr&&!isCounter;
-    const steps=isTable?["preparacion","listo","retirado_mesa","entregado"]:(isCounter?["preparacion","listo","entregado"]:(o.order_type==="Delivery"?["recibido","preparacion","listo","en_camino","entregado"]:["recibido","preparacion","listo","entregado"]));
-    const labels=isTable?["Preparando tu pedido","Listo para servir","Retirado de cocina · va hacia tu mesa","Entregado en tu mesa"]:(isCounter?["Preparando tu pedido","Listo para retirar en mostrador","Retirado en mostrador"]:(o.order_type==="Delivery"?["Pedido recibido","Preparando tu pedido","Pedido listo","En camino","Entregado"]:["Pedido recibido","Preparando tu pedido","Listo para recoger","Pedido entregado"]));
+    const steps=isRetail?(raw==="pending_payment"?["pendiente_pago","recibido","preparacion","listo","entregado"]:(o.order_type==="Delivery"?["recibido","preparacion","listo","entregado"]:["recibido","preparacion","listo","entregado"])):isTable?["preparacion","listo","retirado_mesa","entregado"]:(isCounter?["preparacion","listo","entregado"]:(o.order_type==="Delivery"?["recibido","preparacion","listo","en_camino","entregado"]:["recibido","preparacion","listo","entregado"]));
+    const labels=isRetail?(raw==="pending_payment"?["Esperando confirmación de pago","Compra recibida","Preparando tu compra","Lista para entrega/retiro","Entregada"]:["Compra recibida","Preparando tu compra","Lista para entrega/retiro","Entregada"]):isTable?["Preparando tu pedido","Listo para servir","Retirado de cocina · va hacia tu mesa","Entregado en tu mesa"]:(isCounter?["Preparando tu pedido","Listo para retirar en mostrador","Retirado en mostrador"]:(o.order_type==="Delivery"?["Pedido recibido","Preparando tu pedido","Pedido listo","En camino","Entregado"]:["Pedido recibido","Preparando tu pedido","Listo para recoger","Pedido entregado"]));
     let idx=steps.indexOf(normalized);if(idx<0)idx=0;
-    const location=isTable?(o.table_name||window.__tableQrContext?.name||"Tu mesa"):(isCounter?(CONFIG.address||"Mostrador del restaurante"):(o.order_type==="Delivery"?(o.delivery_address||"Dirección de entrega no registrada"):(CONFIG.address||"Dirección del restaurante no disponible")));
+    const location=isRetail?(o.order_type==="Delivery"?(o.delivery_address||"Dirección de entrega no registrada"):(CONFIG.address||"Dirección de retiro no disponible")):isTable?(o.table_name||window.__tableQrContext?.name||"Tu mesa"):(isCounter?(CONFIG.address||"Mostrador del restaurante"):(o.order_type==="Delivery"?(o.delivery_address||"Dirección de entrega no registrada"):(CONFIG.address||"Dirección del restaurante no disponible")));
     const items=Array.isArray(o.items)?o.items:[];
     const canAdd=isQr&&!["entregado","cancelado"].includes(raw);
     const appendable=canAdd&&["recibido","preparacion"].includes(raw)&&!["mercado pago","qr bolivia"].includes(String(o.payment_method||"").trim().toLowerCase())&&String(o.payment_status||"").trim().toLowerCase()!=="approved";
-    const action=canAdd?'<button type="button" id="qr-add-products" class="primary" style="width:100%;margin-top:14px">'+(appendable?"＋ Agregar productos a este pedido":"＋ Hacer un pedido adicional")+'</button>':"";
+    const canRetailCancel=isRetail&&["pending_payment","received"].includes(raw)&&String(o.payment_status||"").toLowerCase()!=="approved";
+    const action=(canAdd?'<button type="button" id="qr-add-products" class="primary" style="width:100%;margin-top:14px">'+(appendable?"＋ Agregar productos a este pedido":"＋ Hacer un pedido adicional")+'</button>':'')+(canRetailCancel?'<button type="button" id="retail-cancel-order" class="ghost" style="width:100%;margin-top:10px">Cancelar compra</button>':'');
     document.getElementById("order-detail-content").innerHTML='<div class="order-code">'+esc((isQr?((isCounter?"Retiro mostrador":location)+" · #"):"")+o.order_code)+'</div><div class="order-meta">'+new Date(o.created_at||Date.now()).toLocaleString("es-CL")+'</div>'+(items.length?'<div class="order-items" style="margin-top:12px">'+items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join("<br>")+'</div>':'')+'<div style="margin-top:14px">'+steps.map((s,i)=>'<div class="tracking-step '+(i<idx?"done":i===idx?"current":"")+'"><span class="tracking-dot"></span><div>'+esc(labels[i])+(i===idx?'<div class="order-meta">Estado actual</div>':'')+'</div></div>').join("")+'</div><div class="pickup-box"><b>'+(isTable?"🍽️ Mesa asignada":isCounter?"🛍️ Retiro en mostrador":(o.order_type==="Delivery"?"📍 Lugar de entrega":"📍 Dónde recogerlo"))+'</b>'+esc(location)+'</div>'+action;
+    const retailCancelBtn=document.getElementById("retail-cancel-order");
+    if(retailCancelBtn)retailCancelBtn.onclick=async()=>{
+      const ref=readRetailOrderRefs().find(x=>Number(x.order_id)===Number(openedOrderId));if(!ref?.tracking_token)return;
+      if(!confirm("¿Cancelar esta compra? El stock reservado volverá a estar disponible."))return;
+      retailCancelBtn.disabled=true;
+      const {error}=await db.rpc("retail_cancel_online_order",{p_order_id:Number(openedOrderId),p_tracking_token:ref.tracking_token});
+      if(error){retailCancelBtn.disabled=false;return alert(error.message)}
+      updateRetailOrderRef(openedOrderId,{status:"cancelled",payment_status:"cancelled"});document.getElementById("order-detail-dialog").close();await loadRetailOrdersFromRefs(true)
+    };
     const addBtn=document.getElementById("qr-add-products");
     if(addBtn)addBtn.onclick=()=>{
       qrOrderEditTarget={order_id:Number(openedOrderId),order_code:o.order_code||String(openedOrderId),mode:appendable?"append":"new",order_type:isCounter?"Retiro":"Mesa",payment_method:o.payment_method||""};
