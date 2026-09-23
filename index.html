@@ -545,7 +545,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   }
   function notifyCustomerOrder(row){
     if(!("Notification" in window)||Notification.permission!=="granted")return;
-    const messages={nuevo:"Tu pedido fue recibido.",recibido:"Tu pedido fue recibido.",preparando:"🍳 Tu pedido está siendo preparado.",preparacion:"🍳 Tu pedido está siendo preparado.",listo:row.order_type==="Delivery"?"✅ Tu pedido está listo.":"✅ Tu pedido está listo para recoger.",en_camino:"🛵 Tu pedido va en camino.",entregado:"🎉 Tu pedido fue entregado.",cancelado:"Tu pedido fue cancelado."};
+    const messages={nuevo:"Tu pedido fue recibido.",recibido:"Tu pedido fue recibido.",received:"Tu compra fue recibida.",preparando:"🍳 Tu pedido está siendo preparado.",preparacion:"🍳 Tu pedido está siendo preparado.",preparing:"🛒 Estamos preparando tu compra.",listo:row.order_type==="Delivery"?"✅ Tu pedido está listo.":"✅ Tu pedido está listo para recoger.",ready:row.order_type==="Delivery"?"✅ Tu compra está lista para entrega.":"✅ Tu compra está lista para retirar.",en_camino:"🛵 Tu pedido va en camino.",entregado:"🎉 Tu pedido fue entregado.",delivered:"🎉 Tu compra fue entregada.",cancelado:"Tu pedido fue cancelado.",cancelled:"Tu compra fue cancelada.",pending_payment:"Esperando confirmación de pago."};
     try{new Notification("Express · "+statusLabel(row.status),{body:messages[row.status]||"Tu pedido cambió de estado.",tag:"order-"+row.id,renotify:true});}catch(e){}
   }
   async function loadTableQrOrders(){
@@ -1862,6 +1862,19 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     if("Notification" in window&&Notification.permission==="granted")setTimeout(()=>enableTableQrNotifications(false),0);
     if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data?.type==="yummypro-push"&&String(e.data?.data?.tag||"").startsWith("table-order-"))refreshTableQrOrderStatus()});
     setInterval(refreshTableQrOrderStatus,8000);
+  }
+  if(["supermarket","minimarket"].includes(window.__businessType||"")){
+    let retailStatusSnapshot={};
+    const refreshRetailTracking=async()=>{
+      const rows=await loadRetailOrdersFromRefs(false),changed=[];
+      rows.forEach(row=>{const id=Number(row.id||row.order_id),prev=retailStatusSnapshot[id];if(prev&&prev!==row.status)changed.push(row);retailStatusSnapshot[id]=row.status});
+      changed.forEach(row=>notifyCustomerOrder(row));
+      if(document.getElementById("orders-dialog")?.open)await loadRetailOrdersFromRefs(true);
+      if(document.getElementById("order-detail-dialog")?.open&&openedOrderId){const row=rows.find(x=>Number(x.id||x.order_id)===Number(openedOrderId));if(row)openOrderDetail(row)}
+    };
+    loadRetailOrdersFromRefs(false).then(rows=>rows.forEach(row=>retailStatusSnapshot[Number(row.id||row.order_id)]=row.status)).catch(()=>{});
+    setInterval(()=>{if(document.visibilityState==="visible")refreshRetailTracking().catch(()=>{})},8000);
+    document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshRetailTracking().catch(()=>{})});
   }
   window.addEventListener("pageshow",()=>{verifyMercadoPagoReturn();refreshTableQrOrderStatus();});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")verifyMercadoPagoReturn();});
