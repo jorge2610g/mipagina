@@ -604,6 +604,15 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     if(!currentCustomer||!("serviceWorker" in navigator)||!("PushManager" in window)||Notification.permission!=="granted")return;
     const registration=await navigator.serviceWorker.register("/pwa-sw.js");
     let subscription=await registration.pushManager.getSubscription();
+    if(subscription){
+      try{
+        const {data:known}=await db.from("push_subscriptions").select("id,enabled").eq("user_id",currentCustomer.id).eq("endpoint",subscription.endpoint).maybeSingle();
+        if(known&&known.enabled===false){
+          await subscription.unsubscribe().catch(()=>false);
+          subscription=null;
+        }
+      }catch(e){console.warn("No se pudo validar la suscripción Push actual",e)}
+    }
     if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(WEB_PUSH_PUBLIC_KEY)});
     const json=subscription.toJSON();
     const restaurantId=Number(window.__restaurantId||0)||null;
@@ -2398,5 +2407,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.33</footer></body>
+<footer class="site-version">Versión v1.6.34</footer></body>
 </html>
