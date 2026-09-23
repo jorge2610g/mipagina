@@ -11,7 +11,7 @@ const pwaManifest=readFileSync('manifest.webmanifest','utf8');
 for(const marker of ['"id": "/"','"start_url": "/?source=pwa"','"scope": "/"','"display": "standalone"','"/icon-192.png"','"/icon-512.png"','"purpose": "maskable"'])if(!pwaManifest.includes(marker))throw new Error('Manifest PWA cliente v1.6.23 incompleto: '+marker);
 
 const pwaSw=readFileSync('pwa-sw.js','utf8');
-for(const marker of ['yummypro-client-v1621-installfix','SKIP_WAITING','/offline.html','/icon-192.png','/icon-512.png'])if(!pwaSw.includes(marker))throw new Error('Service Worker PWA cliente v1.6.23 incompleto: '+marker);
+for(const marker of ['yummypro-client-v1623-retail-store','SKIP_WAITING','/offline.html','/icon-192.png','/icon-512.png'])if(!pwaSw.includes(marker))throw new Error('Service Worker PWA cliente v1.6.23 incompleto: '+marker);
 
 if(!html.includes('["pwa","client-pwa-v2","client-pwa-v3"]'))throw new Error('El inicio PWA no conserva el último restaurante');
 
