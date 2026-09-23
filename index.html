@@ -1027,6 +1027,75 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     document.getElementById("professional-reservations-close")?.addEventListener("click",closeProfessionalReservations);
     document.getElementById("professional-login-tab")?.addEventListener("click",()=>{document.getElementById("professional-login-form").hidden=false;document.getElementById("professional-register-form").hidden=true;document.getElementById("professional-login-tab").classList.add("active");document.getElementById("professional-register-tab").classList.remove("active")});
     document.getElementById("professional-register-tab")?.addEventListener("click",()=>{document.getElementById("professional-login-form").hidden=true;document.getElementById("professional-register-form").hidden=false;document.getElementById("professional-login-tab").classList.remove("active");document.getElementById("professional-register-tab").classList.add("active")});
+    async function syncProfessionalCustomer(){
+      const accountBtn=document.getElementById("professional-account"),guest=document.getElementById("professional-account-guest"),authBox=document.getElementById("professional-account-auth"),userText=document.getElementById("professional-account-user"),msg=document.getElementById("professional-account-message");
+      const {data:{session}}=await db.auth.getSession();
+      currentCustomer=session?.user||null;
+      if(currentCustomer){
+        const {data:role}=await db.rpc("current_account_role");
+        if(role!=="customer"){await db.auth.signOut();currentCustomer=null}
+      }
+      if(currentCustomer){
+        accountBtn.textContent="👤 Mi cuenta";guest.hidden=true;authBox.hidden=false;
+        const {data:p}=await db.from("customer_profiles").select("full_name,phone").eq("user_id",currentCustomer.id).maybeSingle();
+        userText.textContent=(p?.full_name?String(p.full_name)+" · ":"")+String(currentCustomer.email||"");
+        const name=document.getElementById("public-professional-name"),phone=document.getElementById("public-professional-phone"),email=document.getElementById("public-professional-email");
+        if(name&&!name.value&&p?.full_name)name.value=p.full_name;
+        if(phone&&!phone.value&&p?.phone)phone.value=p.phone;
+        if(email&&!email.value)email.value=currentCustomer.email||"";
+        if(msg){msg.classList.remove("error");msg.textContent=""}
+      }else{
+        accountBtn.textContent="👤 Iniciar sesión";guest.hidden=false;authBox.hidden=true;userText.textContent="Inicia sesión para guardar y seguir tus reservas.";
+      }
+    }
+    document.getElementById("professional-login-form")?.addEventListener("submit",async event=>{
+      event.preventDefault();
+      const msg=document.getElementById("professional-account-message");msg.classList.remove("error");msg.textContent="Ingresando…";
+      const email=document.getElementById("professional-login-email").value.trim(),password=document.getElementById("professional-login-password").value;
+      const {error}=await db.auth.signInWithPassword({email,password});
+      if(error){msg.classList.add("error");msg.textContent="No pudimos iniciar sesión. Revisa correo y contraseña.";await trackClientError("auth","professional_login_failure",error.message||"Error de acceso",true);return}
+      const {data:role}=await db.rpc("current_account_role");
+      if(role!=="customer"){
+        await db.auth.signOut();
+        msg.classList.add("error");
+        msg.textContent=role==="restaurant"?"Esta cuenta pertenece a un negocio. Ingresa desde el panel del negocio.":role==="admin"?"Esta cuenta es de administrador y no puede entrar como cliente.":"Esta cuenta no está registrada como cliente.";
+        return;
+      }
+      await syncProfessionalCustomer();
+      closeProfessionalAccount();
+      await trackClientEvent("professional_customer_login","account");
+    });
+    document.getElementById("professional-register-form")?.addEventListener("submit",async event=>{
+      event.preventDefault();
+      const msg=document.getElementById("professional-account-message");msg.classList.remove("error");msg.textContent="Creando cuenta…";
+      const name=document.getElementById("professional-register-name").value.trim(),phone=document.getElementById("professional-register-phone").value.trim(),email=document.getElementById("professional-register-email").value.trim(),password=document.getElementById("professional-register-password").value;
+      const {data,error}=await db.auth.signUp({email,password,options:{data:{full_name:name,phone}}});
+      if(error){
+        const raw=String(error.message||"");
+        msg.classList.add("error");
+        msg.textContent=/already|registered|exists/i.test(raw)?"Este correo ya tiene una cuenta. Usa Iniciar sesión.":"No pudimos crear la cuenta: "+raw;
+        return;
+      }
+      if(data.session&&data.user){
+        const {error:profileError}=await db.from("customer_profiles").upsert({user_id:data.user.id,full_name:name,phone});
+        if(profileError){msg.classList.add("error");msg.textContent="La cuenta se creó, pero no pudimos completar el perfil. Inicia sesión e inténtalo nuevamente.";return}
+        await syncProfessionalCustomer();
+        closeProfessionalAccount();
+        await trackClientEvent("professional_customer_signup","account");
+      }else{
+        document.getElementById("professional-login-form").hidden=false;
+        document.getElementById("professional-register-form").hidden=true;
+        document.getElementById("professional-login-tab").classList.add("active");
+        document.getElementById("professional-register-tab").classList.remove("active");
+        msg.textContent="Cuenta creada. Ahora inicia sesión para continuar.";
+      }
+    });
+    document.getElementById("professional-logout")?.addEventListener("click",async()=>{
+      await db.auth.signOut();currentCustomer=null;closeProfessionalAccount();closeProfessionalReservations();await syncProfessionalCustomer();
+    });
+    db.auth.onAuthStateChange(()=>setTimeout(syncProfessionalCustomer,0));
+    syncProfessionalCustomer();
+
 
     serviceBox.innerHTML=services.map(s=>'<button class="professional-choice" type="button" data-service="'+Number(s.id)+'"><strong>'+e(s.name)+'</strong><small>'+e(s.description||"Servicio profesional")+'</small><span class="professional-choice-price">'+e(cash(s.price))+' · '+Number(s.duration_minutes)+' min</span></button>').join("")||'<p class="professional-summary-empty">Este negocio todavía no publicó servicios.</p>';
     function updateSummary(){
