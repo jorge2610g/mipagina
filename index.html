@@ -1648,8 +1648,9 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
           const data=await resp.json();if(!resp.ok||!data?.qr)throw new Error(data?.error||"No se pudo generar QR Bolivia.");
           cart.clear();saveCart();update();send.disabled=false;send.textContent="Generar QR de pago";openRestaurantVeripagosQr({...data,tracking_token:token});$("#err").textContent="QR generado. El stock quedó reservado mientras confirmamos el pago.";return
         }
+        fetch(SUPABASE_URL+"/functions/v1/send-order-push",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({order_id:retailOrderId,kind:"retail_restaurant"})}).catch(()=>{});
         cart.clear();saveCart();update();send.disabled=false;send.textContent="Confirmar compra";
-        $("#err").textContent="✅ Compra "+(window.__lastRetailOrder?.order_code||("#"+retailOrderId))+" registrada. Puedes seguirla en Mis pedidos.";
+        $("#err").textContent="✅ Compra "+(window.__lastRetailOrder?.order_code||("#"+retailOrderId))+" registrada. Puedes seguirla en Mis compras.";
         await loadRetailOrdersFromRefs(false);
         return
       }catch(err){
