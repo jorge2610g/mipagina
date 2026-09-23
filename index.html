@@ -992,16 +992,45 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     const localDate=value=>new Intl.DateTimeFormat("en-CA",{timeZone:timezone,year:"numeric",month:"2-digit",day:"2-digit"}).format(value||new Date());
     const addDays=(dateText,days)=>{const d=new Date(dateText+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)};
     const paymentReturnKey="yummypro_professional_payment_return";
+    const paymentRedirectKey="yummypro_professional_mp_redirecting";
     const paymentReturnRaw=localStorage.getItem(paymentReturnKey);
+    const resumeProfessionalPaymentReturn=()=>{
+      let redirecting=false;try{redirecting=sessionStorage.getItem(paymentRedirectKey)==="1"}catch(_){}
+      if(!redirecting||!localStorage.getItem(paymentReturnKey))return;
+      if(document.getElementById("professional-return-status"))return;
+      if(document.getElementById("professional-mp-pay")){
+        try{sessionStorage.removeItem(paymentRedirectKey)}catch(_){}
+        location.reload();
+      }
+    };
+    window.addEventListener("pageshow",()=>setTimeout(resumeProfessionalPaymentReturn,0));
+    document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(resumeProfessionalPaymentReturn,180)});
     const renderProfessionalPaymentReturn=async raw=>{
       let ref=null;try{ref=JSON.parse(raw||"null")}catch(_){}
+      try{sessionStorage.removeItem(paymentRedirectKey)}catch(_){}
       if(!ref?.id||!ref?.token){localStorage.removeItem(paymentReturnKey);location.reload();return}
       document.body.classList.add("professional-booking-mode");app.hidden=false;
-      app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">⌛</div><h2>Verificando tu pago</h2><p>Estamos comprobando el pago. La reserva se crea únicamente cuando el pago sea aprobado.</p><p id="professional-return-status" class="professional-booking-status">Consultando estado…</p></section></div>';
-      const check=async()=>{
+      app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">↻</div><h2>Revisando estado del pago</h2><p>Consultamos Mercado Pago para confirmar el resultado. La reserva solo se crea cuando el pago esté aprobado.</p><p id="professional-return-status" class="professional-booking-status">Verificando…</p></section></div>';
+      let automaticChecks=0;
+      const check=async(manual=false)=>{
         const box=document.getElementById("professional-return-status");
+        if(!box)return;
+        box.classList.remove("error");
+        box.textContent=manual?"Actualizando estado…":"Verificando pago…";
+        try{
+          await fetch(SUPABASE_URL+"/functions/v1/verify-professional-booking-payment",{
+            method:"POST",
+            headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},
+            body:JSON.stringify({intent_id:Number(ref.id),public_token:String(ref.token)})
+          });
+        }catch(_){}
         const {data,error}=await db.rpc("get_public_professional_booking_payment_status",{p_intent_id:Number(ref.id),p_public_token:String(ref.token)});
-        if(error||!data){if(box){box.classList.add("error");box.textContent="No pudimos verificar el pago. Intenta nuevamente."}return}
+        if(error||!data){
+          box.classList.add("error");
+          box.innerHTML='No pudimos verificar el pago ahora. <button id="professional-return-refresh" type="button">Intentar de nuevo</button>';
+          document.getElementById("professional-return-refresh")?.addEventListener("click",()=>check(true),{once:true});
+          return;
+        }
         const when=new Intl.DateTimeFormat(data.locale||locale,{dateStyle:"full",timeStyle:"short",timeZone:data.timezone||timezone}).format(new Date(data.starts_at));
         if(data.payment_status==="approved"&&data.appointment_id){
           localStorage.removeItem(paymentReturnKey);
@@ -1013,13 +1042,16 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
           app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">!</div><h2>El pago no se completó</h2><p><b>No se creó ninguna reserva.</b> El horario se libera para que puedas intentarlo nuevamente.</p><button type="button" onclick="location.reload()">Elegir otro horario</button></section></div>';
           return;
         }
-        if(box){
-          box.classList.remove("error");
-          box.innerHTML='El pago todavía está pendiente. Aún no existe una reserva. <button id="professional-return-refresh" type="button">Actualizar estado</button>';
-          document.getElementById("professional-return-refresh")?.addEventListener("click",()=>{box.textContent="Verificando…";check()},{once:true});
+        automaticChecks++;
+        if(!manual&&automaticChecks<4){
+          box.textContent="Pago todavía pendiente. Volvemos a comprobarlo automáticamente…";
+          setTimeout(()=>check(false),1800);
+          return;
         }
+        box.innerHTML='<b>Pago pendiente.</b> Aún no se creó ninguna reserva. <button id="professional-return-refresh" type="button">Actualizar estado</button>';
+        document.getElementById("professional-return-refresh")?.addEventListener("click",()=>check(true),{once:true});
       };
-      await check();
+      await check(false);
     };
     if(paymentReturnRaw){renderProfessionalPaymentReturn(paymentReturnRaw);return}
     const state={service:null,provider:null,date:localDate(),slot:null,loading:false};
@@ -1229,7 +1261,8 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
             });
             const payment=await resp.json();
             if(!resp.ok||!payment?.init_point)throw new Error(payment?.error||"No se pudo iniciar el pago.");
-            window.location.href=payment.init_point;
+            try{sessionStorage.setItem(paymentRedirectKey,"1")}catch(_){}
+            window.location.assign(payment.init_point);
           }catch(paymentError){
             pay.disabled=false;pay.innerHTML='<b>Mercado Pago</b><span>Pago online seguro · la reserva se crea al aprobarse</span>';
             if(payStatus){payStatus.hidden=false;payStatus.classList.add("error");payStatus.textContent=String(paymentError?.message||"No se pudo iniciar el pago.")}
@@ -2339,5 +2372,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.30</footer></body>
+<footer class="site-version">Versión v1.6.31</footer></body>
 </html>
