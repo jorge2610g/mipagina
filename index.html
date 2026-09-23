@@ -570,7 +570,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     const guest=document.getElementById("account-guest"), auth=document.getElementById("account-auth"), userText=document.getElementById("account-user");
     if(currentCustomer){
       accountBtn.textContent="👤 Mi cuenta"; ordersBtn.hidden=false; guest.hidden=true; auth.hidden=false;
-      if("Notification" in window&&Notification.permission==="granted") ordersBtn.textContent="🔔 Mis pedidos";
+      if("Notification" in window&&Notification.permission==="granted"){ordersBtn.textContent="🔔 Mis pedidos";registerCustomerPush().catch(e=>console.warn("No se pudo actualizar la suscripción Push",e))}
       const {data:p}=await db.from("customer_profiles").select("*").eq("user_id",currentCustomer.id).maybeSingle();
       userText.textContent=p?.full_name ? p.full_name+" · "+currentCustomer.email : currentCustomer.email;
       if(p?.full_name && document.getElementById("f-name")) document.getElementById("f-name").value=p.full_name;
@@ -603,7 +603,28 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     let subscription=await registration.pushManager.getSubscription();
     if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(WEB_PUSH_PUBLIC_KEY)});
     const json=subscription.toJSON();
-    const {error}=await db.from("push_subscriptions").upsert({user_id:currentCustomer.id,restaurant_id:null,audience:"customer",endpoint:subscription.endpoint,p256dh:json.keys?.p256dh,auth:json.keys?.auth,enabled:true,updated_at:new Date().toISOString()},{onConflict:"endpoint"});
+    const restaurantId=Number(window.__restaurantId||0)||null;
+    let geo={country_code:null,city:null,business_type:null};
+    if(restaurantId){
+      try{
+        const {data:r}=await db.from("restaurants").select("country_code,city,business_type").eq("id",restaurantId).maybeSingle();
+        if(r)geo={country_code:r.country_code||null,city:r.city||null,business_type:r.business_type||null}
+      }catch(_){}
+    }
+    const {error}=await db.from("push_subscriptions").upsert({
+      user_id:currentCustomer.id,
+      restaurant_id:null,
+      context_restaurant_id:restaurantId,
+      audience:"customer",
+      endpoint:subscription.endpoint,
+      p256dh:json.keys?.p256dh,
+      auth:json.keys?.auth,
+      country_code:geo.country_code,
+      city:geo.city,
+      business_type:geo.business_type,
+      enabled:true,
+      updated_at:new Date().toISOString()
+    },{onConflict:"endpoint"});
     if(error)throw error;
   }
   async function enableOrderNotifications(){
@@ -1122,6 +1143,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
       }
       if(currentCustomer){
         accountBtn.textContent="👤 Mi cuenta";guest.hidden=true;authBox.hidden=false;
+        if("Notification" in window&&Notification.permission==="granted")registerCustomerPush().catch(e=>console.warn("No se pudo actualizar la suscripción Push",e));
         const {data:p}=await db.from("customer_profiles").select("full_name,phone").eq("user_id",currentCustomer.id).maybeSingle();
         userText.textContent=(p?.full_name?String(p.full_name)+" · ":"")+String(currentCustomer.email||"");
         const name=document.getElementById("public-professional-name"),phone=document.getElementById("public-professional-phone"),email=document.getElementById("public-professional-email");
@@ -2372,5 +2394,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.31</footer></body>
+<footer class="site-version">Versión v1.6.32</footer></body>
 </html>
