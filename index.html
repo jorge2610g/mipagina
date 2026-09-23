@@ -28,9 +28,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="YummyPro">
-<link rel="manifest" href="/yummypro-client-v1619.webmanifest?v=1619">
+<link rel="manifest" href="/manifest.webmanifest?v=1620">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" sizes="192x192" href="/icon-192.png" type="image/png">
+<link rel="icon" href="/pwa-icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#000000">
 <meta name="description" content="Menú digital del restaurante. Pedidos directos por WhatsApp.">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -524,7 +524,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   function pushKeyBytes(value){const padding="=".repeat((4-value.length%4)%4),base64=(value+padding).replace(/-/g,"+").replace(/_/g,"/"),raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)))}
   async function registerCustomerPush(){
     if(!currentCustomer||!("serviceWorker" in navigator)||!("PushManager" in window)||Notification.permission!=="granted")return;
-    const registration=await navigator.serviceWorker.register("/yummypro-client-v1619-sw.js");
+    const registration=await navigator.serviceWorker.register("/pwa-sw.js");
     let subscription=await registration.pushManager.getSubscription();
     if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(WEB_PUSH_PUBLIC_KEY)});
     const json=subscription.toJSON();
@@ -1579,7 +1579,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   }
   async function registerTableQrOrderPush(orderId){
     if(!window.__tableQrContext||!orderId||!("serviceWorker" in navigator)||!("PushManager" in window)||!("Notification" in window)||Notification.permission!=="granted")return false;
-    const registration=await navigator.serviceWorker.register("/yummypro-client-v1619-sw.js");
+    const registration=await navigator.serviceWorker.register("/pwa-sw.js");
     let subscription=await registration.pushManager.getSubscription();
     if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(WEB_PUSH_PUBLIC_KEY)});
     const json=subscription.toJSON();
@@ -1710,7 +1710,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   update();
 })();
 </script>
-<script id="customer-pwa-v1619">
+<script id="customer-pwa-v1620">
 let yummyCustomerInstallPrompt=null;
 function customerPwaStandalone(){return window.matchMedia?.("(display-mode: standalone)")?.matches===true||window.navigator.standalone===true}
 function refreshCustomerInstallButton(){
@@ -1733,15 +1733,19 @@ window.addEventListener("DOMContentLoaded",async()=>{
  document.getElementById("pwa-install-btn")?.addEventListener("click",installCustomerPwa);
  try{
   if("serviceWorker" in navigator){
-   const migrationKey="yummypro_client_pwa_identity_v1619";
+   const migrationKey="yummypro_client_pwa_identity_v1620";
    if(!localStorage.getItem(migrationKey)){
+    try{
+     const regs=await navigator.serviceWorker.getRegistrations();
+     await Promise.all(regs.filter(r=>!String(r.active?.scriptURL||r.waiting?.scriptURL||r.installing?.scriptURL||"").endsWith("/pwa-sw.js")).map(r=>r.unregister()));
+    }catch(_){}
     if("caches" in window){
      const keys=await caches.keys();
      await Promise.all(keys.filter(k=>k.startsWith("yummypro-customer-")||k.startsWith("yummypro-client-app-")||k.startsWith("yummypro-client-v")).map(k=>caches.delete(k)));
     }
     localStorage.setItem(migrationKey,"1");
    }
-   const reg=await navigator.serviceWorker.register("/yummypro-client-v1619-sw.js",{scope:"/"});
+   const reg=await navigator.serviceWorker.register("/pwa-sw.js",{scope:"/"});
    await reg.update().catch(()=>{});
    navigator.serviceWorker.addEventListener("controllerchange",()=>{
     if(customerPwaStandalone()||window.__customerPwaReloading)return;
@@ -1752,5 +1756,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.19</footer></body>
+<footer class="site-version">Versión v1.6.20</footer></body>
 </html>
