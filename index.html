@@ -525,7 +525,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     document.getElementById("tab-login").classList.toggle("active",!register); document.getElementById("tab-register").classList.toggle("active",register);
     document.getElementById("account-msg").textContent="";
   }
-  function statusLabel(s){return ({nuevo:"Recibido",recibido:"Recibido",preparando:"Preparando",preparacion:"Preparación",listo:"Listo",en_camino:"En camino",entregado:"Entregado",cancelado:"Cancelado"}[s]||String(s||"Recibido").replaceAll("_"," "));}
+  function statusLabel(s){return ({nuevo:"Recibido",recibido:"Recibido",received:"Recibido",preparando:"Preparando",preparacion:"Preparación",preparing:"Preparación",listo:"Listo",ready:"Listo",en_camino:"En camino",entregado:"Entregado",delivered:"Entregado",cancelado:"Cancelado",cancelled:"Cancelado",pending_payment:"Esperando pago"}[String(s||"").toLowerCase()]||String(s||"Recibido").replaceAll("_"," "));}
   const WEB_PUSH_PUBLIC_KEY="BEhtHznJex6P3ANNL3SZzgiyXTrilvU-On1qpSwdx0MqmPhrpikxI1sCAbXUFFfkVczLAHdyDFQQS9_Wm5mahpw";
   function pushKeyBytes(value){const padding="=".repeat((4-value.length%4)%4),base64=(value+padding).replace(/-/g,"+").replace(/_/g,"/"),raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)))}
   async function registerCustomerPush(){
@@ -568,10 +568,38 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
       return '<article class="order-card" data-order-index="'+i+'" tabindex="0" role="button"><div class="order-top"><div><div class="order-code">'+esc((counter?"🛍️ ":"🍽️ ")+destination)+' · #'+esc(o.order_code)+'</div><div class="order-meta">'+new Date(o.created_at).toLocaleString("es-CL")+'</div></div><span class="order-status">'+esc(statusLabel(o.status))+'</span></div><div class="order-items">'+items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join("<br>")+'</div><div class="order-meta">'+esc(o.payment_method||"Pago pendiente")+' · <b>'+fmt(Number(o.total||0))+'</b></div><div class="order-meta"><b>Toca para ver seguimiento y '+(counter?"retiro en mostrador":"entrega en mesa")+'</b></div></article>';
     }).join("");
   }
+  async function loadRetailOrdersFromRefs(render=true){
+    const localRefs=readRetailOrderRefs().filter(x=>Number(x.restaurant_id||window.__restaurantId)===Number(window.__restaurantId));
+    const rows=[];
+    for(const ref of localRefs){
+      try{
+        const {data,error}=await db.rpc("retail_get_online_order_status",{p_order_id:Number(ref.order_id),p_tracking_token:ref.tracking_token});
+        if(!error&&data){rows.push(data);updateRetailOrderRef(ref.order_id,{status:data.status,payment_status:data.payment_status,reservation_expires_at:data.reservation_expires_at||null})}
+      }catch(_){}
+    }
+    if(currentCustomer){
+      try{
+        const {data,error}=await db.rpc("retail_get_my_online_orders",{p_restaurant_id:Number(window.__restaurantId)});
+        if(!error&&Array.isArray(data))data.forEach(row=>{if(!rows.some(x=>Number(x.id||x.order_id)===Number(row.id||row.order_id)))rows.push(row)});
+      }catch(_){}
+    }
+    rows.sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+    window.__customerOrders=rows;
+    if(!render)return rows;
+    const box=document.getElementById("orders-list"),help=document.getElementById("orders-dialog-help");if(!box)return rows;
+    if(help)help.textContent="Aquí puedes seguir tus compras del supermercado/minimarket, incluyendo pagos pendientes, preparación y entrega.";
+    if(!rows.length){box.innerHTML="<p>Aún no tienes compras registradas en esta tienda.</p>";return rows}
+    box.innerHTML=rows.map((o,i)=>{
+      const items=Array.isArray(o.items)?o.items:[],waiting=String(o.status)==="pending_payment",cancelled=["cancelled","cancelado"].includes(String(o.status));
+      return '<article class="order-card" data-order-index="'+i+'" tabindex="0" role="button"><div class="order-top"><div><div class="order-code">🛒 '+esc(o.order_code||("#"+o.id))+'</div><div class="order-meta">'+new Date(o.created_at).toLocaleString(CONFIG.locale||"es-CL")+'</div></div><span class="order-status">'+esc(statusLabel(o.status))+'</span></div><div class="order-items">'+items.slice(0,5).map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join("<br>")+(items.length>5?"<br>…":"")+'</div><div class="order-meta">'+esc(o.order_type||"Retiro")+' · '+esc(o.payment_method||"")+' · <b>'+fmt(Number(o.total||0))+'</b></div>'+(waiting?'<div class="order-meta"><b>El stock está reservado temporalmente mientras completas el pago.</b></div>':cancelled?'<div class="order-meta">Pedido cancelado.</div>':'<div class="order-meta"><b>Toca para ver el seguimiento.</b></div>')+'</article>';
+    }).join("");
+    return rows;
+  }
   async function loadCustomerOrders(){
     const box=document.getElementById("orders-list"); box.innerHTML="<p>Cargando pedidos…</p>";
     const help=document.getElementById("orders-dialog-help");
     if(window.__tableQrContext){if(help)help.textContent="Aquí puedes seguir los pedidos realizados desde "+window.__tableQrContext.name+" en este dispositivo.";return loadTableQrOrders()}
+    if(["supermarket","minimarket"].includes(window.__businessType||""))return loadRetailOrdersFromRefs(true);
     if(help)help.textContent="Aquí puedes seguir tus pedidos pagados en línea y los comprobantes enviados.";
     if(!currentCustomer){box.innerHTML="<p>Inicia sesión para ver tus pedidos.</p>";return;}
     const {data,error}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address,payment_status,payment_verification_status,currency_code").eq("customer_id",currentCustomer.id).eq("restaurant_id",window.__restaurantId).eq("order_source","online").in("payment_method",["Mercado Pago","QR Bolivia"]).eq("payment_status","approved").order("created_at",{ascending:false}).limit(50);
