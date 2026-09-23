@@ -351,6 +351,26 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
 :root[data-theme="dark"] .professional-booking-success .check{background:#123b2b;color:#83e5b3}
 :root[data-theme="dark"] .professional-booking-success button{background:#e7edf7;color:#111827}
 @media(max-width:780px){.professional-booking-contact{display:flex}}
+.professional-overlay[hidden]{display:none!important}
+.professional-overlay{position:fixed;inset:0;z-index:1200;background:#17203388;backdrop-filter:blur(5px);padding:18px;display:grid;place-items:center}
+.professional-overlay-card{width:min(94vw,620px);max-height:min(88vh,820px);overflow:auto;background:#fff;color:#172033;border:1px solid #dbe3ee;border-radius:24px;padding:22px;box-shadow:0 28px 90px #0005}
+.professional-overlay-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}.professional-overlay-head h2{margin:0;font:850 1.55rem var(--body)}.professional-overlay-close{width:42px;height:42px;border:1px solid #dbe3ee;border-radius:50%;background:#f6f8fb;color:#172033;font-size:18px;cursor:pointer}
+.professional-auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}.professional-auth-tabs button{border:1px solid #dbe3ee;border-radius:12px;background:#f6f8fb;color:#172033;padding:11px;font-weight:800;cursor:pointer}.professional-auth-tabs button.active{background:#172033;color:#fff;border-color:#172033}
+.professional-auth-form{display:grid;gap:11px}.professional-auth-form input{margin-top:0}.professional-auth-primary{border:0;border-radius:13px;padding:13px 16px;background:#2563eb;color:#fff;font-weight:850;cursor:pointer}.professional-auth-secondary{border:1px solid #dbe3ee;border-radius:13px;padding:12px 15px;background:#fff;color:#172033;font-weight:800;cursor:pointer}
+.professional-account-message{min-height:20px;margin:10px 0 0;color:#667085;font-size:13px}.professional-account-message.error{color:#a21818}
+.professional-reservation-list{display:grid;gap:12px}.professional-reservation-card{border:1px solid #e1e7ef;border-radius:18px;padding:15px;background:#f9fbfd}
+.professional-reservation-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.professional-reservation-top h3{margin:0;font:850 17px var(--body)}.professional-reservation-meta{color:#667085;font-size:14px;line-height:1.55;margin-top:5px}.professional-reservation-pills{display:grid;gap:6px;justify-items:end}.professional-reservation-pill{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;background:#e8eef7;color:#24364c;font-size:12px;font-weight:850}.professional-reservation-pill.ok{background:#dcfce7;color:#166534}.professional-reservation-pill.warn{background:#fff4cc;color:#754f00}.professional-reservation-pill.bad{background:#fee2e2;color:#991b1b}
+.professional-tracking{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}.professional-track-step{position:relative;text-align:center;padding-top:20px;color:#98a2b3;font-size:11px;font-weight:800}.professional-track-step:before{content:"";position:absolute;top:5px;left:50%;width:11px;height:11px;margin-left:-5.5px;border-radius:50%;background:#cbd5e1;z-index:2}.professional-track-step:after{content:"";position:absolute;top:9px;left:-50%;width:100%;height:3px;background:#dbe3ee}.professional-track-step:first-child:after{display:none}.professional-track-step.done{color:#174a7e}.professional-track-step.done:before,.professional-track-step.done:after{background:#2563eb}.professional-track-alert{margin-top:13px;padding:10px 12px;border-radius:12px;background:#fff0f0;color:#a21818;font-weight:800;font-size:13px}.professional-reservations-empty{text-align:center;padding:30px 12px;color:#667085}.professional-reservations-refresh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;color:#667085;font-size:13px}.professional-reservations-refresh button{border:1px solid #dbe3ee;background:#fff;color:#172033;border-radius:999px;padding:8px 11px;font-weight:800;cursor:pointer}
+:root[data-theme="dark"] .professional-overlay{background:#000b}
+:root[data-theme="dark"] .professional-overlay-card{background:#111722;color:#f7f8fb;border-color:#273142}
+:root[data-theme="dark"] .professional-overlay-close,:root[data-theme="dark"] .professional-auth-tabs button,:root[data-theme="dark"] .professional-auth-secondary{background:#151d29;color:#f7f8fb;border-color:#334155}
+:root[data-theme="dark"] .professional-auth-tabs button.active{background:#e7edf7;color:#111827;border-color:#e7edf7}
+:root[data-theme="dark"] .professional-account-message{color:#aab6c8}:root[data-theme="dark"] .professional-account-message.error{color:#ffb4bd}
+:root[data-theme="dark"] .professional-reservation-card{background:#0b111b;border-color:#2b3748}
+:root[data-theme="dark"] .professional-reservation-meta,:root[data-theme="dark"] .professional-reservations-empty,:root[data-theme="dark"] .professional-reservations-refresh{color:#aab6c8}
+:root[data-theme="dark"] .professional-reservation-pill{background:#243043;color:#dce7f5}:root[data-theme="dark"] .professional-reservation-pill.ok{background:#123b2b;color:#83e5b3}:root[data-theme="dark"] .professional-reservation-pill.warn{background:#43350f;color:#ffd873}:root[data-theme="dark"] .professional-reservation-pill.bad{background:#3a171b;color:#ffb4bd}
+:root[data-theme="dark"] .professional-track-step:after{background:#344154}:root[data-theme="dark"] .professional-track-step.done{color:#9bc8ff}:root[data-theme="dark"] .professional-track-step.done:before,:root[data-theme="dark"] .professional-track-step.done:after{background:#60a5fa}:root[data-theme="dark"] .professional-track-alert{background:#3a171b;color:#ffb4bd}:root[data-theme="dark"] .professional-reservations-refresh button{background:#151d29;color:#f7f8fb;border-color:#334155}
+@media(max-width:560px){.professional-overlay{padding:0;align-items:end}.professional-overlay-card{width:100%;max-height:92vh;border-radius:24px 24px 0 0;padding:18px}.professional-booking-contact{gap:6px}.professional-booking-contact a,.professional-booking-contact button{padding:10px 11px;font-size:12px}}
 </style></head>
 <body class="menu-loading">
 
@@ -979,7 +999,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
         const when=new Intl.DateTimeFormat(data.locale||locale,{dateStyle:"full",timeStyle:"short",timeZone:data.timezone||timezone}).format(new Date(data.starts_at));
         if(data.payment_status==="approved"){
           localStorage.removeItem(paymentReturnKey);
-          app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">✓</div><h2>Anticipo aprobado</h2><p>'+e(data.service_name)+' con '+e(data.provider_name)+'<br><b>'+e(when)+'</b></p><p>Tu reserva <b>#'+e(data.id)+'</b> quedó '+(data.status==="confirmed"?"confirmada":"registrada")+'.</p><button type="button" onclick="location.reload()">Volver a reservas</button></section></div>';
+          app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">✓</div><h2>Anticipo aprobado</h2><p>'+e(data.service_name)+' con '+e(data.provider_name)+'<br><b>'+e(when)+'</b></p><p>Tu reserva <b>#'+e(data.id)+'</b> quedó '+(data.status==="confirmed"?"confirmada":"registrada")+'.</p><button type="button" onclick="localStorage.setItem(\'yummypro_professional_open_reservations\',\'1\');location.reload()">Ver mis reservas</button><button type="button" onclick="location.reload()">Volver a reservas</button></section></div>';
           return;
         }
         if(["rejected","cancelled","expired"].includes(String(data.payment_status||""))||data.status==="cancelled"){
@@ -997,9 +1017,137 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     };
     if(paymentReturnRaw){renderProfessionalPaymentReturn(paymentReturnRaw);return}
     const state={service:null,provider:null,date:localDate(),slot:null,loading:false};
+    const professionalAccountMarkup='<div id="professional-account-overlay" class="professional-overlay" hidden><section class="professional-overlay-card"><div class="professional-overlay-head"><div><span class="professional-booking-kicker">Cuenta cliente</span><h2>Mi cuenta</h2></div><button id="professional-account-close" class="professional-overlay-close" type="button" aria-label="Cerrar">✕</button></div><p id="professional-account-user" class="professional-booking-address">Inicia sesión para guardar y seguir tus reservas.</p><div id="professional-account-guest"><div class="professional-auth-tabs"><button id="professional-login-tab" class="active" type="button">Iniciar sesión</button><button id="professional-register-tab" type="button">Crear cuenta</button></div><form id="professional-login-form" class="professional-auth-form"><input id="professional-login-email" type="email" autocomplete="email" placeholder="Correo electrónico" required><input id="professional-login-password" type="password" autocomplete="current-password" placeholder="Contraseña" minlength="6" required><button class="professional-auth-primary" type="submit">Entrar a mi cuenta</button></form><form id="professional-register-form" class="professional-auth-form" hidden><input id="professional-register-name" type="text" autocomplete="name" placeholder="Nombre y apellido" required><input id="professional-register-phone" type="tel" autocomplete="tel" placeholder="Teléfono" required><input id="professional-register-email" type="email" autocomplete="email" placeholder="Correo electrónico" required><input id="professional-register-password" type="password" autocomplete="new-password" placeholder="Contraseña (mínimo 6 caracteres)" minlength="6" required><button class="professional-auth-primary" type="submit">Crear mi cuenta</button></form><p id="professional-account-message" class="professional-account-message"></p></div><div id="professional-account-auth" hidden><p>Tu cuenta está conectada.</p><button id="professional-logout" class="professional-auth-secondary" type="button">Cerrar sesión</button></div></section></div><div id="professional-reservations-overlay" class="professional-overlay" hidden><section class="professional-overlay-card"><div class="professional-overlay-head"><div><span class="professional-booking-kicker">Seguimiento</span><h2>Mis reservas</h2></div><button id="professional-reservations-close" class="professional-overlay-close" type="button" aria-label="Cerrar">✕</button></div><div class="professional-reservations-refresh"><span id="professional-reservations-updated">Se actualiza automáticamente.</span><button id="professional-reservations-reload" type="button">Actualizar</button></div><div id="professional-reservations-list" class="professional-reservation-list"><p class="professional-summary-empty">Inicia sesión para ver tus reservas.</p></div></section></div>';
     document.body.classList.add("professional-booking-mode");app.hidden=false;document.title=(restaurant.name||"Reservas")+" | Reservas online";
-    app.innerHTML='<div class="professional-booking-shell"><header class="professional-booking-hero"><div class="professional-booking-brand"><div class="professional-booking-logo">'+(restaurant.logo_url?'<img src="'+e(restaurant.logo_url)+'" alt="">':'✦')+'</div><div><span class="professional-booking-kicker">Reservas online</span><h1>'+e(restaurant.name||"Servicios profesionales")+'</h1><p class="professional-booking-address">'+e(restaurant.address||"Selecciona un servicio y reserva tu hora")+'</p></div></div><div class="professional-booking-contact">'+(restaurant.whatsapp?'<a href="https://wa.me/'+e(String(restaurant.whatsapp).replace(/\D/g,""))+'" target="_blank" rel="noopener">WhatsApp</a>':'')+'<button id="professional-theme" type="button">◐ Tema</button></div></header><div class="professional-booking-layout"><div><section class="professional-booking-card"><div class="professional-booking-step"><span>1</span><div><h2>Elige el servicio</h2><p>Duración y precio visibles antes de reservar.</p></div></div><div id="public-professional-services" class="professional-service-grid"></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>2</span><div><h2>Elige al profesional</h2><p>Solo mostramos quienes atienden el servicio seleccionado.</p></div></div><div id="public-professional-providers" class="professional-provider-grid"><p class="professional-summary-empty">Primero selecciona un servicio.</p></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>3</span><div><h2>Fecha y hora</h2><p>Los horarios ocupados o bloqueados no aparecen.</p></div></div><label style="font-weight:800">Fecha<input id="public-professional-date" type="date" value="'+e(state.date)+'" min="'+e(state.date)+'" max="'+e(addDays(state.date,Number(booking.max_days||60)))+'"></label><div id="public-professional-slots" class="professional-slots"><p class="professional-summary-empty">Elige servicio y profesional para consultar horarios.</p></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>4</span><div><h2>Tus datos</h2><p>Los usaremos únicamente para gestionar esta reserva.</p></div></div><div class="professional-booking-fields"><label>Nombre completo<input id="public-professional-name" autocomplete="name" required></label><label>Teléfono<input id="public-professional-phone" type="tel" autocomplete="tel" required></label><label>Correo (opcional)<input id="public-professional-email" type="email" autocomplete="email"></label><label>Nota (opcional)<textarea id="public-professional-notes" placeholder="Información importante para la atención"></textarea></label></div><button id="public-professional-submit" class="professional-booking-submit" type="button" disabled>Confirmar reserva</button><div id="public-professional-status" class="professional-booking-status" hidden></div></section></div><aside class="professional-booking-card professional-booking-summary"><span class="professional-booking-kicker">Tu reserva</span><div id="public-professional-summary"><p class="professional-summary-empty">Selecciona un servicio para comenzar.</p></div></aside></div></div>';
+    app.innerHTML='<div class="professional-booking-shell"><header class="professional-booking-hero"><div class="professional-booking-brand"><div class="professional-booking-logo">'+(restaurant.logo_url?'<img src="'+e(restaurant.logo_url)+'" alt="">':'✦')+'</div><div><span class="professional-booking-kicker">Reservas online</span><h1>'+e(restaurant.name||"Servicios profesionales")+'</h1><p class="professional-booking-address">'+e(restaurant.address||"Selecciona un servicio y reserva tu hora")+'</p></div></div><div class="professional-booking-contact">'+(restaurant.whatsapp?'<a href="https://wa.me/'+e(String(restaurant.whatsapp).replace(/\D/g,""))+'" target="_blank" rel="noopener">WhatsApp</a>':'')+'<button id="professional-account" type="button">👤 Iniciar sesión</button><button id="professional-reservations" type="button">📅 Mis reservas</button><button id="professional-theme" type="button">◐ Tema</button></div></header><div class="professional-booking-layout"><div><section class="professional-booking-card"><div class="professional-booking-step"><span>1</span><div><h2>Elige el servicio</h2><p>Duración y precio visibles antes de reservar.</p></div></div><div id="public-professional-services" class="professional-service-grid"></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>2</span><div><h2>Elige al profesional</h2><p>Solo mostramos quienes atienden el servicio seleccionado.</p></div></div><div id="public-professional-providers" class="professional-provider-grid"><p class="professional-summary-empty">Primero selecciona un servicio.</p></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>3</span><div><h2>Fecha y hora</h2><p>Los horarios ocupados o bloqueados no aparecen.</p></div></div><label style="font-weight:800">Fecha<input id="public-professional-date" type="date" value="'+e(state.date)+'" min="'+e(state.date)+'" max="'+e(addDays(state.date,Number(booking.max_days||60)))+'"></label><div id="public-professional-slots" class="professional-slots"><p class="professional-summary-empty">Elige servicio y profesional para consultar horarios.</p></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>4</span><div><h2>Tus datos</h2><p>Los usaremos únicamente para gestionar esta reserva.</p></div></div><div class="professional-booking-fields"><label>Nombre completo<input id="public-professional-name" autocomplete="name" required></label><label>Teléfono<input id="public-professional-phone" type="tel" autocomplete="tel" required></label><label>Correo (opcional)<input id="public-professional-email" type="email" autocomplete="email"></label><label>Nota (opcional)<textarea id="public-professional-notes" placeholder="Información importante para la atención"></textarea></label></div><button id="public-professional-submit" class="professional-booking-submit" type="button" disabled>Confirmar reserva</button><div id="public-professional-status" class="professional-booking-status" hidden></div></section></div><aside class="professional-booking-card professional-booking-summary"><span class="professional-booking-kicker">Tu reserva</span><div id="public-professional-summary"><p class="professional-summary-empty">Selecciona un servicio para comenzar.</p></div></aside></div></div>'+professionalAccountMarkup;
     const serviceBox=document.getElementById("public-professional-services"),providerBox=document.getElementById("public-professional-providers"),dateInput=document.getElementById("public-professional-date"),slotBox=document.getElementById("public-professional-slots"),submit=document.getElementById("public-professional-submit"),status=document.getElementById("public-professional-status"),summary=document.getElementById("public-professional-summary");
+    const professionalAccountOverlay=document.getElementById("professional-account-overlay"),professionalReservationsOverlay=document.getElementById("professional-reservations-overlay");
+    let professionalReservationsChannel=null,professionalReservationsTimer=null,professionalPendingBookingAfterAuth=false;
+    const professionalStatusLabels={pending:"Pendiente de aprobación",confirmed:"Confirmada",in_service:"En atención",completed:"Completada",cancelled:"Cancelada",no_show:"No asistió"};
+    const professionalPaymentLabels={not_required:"Sin anticipo",pending:"Anticipo pendiente",approved:"Anticipo pagado",refunded:"Anticipo reembolsado",rejected:"Pago rechazado",cancelled:"Pago cancelado",expired:"Pago vencido"};
+    const openProfessionalAccount=(message="")=>{professionalAccountOverlay.hidden=false;if(message){const msg=document.getElementById("professional-account-message");msg.classList.remove("error");msg.textContent=message}};
+    const closeProfessionalAccount=()=>{professionalAccountOverlay.hidden=true};
+    const closeProfessionalReservations=()=>{professionalReservationsOverlay.hidden=true;if(professionalReservationsTimer){clearInterval(professionalReservationsTimer);professionalReservationsTimer=null}};
+    function professionalReservationCard(a){
+      const sv=services.find(x=>Number(x.id)===Number(a.service_id)),pr=providers.find(x=>Number(x.id)===Number(a.provider_id)),stateKey=String(a.status||"pending"),paymentKey=String(a.payment_status||"not_required");
+      const when=new Intl.DateTimeFormat(locale,{dateStyle:"full",timeStyle:"short",timeZone:timezone}).format(new Date(a.starts_at));
+      const stateLabel=professionalStatusLabels[stateKey]||stateKey.replaceAll("_"," "),paymentLabel=professionalPaymentLabels[paymentKey]||paymentKey.replaceAll("_"," ");
+      const stateClass=stateKey==="completed"?"ok":(["cancelled","no_show"].includes(stateKey)?"bad":"warn"),payClass=["approved","refunded","not_required"].includes(paymentKey)?"ok":(["rejected","cancelled","expired"].includes(paymentKey)?"bad":"warn");
+      const progressIndex={pending:0,confirmed:1,in_service:2,completed:3}[stateKey]??0;
+      const progress=["Solicitud","Confirmada","En atención","Completada"].map((label,i)=>'<div class="professional-track-step '+(i<=progressIndex&&!["cancelled","no_show"].includes(stateKey)?"done":"")+'">'+label+'</div>').join("");
+      const tracking=["cancelled","no_show"].includes(stateKey)?'<div class="professional-track-alert">'+e(stateLabel)+'</div>':'<div class="professional-tracking">'+progress+'</div>';
+      return '<article class="professional-reservation-card"><div class="professional-reservation-top"><div><h3>#'+e(a.id)+' · '+e(sv?.name||"Servicio")+'</h3><div class="professional-reservation-meta">'+e(pr?.name||"Profesional")+'<br><b>'+e(when)+'</b><br>Total: '+e(cash(a.total_amount||0))+'</div></div><div class="professional-reservation-pills"><span class="professional-reservation-pill '+stateClass+'">'+e(stateLabel)+'</span><span class="professional-reservation-pill '+payClass+'">'+e(paymentLabel)+(Number(a.deposit_amount||0)>0?' · '+e(cash(a.deposit_amount)):'')+'</span></div></div>'+tracking+'</article>';
+    }
+    async function loadProfessionalCustomerReservations(){
+      const list=document.getElementById("professional-reservations-list"),updated=document.getElementById("professional-reservations-updated");
+      if(!currentCustomer){list.innerHTML='<p class="professional-reservations-empty">Inicia sesión para ver tus reservas.</p>';return}
+      list.innerHTML='<p class="professional-reservations-empty">Cargando reservas…</p>';
+      const {data,error}=await db.from("professional_appointments").select("id,restaurant_id,service_id,provider_id,customer_id,starts_at,ends_at,status,payment_status,deposit_amount,total_amount,refund_status,refunded_at,created_at").eq("restaurant_id",Number(restaurant.id)).eq("customer_id",currentCustomer.id).order("starts_at",{ascending:false}).limit(100);
+      if(error){list.innerHTML='<p class="professional-reservations-empty">No pudimos cargar tus reservas. Intenta nuevamente.</p>';await trackClientError("professional_booking","customer_reservations_load_failure",error.message||"Error al cargar reservas",false);return}
+      const rows=data||[],now=Date.now(),upcoming=rows.filter(x=>new Date(x.ends_at||x.starts_at).getTime()>=now&&!["completed","cancelled","no_show"].includes(String(x.status))).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at)),history=rows.filter(x=>!upcoming.some(y=>Number(y.id)===Number(x.id))).sort((a,b)=>new Date(b.starts_at)-new Date(a.starts_at));
+      list.innerHTML=(upcoming.length?'<h3 style="margin:0 0 2px">Próximas</h3>'+upcoming.map(professionalReservationCard).join(""):'')+(history.length?'<h3 style="margin:8px 0 2px">Historial</h3>'+history.map(professionalReservationCard).join(""):'')||'<p class="professional-reservations-empty">Aún no tienes reservas en este negocio.</p>';
+      if(updated)updated.textContent="Actualizado "+new Intl.DateTimeFormat(locale,{hour:"2-digit",minute:"2-digit"}).format(new Date())+" · seguimiento automático";
+    }
+    function startProfessionalReservationsRealtime(){
+      if(professionalReservationsChannel){db.removeChannel(professionalReservationsChannel);professionalReservationsChannel=null}
+      if(!currentCustomer)return;
+      professionalReservationsChannel=db.channel("professional-customer-"+currentCustomer.id)
+        .on("postgres_changes",{event:"*",schema:"public",table:"professional_appointments",filter:"customer_id=eq."+currentCustomer.id},payload=>{
+          const row=payload.new||payload.old||{};
+          if(row.restaurant_id&&Number(row.restaurant_id)!==Number(restaurant.id))return;
+          if(!professionalReservationsOverlay.hidden)loadProfessionalCustomerReservations();
+        }).subscribe();
+    }
+    async function openProfessionalReservations(){
+      if(!currentCustomer){professionalPendingBookingAfterAuth=false;openProfessionalAccount("Inicia sesión o crea una cuenta para ver tus reservas.");return}
+      professionalReservationsOverlay.hidden=false;
+      await loadProfessionalCustomerReservations();
+      if(professionalReservationsTimer)clearInterval(professionalReservationsTimer);
+      professionalReservationsTimer=setInterval(()=>{if(!professionalReservationsOverlay.hidden)loadProfessionalCustomerReservations()},10000);
+    }
+    document.getElementById("professional-account")?.addEventListener("click",openProfessionalAccount);
+    document.getElementById("professional-reservations")?.addEventListener("click",openProfessionalReservations);
+    document.getElementById("professional-account-close")?.addEventListener("click",closeProfessionalAccount);
+    document.getElementById("professional-reservations-close")?.addEventListener("click",closeProfessionalReservations);
+    document.getElementById("professional-reservations-reload")?.addEventListener("click",loadProfessionalCustomerReservations);
+    document.getElementById("professional-login-tab")?.addEventListener("click",()=>{document.getElementById("professional-login-form").hidden=false;document.getElementById("professional-register-form").hidden=true;document.getElementById("professional-login-tab").classList.add("active");document.getElementById("professional-register-tab").classList.remove("active")});
+    document.getElementById("professional-register-tab")?.addEventListener("click",()=>{document.getElementById("professional-login-form").hidden=true;document.getElementById("professional-register-form").hidden=false;document.getElementById("professional-login-tab").classList.remove("active");document.getElementById("professional-register-tab").classList.add("active")});
+    async function syncProfessionalCustomer(){
+      const accountBtn=document.getElementById("professional-account"),guest=document.getElementById("professional-account-guest"),authBox=document.getElementById("professional-account-auth"),userText=document.getElementById("professional-account-user"),msg=document.getElementById("professional-account-message");
+      const {data:{session}}=await db.auth.getSession();
+      currentCustomer=session?.user||null;
+      if(currentCustomer){
+        const {data:role}=await db.rpc("current_account_role");
+        if(role!=="customer"){await db.auth.signOut();currentCustomer=null}
+      }
+      if(currentCustomer){
+        accountBtn.textContent="👤 Mi cuenta";guest.hidden=true;authBox.hidden=false;
+        const {data:p}=await db.from("customer_profiles").select("full_name,phone").eq("user_id",currentCustomer.id).maybeSingle();
+        userText.textContent=(p?.full_name?String(p.full_name)+" · ":"")+String(currentCustomer.email||"");
+        const name=document.getElementById("public-professional-name"),phone=document.getElementById("public-professional-phone"),email=document.getElementById("public-professional-email");
+        if(name&&!name.value&&p?.full_name)name.value=p.full_name;
+        if(phone&&!phone.value&&p?.phone)phone.value=p.phone;
+        if(email&&!email.value)email.value=currentCustomer.email||"";
+        if(msg){msg.classList.remove("error");msg.textContent=""}
+      }else{
+        accountBtn.textContent="👤 Iniciar sesión";guest.hidden=false;authBox.hidden=true;userText.textContent="Inicia sesión para guardar y seguir tus reservas.";
+      }
+      startProfessionalReservationsRealtime();
+      try{
+        if(currentCustomer&&localStorage.getItem("yummypro_professional_open_reservations")==="1"){localStorage.removeItem("yummypro_professional_open_reservations");setTimeout(openProfessionalReservations,0)}
+      }catch(_){}
+    }
+    document.getElementById("professional-login-form")?.addEventListener("submit",async event=>{
+      event.preventDefault();
+      const msg=document.getElementById("professional-account-message");msg.classList.remove("error");msg.textContent="Ingresando…";
+      const email=document.getElementById("professional-login-email").value.trim(),password=document.getElementById("professional-login-password").value;
+      const {error}=await db.auth.signInWithPassword({email,password});
+      if(error){msg.classList.add("error");msg.textContent="No pudimos iniciar sesión. Revisa correo y contraseña.";await trackClientError("auth","professional_login_failure",error.message||"Error de acceso",true);return}
+      const {data:role}=await db.rpc("current_account_role");
+      if(role!=="customer"){
+        await db.auth.signOut();
+        msg.classList.add("error");
+        msg.textContent=role==="restaurant"?"Esta cuenta pertenece a un negocio. Ingresa desde el panel del negocio.":role==="admin"?"Esta cuenta es de administrador y no puede entrar como cliente.":"Esta cuenta no está registrada como cliente.";
+        return;
+      }
+      await syncProfessionalCustomer();
+      closeProfessionalAccount();
+      await trackClientEvent("professional_customer_login","account");
+      if(professionalPendingBookingAfterAuth){professionalPendingBookingAfterAuth=false;status.hidden=false;status.classList.remove("error");status.textContent="Sesión iniciada. Presiona Confirmar reserva para guardar tu cita."}
+    });
+    document.getElementById("professional-register-form")?.addEventListener("submit",async event=>{
+      event.preventDefault();
+      const msg=document.getElementById("professional-account-message");msg.classList.remove("error");msg.textContent="Creando cuenta…";
+      const name=document.getElementById("professional-register-name").value.trim(),phone=document.getElementById("professional-register-phone").value.trim(),email=document.getElementById("professional-register-email").value.trim(),password=document.getElementById("professional-register-password").value;
+      const {data,error}=await db.auth.signUp({email,password,options:{data:{full_name:name,phone}}});
+      if(error){
+        const raw=String(error.message||"");
+        msg.classList.add("error");
+        msg.textContent=/already|registered|exists/i.test(raw)?"Este correo ya tiene una cuenta. Usa Iniciar sesión.":"No pudimos crear la cuenta: "+raw;
+        return;
+      }
+      if(data.session&&data.user){
+        const {error:profileError}=await db.from("customer_profiles").upsert({user_id:data.user.id,full_name:name,phone});
+        if(profileError){msg.classList.add("error");msg.textContent="La cuenta se creó, pero no pudimos completar el perfil. Inicia sesión e inténtalo nuevamente.";return}
+        await syncProfessionalCustomer();
+        closeProfessionalAccount();
+        await trackClientEvent("professional_customer_signup","account");
+        if(professionalPendingBookingAfterAuth){professionalPendingBookingAfterAuth=false;status.hidden=false;status.classList.remove("error");status.textContent="Cuenta creada. Presiona Confirmar reserva para guardar tu cita."}
+      }else{
+        document.getElementById("professional-login-form").hidden=false;
+        document.getElementById("professional-register-form").hidden=true;
+        document.getElementById("professional-login-tab").classList.add("active");
+        document.getElementById("professional-register-tab").classList.remove("active");
+        msg.textContent="Cuenta creada. Ahora inicia sesión para continuar.";
+      }
+    });
+    document.getElementById("professional-logout")?.addEventListener("click",async()=>{
+      await db.auth.signOut();currentCustomer=null;closeProfessionalAccount();closeProfessionalReservations();await syncProfessionalCustomer();
+    });
+    db.auth.onAuthStateChange(()=>setTimeout(syncProfessionalCustomer,0));
+    syncProfessionalCustomer();
+
+
     serviceBox.innerHTML=services.map(s=>'<button class="professional-choice" type="button" data-service="'+Number(s.id)+'"><strong>'+e(s.name)+'</strong><small>'+e(s.description||"Servicio profesional")+'</small><span class="professional-choice-price">'+e(cash(s.price))+' · '+Number(s.duration_minutes)+' min</span></button>').join("")||'<p class="professional-summary-empty">Este negocio todavía no publicó servicios.</p>';
     function updateSummary(){
       const dateLabel=state.date?new Intl.DateTimeFormat(locale,{dateStyle:"long",timeZone:"UTC"}).format(new Date(state.date+"T12:00:00Z")):"—",timeLabel=state.slot?new Intl.DateTimeFormat(locale,{hour:"2-digit",minute:"2-digit",timeZone:timezone}).format(new Date(state.slot)):"—";
@@ -1024,6 +1172,8 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     submit.addEventListener("click",async()=>{
       const name=document.getElementById("public-professional-name").value.trim(),phone=document.getElementById("public-professional-phone").value.trim(),email=document.getElementById("public-professional-email").value.trim(),notes=document.getElementById("public-professional-notes").value.trim();
       status.hidden=false;status.classList.remove("error");if(!name||!phone){status.classList.add("error");status.textContent="Completa tu nombre y teléfono.";return}
+      if(!currentCustomer){await syncProfessionalCustomer()}
+      if(!currentCustomer){professionalPendingBookingAfterAuth=true;status.classList.add("error");status.textContent="Inicia sesión o crea una cuenta para confirmar y seguir tu reserva.";openProfessionalAccount("Necesitas una cuenta de cliente para confirmar esta reserva.");return}
       state.loading=true;submit.disabled=true;submit.textContent="Confirmando reserva…";
       try{
         const {data,error}=await db.rpc("create_public_professional_appointment",{p_restaurant_id:Number(restaurant.id),p_service_id:Number(state.service.id),p_provider_id:Number(state.provider.id),p_starts_at:state.slot,p_customer_name:name,p_customer_phone:phone,p_customer_email:email||null,p_notes:notes||null});
@@ -1036,7 +1186,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
           ?'<p>Anticipo requerido: <b>'+e(cash(data.deposit_amount))+'</b>. '+(mpReady?'Págalo ahora para confirmar tu hora.':'Mercado Pago todavía no está configurado en este negocio; contáctalo para coordinar el anticipo.')+'</p>'
           :'';
         const payButton=depositPending&&mpReady?'<button id="professional-deposit-pay" type="button">Pagar anticipo con Mercado Pago</button><p id="professional-deposit-status" class="professional-booking-status" hidden></p>':'';
-        app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">'+(depositPending?'⌛':'✓')+'</div><h2>'+e(title)+'</h2><p>'+e(state.service.name)+' con '+e(state.provider.name)+'<br><b>'+e(when)+'</b></p><p>Tu código de reserva es <b>#'+e(data?.id||"")+'</b>.</p>'+depositNote+payButton+'<button type="button" onclick="location.reload()">Crear otra reserva</button></section></div>';
+        app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">'+(depositPending?'⌛':'✓')+'</div><h2>'+e(title)+'</h2><p>'+e(state.service.name)+' con '+e(state.provider.name)+'<br><b>'+e(when)+'</b></p><p>Tu código de reserva es <b>#'+e(data?.id||"")+'</b>.</p>'+depositNote+payButton+'<button type="button" onclick="localStorage.setItem(\'yummypro_professional_open_reservations\',\'1\');location.reload()">Ver mis reservas</button><button type="button" onclick="location.reload()">Crear otra reserva</button></section></div>';
         if(depositPending&&mpReady){
           const pay=document.getElementById("professional-deposit-pay"),payStatus=document.getElementById("professional-deposit-status");
           pay?.addEventListener("click",async()=>{
@@ -2122,5 +2272,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.27</footer></body>
+<footer class="site-version">Versión v1.6.28</footer></body>
 </html>
