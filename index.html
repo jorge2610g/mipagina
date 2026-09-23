@@ -1044,6 +1044,20 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   const MP_RETURN_ORDER_KEY = "mp_return_order_id";
   const TABLE_QR_ORDER_KEY = "table_qr_last_order";
   const TABLE_QR_ORDERS_KEY = "table_qr_orders_v2";
+  const RETAIL_ORDER_REFS_KEY = "retail_online_orders_v1";
+  function readRetailOrderRefs(){
+    let rows=[];try{rows=JSON.parse(localStorage.getItem(RETAIL_ORDER_REFS_KEY)||"[]");if(!Array.isArray(rows))rows=[]}catch(_){rows=[]}
+    return rows.filter(x=>x?.order_id&&x?.tracking_token).slice(0,40);
+  }
+  function saveRetailOrderRef(ref){
+    const rows=readRetailOrderRefs().filter(x=>Number(x.order_id)!==Number(ref.order_id));
+    rows.unshift({...ref,restaurant_id:Number(window.__restaurantId||ref.restaurant_id||0),updated_at:new Date().toISOString()});
+    try{localStorage.setItem(RETAIL_ORDER_REFS_KEY,JSON.stringify(rows.slice(0,40)))}catch(_){}
+  }
+  function updateRetailOrderRef(orderId,patch){
+    const rows=readRetailOrderRefs(),idx=rows.findIndex(x=>Number(x.order_id)===Number(orderId));
+    if(idx>=0){rows[idx]={...rows[idx],...patch,updated_at:new Date().toISOString()};try{localStorage.setItem(RETAIL_ORDER_REFS_KEY,JSON.stringify(rows))}catch(_){}}
+  }
   function readTableQrOrderRefs(){
     let rows=[];try{rows=JSON.parse(localStorage.getItem(TABLE_QR_ORDERS_KEY)||"[]");if(!Array.isArray(rows))rows=[]}catch(_){rows=[]}
     try{const last=JSON.parse(localStorage.getItem(TABLE_QR_ORDER_KEY)||"null");if(last?.order_id&&!rows.some(x=>Number(x.order_id)===Number(last.order_id)))rows.unshift(last)}catch(_){}
