@@ -1054,6 +1054,13 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     if(clearCart)clearCart.hidden=true;
     if(pending)pending.hidden=true;
   }
+  if(["supermarket","minimarket"].includes(window.__businessType||"")){
+    const ordersBtn=document.getElementById("orders-btn"),lead=document.querySelector(".lead"),trust=document.querySelector(".trust"),heroTitle=document.querySelector("h1");
+    if(ordersBtn){ordersBtn.hidden=false;ordersBtn.textContent="🛒 Mis compras"}
+    if(lead)lead.textContent="Compra productos con stock real, elige retiro o delivery y sigue tu compra desde este mismo lugar.";
+    if(trust)trust.innerHTML="<div>✓ Stock actualizado</div><div>✓ Retiro o delivery</div><div>✓ Pago seguro y medios locales</div><div>✓ Seguimiento de tu compra</div>";
+    if(heroTitle&&/menú|pedido/i.test(heroTitle.textContent||""))heroTitle.textContent=CONFIG.name;
+  }
   if(window.__tableQrContext){
     const banner=document.getElementById("table-order-banner"),title=document.getElementById("table-order-title"),status=document.getElementById("table-order-status"),field=document.getElementById("order-type-field"),phone=document.getElementById("f-phone");
     if(banner)banner.hidden=false;
@@ -1124,7 +1131,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   const minPrice = it => Math.min(...it.opts.map(o => o.p));
 
   /* ---------- Portada e información ---------- */
-  document.title = CONFIG.name + " | Menú digital";
+  document.title = CONFIG.name + (["supermarket","minimarket"].includes(window.__businessType||"") ? " | Tienda online" : " | Menú digital");
   $("#biz-name").textContent = CONFIG.name; $("#footer-name").textContent = CONFIG.name;
   $("#hours").textContent = "Todos los días de " + CONFIG.open + " a " + CONFIG.close + "hs";
   $("#addr").textContent = CONFIG.address;
@@ -1150,7 +1157,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     paySelected.textContent=selected?"Seleccionaste: "+selected:"";
     mpSafe.hidden=selected!=="Mercado Pago";
     const method=CONFIG.paymentMethods.find(m=>m.label===selected);altNote.hidden=!method;altNote.innerHTML=method?`<b>${esc(method.label)}</b>${method.logo_url?`<img src="${esc(method.logo_url)}" alt="Logo de ${esc(method.institution||method.label)}" style="display:block;max-width:100px;max-height:70px;object-fit:contain;margin:10px 0;border-radius:10px;background:#fff;padding:5px">`:""}${method.institution?`<br>Banco / entidad: ${esc(method.institution)}`:""}${method.account_holder?`<br>Titular: ${esc(method.account_holder)}`:""}${method.document_id?`<br>DNI / documento: ${esc(method.document_id)}`:""}${method.account_type?`<br>Tipo de cuenta: ${esc(method.account_type)}`:""}${method.account_identifier?`<br>Cuenta / teléfono: ${esc(method.account_identifier)}`:""}${method.qr_image_url?`<br><img src="${esc(method.qr_image_url)}" alt="QR de pago" style="display:block;max-width:300px;width:100%;margin:14px auto;border-radius:16px;background:#fff;padding:8px"><div style="margin:12px 0;padding:12px;border-radius:12px;background:#fff;border:1px solid #e6c65d"><b>📱 Guarda una captura del QR antes de continuar</b><br><span>Realiza el pago desde tu aplicación bancaria y luego pulsa “Enviar pedido por WhatsApp”. Si el local solicita el comprobante, envíalo directamente en la conversación de WhatsApp.</span></div>`:""}${method.instructions?`<div style="margin-top:10px">${esc(method.instructions)}</div>`:""}<small>Este pedido se coordina únicamente por WhatsApp y no se registrará como pago en línea.</small>`:"";
-    const sendBtn=$("#send");if(sendBtn)sendBtn.textContent=selected==="Mercado Pago"?"Pagar con Mercado Pago":selected==="QR Bolivia"?"Generar QR de pago":(window.__tableQrContext?"Enviar pedido a cocina":"Enviar pedido por WhatsApp");
+    const sendBtn=$("#send");if(sendBtn)sendBtn.textContent=selected==="Mercado Pago"?"Pagar con Mercado Pago":selected==="QR Bolivia"?"Generar QR de pago":(["supermarket","minimarket"].includes(window.__businessType||"")?"Confirmar compra":(window.__tableQrContext?"Enviar pedido a cocina":"Enviar pedido por WhatsApp"));
   }
   function syncPaymentMethodUI(){
     const selected=$("#f-pay").value;
@@ -1160,7 +1167,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
       const err=$("#err");
       if(err)err.textContent="";
       const sendBtn=$("#send");
-      if(sendBtn){sendBtn.disabled=false;sendBtn.textContent=window.__tableQrContext?"Enviar pedido a cocina":"Enviar pedido por WhatsApp";}
+      if(sendBtn){sendBtn.disabled=false;sendBtn.textContent=["supermarket","minimarket"].includes(window.__businessType||"")?"Confirmar compra":(window.__tableQrContext?"Enviar pedido a cocina":"Enviar pedido por WhatsApp");}
     }
     renderPaymentButtons();
     refreshLink();
