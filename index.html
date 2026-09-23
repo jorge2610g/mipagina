@@ -1584,6 +1584,32 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     else if(f.type==="Delivery"&&CONFIG.delivery.mode==="distance"&&!deliveryCoords)msg="Usa tu ubicación para calcular el costo del delivery.";
     else if(f.type==="Delivery"&&deliveryUnavailable)msg="Tu ubicación está fuera de la zona de delivery.";
     if(msg){$("#err").textContent=msg;return;}
+    if(["supermarket","minimarket"].includes(window.__businessType||"")){
+      if(f.pay==="Mercado Pago"&&!currentCustomer){$("#err").textContent="Para pagar con Mercado Pago inicia sesión o crea una cuenta para seguir tu compra.";document.getElementById("account-dialog").showModal();return}
+      send.disabled=true;send.textContent=f.pay==="Mercado Pago"?"Abriendo Mercado Pago…":f.pay==="QR Bolivia"?"Generando QR…":"Registrando compra…";
+      try{
+        const retailOrderId=await saveOrderToCloud(),ref=readRetailOrderRefs().find(x=>Number(x.order_id)===Number(retailOrderId)),token=ref?.tracking_token||window.__lastRetailOrder?.tracking_token;
+        if(!retailOrderId||!token)throw new Error("No se pudo crear la compra.");
+        if(f.pay==="Mercado Pago"){
+          localStorage.setItem(MP_RETURN_ORDER_KEY,String(retailOrderId));
+          const resp=await fetch(SUPABASE_URL+"/functions/v1/create-retail-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({order_id:retailOrderId,tracking_token:token,return_url:location.href})});
+          const data=await resp.json();if(!resp.ok||!data?.init_point)throw new Error(data?.error||"No se pudo iniciar Mercado Pago.");
+          updateRetailOrderRef(retailOrderId,{status:"pending_payment",payment_status:"pending",reservation_expires_at:data.expires_at||ref?.reservation_expires_at||null});
+          const reset=()=>{send.disabled=false;send.textContent="Pagar con Mercado Pago";};window.addEventListener("pageshow",reset,{once:true});setTimeout(reset,8000);window.location.href=data.init_point;return
+        }
+        if(f.pay==="QR Bolivia"){
+          const resp=await fetch(SUPABASE_URL+"/functions/v1/create-retail-veripagos-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,order_id:retailOrderId,tracking_token:token})});
+          const data=await resp.json();if(!resp.ok||!data?.qr)throw new Error(data?.error||"No se pudo generar QR Bolivia.");
+          cart.clear();saveCart();update();send.disabled=false;send.textContent="Generar QR de pago";openRestaurantVeripagosQr({...data,tracking_token:token});$("#err").textContent="QR generado. El stock quedó reservado mientras confirmamos el pago.";return
+        }
+        cart.clear();saveCart();update();send.disabled=false;send.textContent="Confirmar compra";
+        $("#err").textContent="✅ Compra "+(window.__lastRetailOrder?.order_code||("#"+retailOrderId))+" registrada. Puedes seguirla en Mis pedidos.";
+        await loadRetailOrdersFromRefs(false);
+        return
+      }catch(err){
+        send.disabled=false;renderPaymentButtons();$("#err").textContent="No se pudo completar la compra: "+(err.message||err);await trackClientError("retail","retail_checkout_failure",err.message||String(err),false,{payment_method:f.pay});return
+      }
+    }
     if(f.pay==="QR Bolivia"){
       $("#err").textContent="Generando QR Bolivia…";send.disabled=true;send.textContent="Generando QR…";
       try{
