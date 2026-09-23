@@ -1021,7 +1021,8 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
          + `<svg x="2" y="44" width="124" height="124" viewBox="0 0 200 200">${burger(a.b, id + "b")}</svg>`;
   };
 
-  const ART = { burger, fries, rings, cup, lemonade, beer, water, brownie, flan, combo };
+  const retailBox = () => '<rect x="42" y="48" width="116" height="112" rx="16" fill="#f4c542"/><path d="M42 78h116" stroke="#1d2430" stroke-width="7"/><path d="M70 48v30M130 48v30" stroke="#1d2430" stroke-width="7"/><path d="M68 108h64M68 128h48" stroke="#1d2430" stroke-width="8" stroke-linecap="round"/><path d="M82 42h36" stroke="#1d2430" stroke-width="10" stroke-linecap="round"/>';
+  const ART = { burger, fries, rings, cup, lemonade, beer, water, brownie, flan, combo, box:retailBox };
   function svg(a){
     const id = "g" + (++uid);
     return `<svg viewBox="0 0 200 200" aria-hidden="true" focusable="false">${ART[a.k](a, id)}</svg>`;
