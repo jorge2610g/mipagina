@@ -997,25 +997,25 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
       let ref=null;try{ref=JSON.parse(raw||"null")}catch(_){}
       if(!ref?.id||!ref?.token){localStorage.removeItem(paymentReturnKey);location.reload();return}
       document.body.classList.add("professional-booking-mode");app.hidden=false;
-      app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">⌛</div><h2>Verificando tu anticipo</h2><p>Estamos comprobando el estado del pago de tu reserva #'+e(ref.id)+'.</p><p id="professional-return-status" class="professional-booking-status">Consultando Mercado Pago…</p></section></div>';
+      app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">⌛</div><h2>Verificando tu pago</h2><p>Estamos comprobando el pago. La reserva se crea únicamente cuando el pago sea aprobado.</p><p id="professional-return-status" class="professional-booking-status">Consultando estado…</p></section></div>';
       const check=async()=>{
         const box=document.getElementById("professional-return-status");
-        const {data,error}=await db.rpc("get_public_professional_appointment_status",{p_appointment_id:Number(ref.id),p_public_token:String(ref.token)});
-        if(error||!data){if(box){box.classList.add("error");box.textContent="No pudimos verificar la reserva. Intenta nuevamente."}return}
+        const {data,error}=await db.rpc("get_public_professional_booking_payment_status",{p_intent_id:Number(ref.id),p_public_token:String(ref.token)});
+        if(error||!data){if(box){box.classList.add("error");box.textContent="No pudimos verificar el pago. Intenta nuevamente."}return}
         const when=new Intl.DateTimeFormat(data.locale||locale,{dateStyle:"full",timeStyle:"short",timeZone:data.timezone||timezone}).format(new Date(data.starts_at));
-        if(data.payment_status==="approved"){
+        if(data.payment_status==="approved"&&data.appointment_id){
           localStorage.removeItem(paymentReturnKey);
-          app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">✓</div><h2>Pago aprobado</h2><p>'+e(data.service_name)+' con '+e(data.provider_name)+'<br><b>'+e(when)+'</b></p><p>Tu reserva <b>#'+e(data.id)+'</b> quedó '+(data.status==="confirmed"?"confirmada":"registrada")+'.</p><button type="button" onclick="localStorage.setItem(\'yummypro_professional_open_reservations\',\'1\');location.reload()">Ver mis reservas</button><button type="button" onclick="location.reload()">Volver a reservas</button></section></div>';
+          app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">✓</div><h2>Pago aprobado y reserva creada</h2><p>'+e(data.service_name)+' con '+e(data.provider_name)+'<br><b>'+e(when)+'</b></p><p>Tu reserva es <b>#'+e(data.appointment_id)+'</b>. Pagado: <b>'+e(cash(data.paid_amount||data.amount_due||0))+'</b>.</p><button type="button" onclick="localStorage.setItem(\'yummypro_professional_open_reservations\',\'1\');location.reload()">Ver mis reservas</button><button type="button" onclick="location.reload()">Volver a reservas</button></section></div>';
           return;
         }
-        if(["rejected","cancelled","expired"].includes(String(data.payment_status||""))||data.status==="cancelled"){
+        if(["rejected","cancelled","expired"].includes(String(data.payment_status||""))||["rejected","cancelled","expired"].includes(String(data.status||""))){
           localStorage.removeItem(paymentReturnKey);
-          app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">!</div><h2>El pago no se completó</h2><p>La reserva #'+e(data.id)+' no quedó confirmada. El horario se libera para que puedas reservar nuevamente.</p><button type="button" onclick="location.reload()">Crear nueva reserva</button></section></div>';
+          app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">!</div><h2>El pago no se completó</h2><p><b>No se creó ninguna reserva.</b> El horario se libera para que puedas intentarlo nuevamente.</p><button type="button" onclick="location.reload()">Elegir otro horario</button></section></div>';
           return;
         }
         if(box){
           box.classList.remove("error");
-          box.innerHTML='El pago todavía figura pendiente. <button id="professional-return-refresh" type="button">Actualizar estado</button>';
+          box.innerHTML='El pago todavía está pendiente. Aún no existe una reserva. <button id="professional-return-refresh" type="button">Actualizar estado</button>';
           document.getElementById("professional-return-refresh")?.addEventListener("click",()=>{box.textContent="Verificando…";check()},{once:true});
         }
       };
@@ -1025,7 +1025,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     const state={service:null,provider:null,date:localDate(),slot:null,loading:false};
     const professionalAccountMarkup='<div id="professional-account-overlay" class="professional-overlay" hidden><section class="professional-overlay-card"><div class="professional-overlay-head"><div><span class="professional-booking-kicker">Cuenta cliente</span><h2>Mi cuenta</h2></div><button id="professional-account-close" class="professional-overlay-close" type="button" aria-label="Cerrar">✕</button></div><p id="professional-account-user" class="professional-booking-address">Inicia sesión para guardar y seguir tus reservas.</p><div id="professional-account-guest"><div class="professional-auth-tabs"><button id="professional-login-tab" class="active" type="button">Iniciar sesión</button><button id="professional-register-tab" type="button">Crear cuenta</button></div><form id="professional-login-form" class="professional-auth-form"><input id="professional-login-email" type="email" autocomplete="email" placeholder="Correo electrónico" required><input id="professional-login-password" type="password" autocomplete="current-password" placeholder="Contraseña" minlength="6" required><button class="professional-auth-primary" type="submit">Entrar a mi cuenta</button></form><form id="professional-register-form" class="professional-auth-form" hidden><input id="professional-register-name" type="text" autocomplete="name" placeholder="Nombre y apellido" required><input id="professional-register-phone" type="tel" autocomplete="tel" placeholder="Teléfono" required><input id="professional-register-email" type="email" autocomplete="email" placeholder="Correo electrónico" required><input id="professional-register-password" type="password" autocomplete="new-password" placeholder="Contraseña (mínimo 6 caracteres)" minlength="6" required><button class="professional-auth-primary" type="submit">Crear mi cuenta</button></form><p id="professional-account-message" class="professional-account-message"></p></div><div id="professional-account-auth" hidden><p>Tu cuenta está conectada.</p><button id="professional-logout" class="professional-auth-secondary" type="button">Cerrar sesión</button></div></section></div><div id="professional-reservations-overlay" class="professional-overlay" hidden><section class="professional-overlay-card"><div class="professional-overlay-head"><div><span class="professional-booking-kicker">Seguimiento</span><h2>Mis reservas</h2></div><button id="professional-reservations-close" class="professional-overlay-close" type="button" aria-label="Cerrar">✕</button></div><div class="professional-reservations-refresh"><span id="professional-reservations-updated">Se actualiza automáticamente.</span><button id="professional-reservations-reload" type="button">Actualizar</button></div><div id="professional-reservations-list" class="professional-reservation-list"><p class="professional-summary-empty">Inicia sesión para ver tus reservas.</p></div></section></div>';
     document.body.classList.add("professional-booking-mode");app.hidden=false;document.title=(restaurant.name||"Reservas")+" | Reservas online";
-    app.innerHTML='<div class="professional-booking-shell"><header class="professional-booking-hero"><div class="professional-booking-brand"><div class="professional-booking-logo">'+(restaurant.logo_url?'<img src="'+e(restaurant.logo_url)+'" alt="">':'✦')+'</div><div><span class="professional-booking-kicker">Reservas online</span><h1>'+e(restaurant.name||"Servicios profesionales")+'</h1><p class="professional-booking-address">'+e(restaurant.address||"Selecciona un servicio y reserva tu hora")+'</p></div></div><div class="professional-booking-contact">'+(restaurant.whatsapp?'<a href="https://wa.me/'+e(String(restaurant.whatsapp).replace(/\D/g,""))+'" target="_blank" rel="noopener">WhatsApp</a>':'')+'<button id="professional-account" type="button">👤 Iniciar sesión</button><button id="professional-reservations" type="button">📅 Mis reservas</button><button id="professional-theme" type="button">◐ Tema</button></div></header><div class="professional-booking-layout"><div><section class="professional-booking-card"><div class="professional-booking-step"><span>1</span><div><h2>Elige el servicio</h2><p>Duración y precio visibles antes de reservar.</p></div></div><div id="public-professional-services" class="professional-service-grid"></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>2</span><div><h2>Elige al profesional</h2><p>Solo mostramos quienes atienden el servicio seleccionado.</p></div></div><div id="public-professional-providers" class="professional-provider-grid"><p class="professional-summary-empty">Primero selecciona un servicio.</p></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>3</span><div><h2>Fecha y hora</h2><p>Los horarios ocupados o bloqueados no aparecen.</p></div></div><label style="font-weight:800">Fecha<input id="public-professional-date" type="date" value="'+e(state.date)+'" min="'+e(state.date)+'" max="'+e(addDays(state.date,Number(booking.max_days||60)))+'"></label><div id="public-professional-slots" class="professional-slots"><p class="professional-summary-empty">Elige servicio y profesional para consultar horarios.</p></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>4</span><div><h2>Tus datos</h2><p>Los usaremos únicamente para gestionar esta reserva.</p></div></div><div class="professional-booking-fields"><label>Nombre completo<input id="public-professional-name" autocomplete="name" required></label><label>Teléfono<input id="public-professional-phone" type="tel" autocomplete="tel" required></label><label>Correo (opcional)<input id="public-professional-email" type="email" autocomplete="email"></label><label>Nota (opcional)<textarea id="public-professional-notes" placeholder="Información importante para la atención"></textarea></label></div><button id="public-professional-submit" class="professional-booking-submit" type="button" disabled>Confirmar reserva</button><div id="public-professional-status" class="professional-booking-status" hidden></div></section></div><aside class="professional-booking-card professional-booking-summary"><span class="professional-booking-kicker">Tu reserva</span><div id="public-professional-summary"><p class="professional-summary-empty">Selecciona un servicio para comenzar.</p></div></aside></div></div>'+professionalAccountMarkup;
+    app.innerHTML='<div class="professional-booking-shell"><header class="professional-booking-hero"><div class="professional-booking-brand"><div class="professional-booking-logo">'+(restaurant.logo_url?'<img src="'+e(restaurant.logo_url)+'" alt="">':'✦')+'</div><div><span class="professional-booking-kicker">Reservas online</span><h1>'+e(restaurant.name||"Servicios profesionales")+'</h1><p class="professional-booking-address">'+e(restaurant.address||"Selecciona un servicio y reserva tu hora")+'</p></div></div><div class="professional-booking-contact">'+(restaurant.whatsapp?'<a href="https://wa.me/'+e(String(restaurant.whatsapp).replace(/\D/g,""))+'" target="_blank" rel="noopener">WhatsApp</a>':'')+'<button id="professional-account" type="button">👤 Iniciar sesión</button><button id="professional-reservations" type="button">📅 Mis reservas</button><button id="professional-theme" type="button">◐ Tema</button></div></header><div class="professional-booking-layout"><div><section class="professional-booking-card"><div class="professional-booking-step"><span>1</span><div><h2>Elige el servicio</h2><p>Duración y precio visibles antes de reservar.</p></div></div><div id="public-professional-services" class="professional-service-grid"></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>2</span><div><h2>Elige al profesional</h2><p>Solo mostramos quienes atienden el servicio seleccionado.</p></div></div><div id="public-professional-providers" class="professional-provider-grid"><p class="professional-summary-empty">Primero selecciona un servicio.</p></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>3</span><div><h2>Fecha y hora</h2><p>Los horarios ocupados o bloqueados no aparecen.</p></div></div><label style="font-weight:800">Fecha<input id="public-professional-date" type="date" value="'+e(state.date)+'" min="'+e(state.date)+'" max="'+e(addDays(state.date,Number(booking.max_days||60)))+'"></label><div id="public-professional-slots" class="professional-slots"><p class="professional-summary-empty">Elige servicio y profesional para consultar horarios.</p></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>4</span><div><h2>Tus datos</h2><p>Los usaremos únicamente para gestionar esta reserva.</p></div></div><div class="professional-booking-fields"><label>Nombre completo<input id="public-professional-name" autocomplete="name" required></label><label>Teléfono<input id="public-professional-phone" type="tel" autocomplete="tel" required></label><label>Correo (opcional)<input id="public-professional-email" type="email" autocomplete="email"></label><label>Nota (opcional)<textarea id="public-professional-notes" placeholder="Información importante para la atención"></textarea></label></div><button id="public-professional-submit" class="professional-booking-submit" type="button" disabled>Continuar al pago</button><div id="public-professional-status" class="professional-booking-status" hidden></div></section></div><aside class="professional-booking-card professional-booking-summary"><span class="professional-booking-kicker">Tu reserva</span><div id="public-professional-summary"><p class="professional-summary-empty">Selecciona un servicio para comenzar.</p></div></aside></div></div>'+professionalAccountMarkup;
     const serviceBox=document.getElementById("public-professional-services"),providerBox=document.getElementById("public-professional-providers"),dateInput=document.getElementById("public-professional-date"),slotBox=document.getElementById("public-professional-slots"),submit=document.getElementById("public-professional-submit"),status=document.getElementById("public-professional-status"),summary=document.getElementById("public-professional-summary");
     const professionalAccountOverlay=document.getElementById("professional-account-overlay"),professionalReservationsOverlay=document.getElementById("professional-reservations-overlay");
     let professionalReservationsChannel=null,professionalReservationsTimer=null,professionalPendingBookingAfterAuth=false;
@@ -1179,67 +1179,100 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     slotBox.addEventListener("click",event=>{const button=event.target.closest("[data-slot]");if(!button)return;state.slot=button.dataset.slot;slotBox.querySelectorAll(".professional-slot").forEach(x=>x.classList.toggle("selected",x===button));updateSummary()});
     submit.addEventListener("click",async()=>{
       const name=document.getElementById("public-professional-name").value.trim(),phone=document.getElementById("public-professional-phone").value.trim(),email=document.getElementById("public-professional-email").value.trim(),notes=document.getElementById("public-professional-notes").value.trim();
-      status.hidden=false;status.classList.remove("error");if(!name||!phone){status.classList.add("error");status.textContent="Completa tu nombre y teléfono.";return}
+      status.hidden=false;status.classList.remove("error");
+      if(!name||!phone){status.classList.add("error");status.textContent="Completa tu nombre y teléfono.";return}
       if(!currentCustomer){await syncProfessionalCustomer()}
-      if(!currentCustomer){professionalPendingBookingAfterAuth=true;status.classList.add("error");status.textContent="Inicia sesión o crea una cuenta para confirmar y seguir tu reserva.";openProfessionalAccount("Necesitas una cuenta de cliente para confirmar esta reserva.");return}
-      state.loading=true;submit.disabled=true;submit.textContent="Confirmando reserva…";
+      if(!currentCustomer){professionalPendingBookingAfterAuth=true;status.classList.add("error");status.textContent="Inicia sesión o crea una cuenta para continuar al pago.";openProfessionalAccount("Necesitas una cuenta de cliente para pagar y reservar.");return}
+
+      const mpReady=booking.mercadopago_configured===true;
+      const manualMethods=(catalog.payment_methods||[]);
+      if(!mpReady&&!manualMethods.length){
+        status.classList.add("error");
+        status.textContent="Este negocio todavía no tiene un método de pago disponible. No se creó ninguna reserva.";
+        return;
+      }
+
+      state.loading=true;submit.disabled=true;submit.textContent="Preparando pago…";
       try{
-        const {data,error}=await db.rpc("create_public_professional_appointment",{p_restaurant_id:Number(restaurant.id),p_service_id:Number(state.service.id),p_provider_id:Number(state.provider.id),p_starts_at:state.slot,p_customer_name:name,p_customer_phone:phone,p_customer_email:email||null,p_notes:notes||null});
-        if(error)throw error;trackClientEvent("professional_booking_created","booking",{appointment_id:data?.id,service_id:state.service.id,provider_id:state.provider.id});
+        const {data,error}=await db.rpc("create_professional_booking_payment_intent",{
+          p_restaurant_id:Number(restaurant.id),
+          p_service_id:Number(state.service.id),
+          p_provider_id:Number(state.provider.id),
+          p_starts_at:state.slot,
+          p_customer_name:name,
+          p_customer_phone:phone,
+          p_customer_email:email||null,
+          p_notes:notes||null
+        });
+        if(error)throw error;
+
+        trackClientEvent("professional_payment_intent_created","booking",{intent_id:data?.intent_id,service_id:state.service.id,provider_id:state.provider.id});
         const when=new Intl.DateTimeFormat(locale,{dateStyle:"full",timeStyle:"short",timeZone:timezone}).format(new Date(state.slot));
-        const paymentPending=data?.payment_status==="pending"&&Number(data?.payment_amount_due||0)>0;
-        const paymentDue=Number(data?.payment_amount_due||0),totalAmount=Number(data?.total_amount||state.service.price||0);
-        const mpReady=booking.mercadopago_configured===true;
-        const manualMethods=(catalog.payment_methods||[]);
-        if(paymentPending){
-          const paymentType=String(data?.payment_mode||booking.payment_mode||"full")==="deposit"?"Anticipo":"Pago de la reserva";
-          const methodsHtml=(mpReady?'<button class="professional-payment-method" id="professional-mp-pay" type="button"><b>Mercado Pago</b><span>Pago online seguro · confirmación automática</span></button>':'')+
-            manualMethods.map(m=>'<button class="professional-payment-method" type="button" data-professional-payment-method="'+e(m.id)+'"><b>'+e(m.label||"Otro método")+'</b><span>'+e([m.institution,m.method_type==="bank_transfer"?"Transferencia":m.method_type].filter(Boolean).join(" · "))+'</span></button>').join("");
-          app.innerHTML='<div class="professional-booking-shell" style="padding-top:5vh"><section class="professional-booking-card professional-booking-success"><div class="check">⌛</div><h2>Completa el pago</h2><p>'+e(state.service.name)+' con '+e(state.provider.name)+'<br><b>'+e(when)+'</b></p><div class="professional-payment-summary"><span>'+e(paymentType)+'</span><strong>'+e(cash(paymentDue))+'</strong><span>Total del servicio: '+e(cash(totalAmount))+' · Reserva #'+e(data?.id||"")+'</span></div><h3>Elige cómo pagar</h3><div id="professional-payment-methods" class="professional-payment-methods">'+(methodsHtml||'<p class="professional-booking-status error">Este negocio todavía no tiene un método de pago disponible. La reserva quedó pendiente; contacta al negocio.</p>')+'</div><div id="professional-payment-manual"></div><p id="professional-payment-status" class="professional-booking-status" hidden></p><div class="professional-payment-actions"><button type="button" onclick="localStorage.setItem(\'yummypro_professional_open_reservations\',\'1\');location.reload()">Ver mis reservas</button></div></section></div>';
+        const paymentDue=Number(data?.amount_due||0),totalAmount=Number(data?.total_amount||state.service.price||0);
+        const paymentType=String(data?.payment_mode||booking.payment_mode||"full")==="deposit"?"Anticipo":"Pago de la reserva";
+        const methodsHtml=(mpReady?'<button class="professional-payment-method" id="professional-mp-pay" type="button"><b>Mercado Pago</b><span>Pago online seguro · la reserva se crea al aprobarse</span></button>':'')+
+          manualMethods.map(m=>'<button class="professional-payment-method" type="button" data-professional-payment-method="'+e(m.id)+'"><b>'+e(m.label||"Otro método")+'</b><span>'+e([m.institution,m.method_type==="bank_transfer"?"Transferencia":m.method_type].filter(Boolean).join(" · "))+'</span></button>').join("");
 
-          const payStatus=document.getElementById("professional-payment-status");
-          document.getElementById("professional-mp-pay")?.addEventListener("click",async event=>{
-            const pay=event.currentTarget;pay.disabled=true;pay.innerHTML='<b>Abriendo Mercado Pago…</b><span>Preparando pago seguro</span>';
-            if(payStatus){payStatus.hidden=false;payStatus.classList.remove("error");payStatus.textContent="Preparando pago seguro…"}
-            try{
-              const returnRef={id:Number(data.id),token:String(data.public_token||"")};
-              localStorage.setItem("yummypro_professional_payment_return",JSON.stringify(returnRef));
-              const resp=await fetch(SUPABASE_URL+"/functions/v1/create-professional-appointment-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({appointment_id:returnRef.id,public_token:returnRef.token,return_url:location.href})});
-              const payment=await resp.json();
-              if(!resp.ok||!payment?.init_point)throw new Error(payment?.error||"No se pudo iniciar el pago.");
-              window.location.href=payment.init_point;
-            }catch(paymentError){
-              pay.disabled=false;pay.innerHTML='<b>Mercado Pago</b><span>Pago online seguro · confirmación automática</span>';
-              if(payStatus){payStatus.hidden=false;payStatus.classList.add("error");payStatus.textContent=String(paymentError?.message||"No se pudo iniciar el pago.")}
+        app.innerHTML='<div class="professional-booking-shell" style="padding-top:5vh"><section class="professional-booking-card professional-booking-success"><div class="check">⌛</div><h2>Completa el pago</h2><p>'+e(state.service.name)+' con '+e(state.provider.name)+'<br><b>'+e(when)+'</b></p><div class="professional-payment-summary"><span>'+e(paymentType)+'</span><strong>'+e(cash(paymentDue))+'</strong><span>Total del servicio: '+e(cash(totalAmount))+'</span></div><p class="professional-booking-status"><b>Aún no existe una reserva.</b> Este horario está bloqueado temporalmente mientras completas el pago.</p><h3>Elige cómo pagar</h3><div id="professional-payment-methods" class="professional-payment-methods">'+methodsHtml+'</div><div id="professional-payment-manual"></div><p id="professional-payment-status" class="professional-booking-status" hidden></p></section></div>';
+
+        const payStatus=document.getElementById("professional-payment-status");
+        document.getElementById("professional-mp-pay")?.addEventListener("click",async event=>{
+          const pay=event.currentTarget;pay.disabled=true;pay.innerHTML='<b>Abriendo Mercado Pago…</b><span>Preparando pago seguro</span>';
+          if(payStatus){payStatus.hidden=false;payStatus.classList.remove("error");payStatus.textContent="Preparando pago seguro…"}
+          try{
+            const returnRef={id:Number(data.intent_id),token:String(data.public_token||"")};
+            localStorage.setItem(paymentReturnKey,JSON.stringify(returnRef));
+            const resp=await fetch(SUPABASE_URL+"/functions/v1/create-professional-appointment-payment",{
+              method:"POST",
+              headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},
+              body:JSON.stringify({intent_id:returnRef.id,public_token:returnRef.token,return_url:location.href})
+            });
+            const payment=await resp.json();
+            if(!resp.ok||!payment?.init_point)throw new Error(payment?.error||"No se pudo iniciar el pago.");
+            window.location.href=payment.init_point;
+          }catch(paymentError){
+            pay.disabled=false;pay.innerHTML='<b>Mercado Pago</b><span>Pago online seguro · la reserva se crea al aprobarse</span>';
+            if(payStatus){payStatus.hidden=false;payStatus.classList.add("error");payStatus.textContent=String(paymentError?.message||"No se pudo iniciar el pago.")}
+          }
+        });
+
+        document.getElementById("professional-payment-methods")?.addEventListener("click",async event=>{
+          const button=event.target.closest("[data-professional-payment-method]");if(!button)return;
+          const methodId=Number(button.dataset.professionalPaymentMethod),method=manualMethods.find(x=>Number(x.id)===methodId);if(!method)return;
+          button.disabled=true;
+          if(payStatus){payStatus.hidden=false;payStatus.classList.remove("error");payStatus.textContent="Preparando instrucciones de pago…"}
+          const {data:selected,error:selectError}=await db.rpc("select_professional_booking_payment_method",{p_intent_id:Number(data.intent_id),p_method_id:methodId});
+          button.disabled=false;
+          if(selectError){if(payStatus){payStatus.hidden=false;payStatus.classList.add("error");payStatus.textContent=selectError.message||"No se pudo seleccionar este método."}return}
+          const detail=selected||method,manual=document.getElementById("professional-payment-manual");
+          const qr=detail.qr_image_url?'<img src="'+e(detail.qr_image_url)+'" alt="QR de pago">':'';
+          const rows=[
+            detail.institution&&'<div><b>Institución:</b> '+e(detail.institution)+'</div>',
+            detail.account_holder&&'<div><b>Titular:</b> '+e(detail.account_holder)+'</div>',
+            detail.account_identifier&&'<div><b>Cuenta / identificación:</b> '+e(detail.account_identifier)+'</div>',
+            detail.account_type&&'<div><b>Tipo de cuenta:</b> '+e(detail.account_type)+'</div>',
+            detail.document_id&&'<div><b>Documento:</b> '+e(detail.document_id)+'</div>',
+            detail.instructions&&'<div style="margin-top:8px">'+e(detail.instructions)+'</div>'
+          ].filter(Boolean).join("");
+          manual.innerHTML='<div class="professional-payment-manual"><h3 style="margin-top:0">'+e(detail.label||"Método de pago")+'</h3><p>Paga exactamente <b>'+e(cash(paymentDue))+'</b>.</p>'+qr+rows+'<p><b>Aún no existe una reserva.</b> Cuando el negocio confirme este pago, se creará la reserva y aparecerá en “Mis reservas”.</p><button id="professional-manual-check" type="button">Actualizar estado</button></div>';
+          document.getElementById("professional-manual-check")?.addEventListener("click",async()=>{
+            const {data:checkData,error:checkError}=await db.rpc("get_public_professional_booking_payment_status",{p_intent_id:Number(data.intent_id),p_public_token:String(data.public_token)});
+            if(checkError){if(payStatus){payStatus.hidden=false;payStatus.classList.add("error");payStatus.textContent="No se pudo verificar el pago."}return}
+            if(checkData?.payment_status==="approved"&&checkData?.appointment_id){
+              localStorage.setItem("yummypro_professional_open_reservations","1");
+              location.reload();
+              return;
             }
+            if(payStatus){payStatus.hidden=false;payStatus.classList.remove("error");payStatus.textContent="El pago todavía está pendiente de verificación. No se ha creado ninguna reserva."}
           });
-
-          document.getElementById("professional-payment-methods")?.addEventListener("click",async event=>{
-            const button=event.target.closest("[data-professional-payment-method]");if(!button)return;
-            const methodId=Number(button.dataset.professionalPaymentMethod),method=manualMethods.find(x=>Number(x.id)===methodId);if(!method)return;
-            button.disabled=true;
-            if(payStatus){payStatus.hidden=false;payStatus.classList.remove("error");payStatus.textContent="Preparando instrucciones de pago…"}
-            const {data:selected,error:selectError}=await db.rpc("select_professional_appointment_payment_method",{p_appointment_id:Number(data.id),p_method_id:methodId});
-            button.disabled=false;
-            if(selectError){if(payStatus){payStatus.hidden=false;payStatus.classList.add("error");payStatus.textContent=selectError.message||"No se pudo seleccionar este método."}return}
-            const detail=selected||method,manual=document.getElementById("professional-payment-manual");
-            const qr=detail.qr_image_url?'<img src="'+e(detail.qr_image_url)+'" alt="QR de pago">':'';
-            const rows=[
-              detail.institution&&'<div><b>Institución:</b> '+e(detail.institution)+'</div>',
-              detail.account_holder&&'<div><b>Titular:</b> '+e(detail.account_holder)+'</div>',
-              detail.account_identifier&&'<div><b>Cuenta / identificación:</b> '+e(detail.account_identifier)+'</div>',
-              detail.account_type&&'<div><b>Tipo de cuenta:</b> '+e(detail.account_type)+'</div>',
-              detail.document_id&&'<div><b>Documento:</b> '+e(detail.document_id)+'</div>',
-              detail.instructions&&'<div style="margin-top:8px">'+e(detail.instructions)+'</div>'
-            ].filter(Boolean).join("");
-            manual.innerHTML='<div class="professional-payment-manual"><h3 style="margin-top:0">'+e(detail.label||"Método de pago")+'</h3><p>Paga exactamente <b>'+e(cash(paymentDue))+'</b> por la reserva #'+e(data.id)+'.</p>'+qr+rows+'<p style="margin-bottom:0"><b>Estado:</b> pendiente de verificación. Cuando el negocio confirme el pago, en “Mis reservas” aparecerá como <b>Pagado</b>.</p></div>';
-            if(payStatus){payStatus.hidden=true;payStatus.textContent=""}
-          });
-        }else{
-          const title=data?.status==="confirmed"?"Reserva confirmada":"Solicitud recibida";
-          app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">✓</div><h2>'+e(title)+'</h2><p>'+e(state.service.name)+' con '+e(state.provider.name)+'<br><b>'+e(when)+'</b></p><p>Tu código de reserva es <b>#'+e(data?.id||"")+'</b>.</p><button type="button" onclick="localStorage.setItem(\'yummypro_professional_open_reservations\',\'1\');location.reload()">Ver mis reservas</button><button type="button" onclick="location.reload()">Crear otra reserva</button></section></div>';
-        }
-      }catch(error){status.classList.add("error");status.textContent=String(error?.message||"No se pudo crear la reserva").replace(/^.*?: /,"");trackClientError("professional_booking","booking_create_failure",error?.message||"Error de reserva",false);state.loading=false;submit.disabled=false;submit.textContent="Confirmar reserva";await loadSlots()}
+          if(payStatus){payStatus.hidden=true;payStatus.textContent=""}
+        });
+      }catch(error){
+        status.classList.add("error");
+        status.textContent=String(error?.message||"No se pudo preparar el pago").replace(/^.*?: /,"");
+        trackClientError("professional_booking","payment_intent_create_failure",error?.message||"Error preparando pago",false);
+        state.loading=false;submit.disabled=false;submit.textContent="Continuar al pago";await loadSlots()
+      }
     });
     document.getElementById("professional-theme")?.addEventListener("click",()=>{const root=document.documentElement,next=root.getAttribute("data-theme")==="dark"?"light":"dark";root.setAttribute("data-theme",next);try{localStorage.setItem("menu_theme",next)}catch(_){}});
     updateSummary();
@@ -2306,5 +2339,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.29</footer></body>
+<footer class="site-version">Versión v1.6.30</footer></body>
 </html>
