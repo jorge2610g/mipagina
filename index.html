@@ -1769,7 +1769,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     }catch(e){console.warn("No se pudo actualizar el estado del pedido QR",e);return null}
   }
 
-  let restaurantVeripagosOrderId=null,restaurantVeripagosPollTimer=null;
+  let restaurantVeripagosOrderId=null,restaurantVeripagosTrackingToken=null,restaurantVeripagosPollTimer=null;
   function ensureRestaurantVeripagosDialog(){
     let dlg=document.getElementById("restaurant-veripagos-dialog");if(dlg)return dlg;
     dlg=document.createElement("dialog");dlg.id="restaurant-veripagos-dialog";dlg.style.cssText="width:min(520px,calc(100% - 24px));border:0;border-radius:20px;padding:0;background:var(--panel,#171717);color:inherit;box-shadow:0 24px 80px #0008";
@@ -1780,7 +1780,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     return dlg;
   }
   function openRestaurantVeripagosQr(data){
-    const dlg=ensureRestaurantVeripagosDialog();restaurantVeripagosOrderId=Number(data.order_id);
+    const dlg=ensureRestaurantVeripagosDialog();restaurantVeripagosOrderId=Number(data.order_id);restaurantVeripagosTrackingToken=data.tracking_token||readRetailOrderRefs().find(x=>Number(x.order_id)===Number(data.order_id))?.tracking_token||null;
     const img=dlg.querySelector("#restaurant-veripagos-qr"),amount=dlg.querySelector("#restaurant-veripagos-amount"),state=dlg.querySelector("#restaurant-veripagos-state");
     if(img)img.src=data.qr;if(amount)amount.textContent=fmt(Number(data.amount||0));if(state)state.textContent="QR generado · esperando confirmación del banco.";
     if(!dlg.open)dlg.showModal();
@@ -1793,16 +1793,19 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   }
   async function verifyRestaurantVeripagosNow(){
     if(!restaurantVeripagosOrderId)return;
-    const state=document.getElementById("restaurant-veripagos-state");
+    const state=document.getElementById("restaurant-veripagos-state"),retail=["supermarket","minimarket"].includes(window.__businessType||"");
     try{
-      const resp=await fetch(SUPABASE_URL+"/functions/v1/verify-restaurant-veripagos-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({order_id:restaurantVeripagosOrderId})});
+      const endpoint=retail?"verify-retail-veripagos-payment":"verify-restaurant-veripagos-payment";
+      const payload=retail?{order_id:restaurantVeripagosOrderId,tracking_token:restaurantVeripagosTrackingToken}:{order_id:restaurantVeripagosOrderId};
+      const resp=await fetch(SUPABASE_URL+"/functions/v1/"+endpoint,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify(payload)});
       const data=await resp.json();
       if(!resp.ok){if(state)state.textContent="No se pudo verificar todavía: "+(data?.error||"intenta nuevamente");return}
       if(!data.approved){if(state)state.textContent="Pago pendiente · "+(data.status||"esperando confirmación");return}
-      if(state)state.innerHTML="<b>✅ Pago confirmado. Tu pedido fue enviado al restaurante.</b>";
+      if(state)state.innerHTML="<b>✅ Pago confirmado. Tu compra fue recibida.</b>";
       if(restaurantVeripagosPollTimer){clearInterval(restaurantVeripagosPollTimer);restaurantVeripagosPollTimer=null}
-      $("#err").textContent="✅ Pago QR confirmado. Tu pedido ya está en el restaurante.";
-      if(window.__tableQrContext)await refreshTableQrOrderStatus();else if(currentCustomer){await refreshPendingOrder();if(document.getElementById("orders-dialog")?.open)await loadCustomerOrders();}
+      $("#err").textContent=retail?"✅ Pago QR confirmado. Tu compra ya está en preparación.":"✅ Pago QR confirmado. Tu pedido ya está en el restaurante.";
+      if(retail){updateRetailOrderRef(restaurantVeripagosOrderId,{status:"received",payment_status:"approved"});cart.clear();saveCart();update();if(document.getElementById("orders-dialog")?.open)await loadRetailOrdersFromRefs(true)}
+      else if(window.__tableQrContext)await refreshTableQrOrderStatus();else if(currentCustomer){await refreshPendingOrder();if(document.getElementById("orders-dialog")?.open)await loadCustomerOrders();}
       setTimeout(closeRestaurantVeripagosQr,1200);
     }catch(e){if(state)state.textContent="No pudimos verificar el pago todavía. Intenta nuevamente."}
   }
