@@ -28,9 +28,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="YummyPro">
-<link rel="manifest" href="/manifest.webmanifest?v=1620">
+<link rel="manifest" href="/manifest.webmanifest?v=1621">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" href="/pwa-icon.svg" type="image/svg+xml">
+<link rel="icon" sizes="192x192" href="/icon-192.png" type="image/png">
 <meta name="theme-color" content="#000000">
 <meta name="description" content="Menú digital del restaurante. Pedidos directos por WhatsApp.">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -1710,7 +1710,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   update();
 })();
 </script>
-<script id="customer-pwa-v1620">
+<script id="customer-pwa-v1621">
 let yummyCustomerInstallPrompt=null;
 function customerPwaStandalone(){return window.matchMedia?.("(display-mode: standalone)")?.matches===true||window.navigator.standalone===true}
 function refreshCustomerInstallButton(){
@@ -1733,7 +1733,7 @@ window.addEventListener("DOMContentLoaded",async()=>{
  document.getElementById("pwa-install-btn")?.addEventListener("click",installCustomerPwa);
  try{
   if("serviceWorker" in navigator){
-   const migrationKey="yummypro_client_pwa_identity_v1620";
+   const migrationKey="yummypro_client_pwa_identity_v1621";
    if(!localStorage.getItem(migrationKey)){
     try{
      const regs=await navigator.serviceWorker.getRegistrations();
@@ -1747,6 +1747,15 @@ window.addEventListener("DOMContentLoaded",async()=>{
    }
    const reg=await navigator.serviceWorker.register("/pwa-sw.js",{scope:"/"});
    await reg.update().catch(()=>{});
+   const activateWaiting=worker=>{
+    if(!worker||!navigator.serviceWorker.controller)return;
+    if(!customerPwaStandalone())worker.postMessage({type:"SKIP_WAITING"});
+   };
+   activateWaiting(reg.waiting);
+   reg.addEventListener("updatefound",()=>{
+    const worker=reg.installing;if(!worker)return;
+    worker.addEventListener("statechange",()=>{if(worker.state==="installed")activateWaiting(worker)});
+   });
    navigator.serviceWorker.addEventListener("controllerchange",()=>{
     if(customerPwaStandalone()||window.__customerPwaReloading)return;
     window.__customerPwaReloading=true;location.reload();
@@ -1756,5 +1765,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.20</footer></body>
+<footer class="site-version">Versión v1.6.21</footer></body>
 </html>
