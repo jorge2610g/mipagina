@@ -1716,7 +1716,6 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")verifyMercadoPagoReturn();});
   toggleDelivery();
   update();
-})();
   // Telemetría de interacción: módulos más usados y errores globales.
   document.addEventListener("click",e=>{
     const el=e.target.closest?.("button,a,.chip,.plus");if(!el)return;
