@@ -319,6 +319,38 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
 .professional-service-grid,.professional-provider-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.professional-choice{border:2px solid #e3e8ef;background:#fff;color:#172033;border-radius:18px;padding:15px;text-align:left;cursor:pointer;min-height:116px;transition:.16s}.professional-choice:hover{transform:translateY(-1px);border-color:#9fb5d0}.professional-choice.selected{border-color:#2563eb;background:#eff6ff;box-shadow:0 0 0 3px #2563eb17}.professional-choice strong{display:block;font-size:17px}.professional-choice small{display:block;color:#667085;margin-top:5px}.professional-choice-price{display:block;margin-top:10px;color:#174a7e;font-weight:900}.professional-provider-choice{display:grid;grid-template-columns:46px 1fr;gap:11px;align-items:center}.professional-provider-photo{width:46px;height:46px;border-radius:14px;background:#e8eef6;display:grid;place-items:center;overflow:hidden;font-size:22px}.professional-provider-photo img{width:100%;height:100%;object-fit:cover}
 .professional-booking-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.professional-booking-fields label{font-size:13px;font-weight:800;color:#344054}.professional-booking input,.professional-booking textarea{width:100%;margin-top:6px;border:1px solid #d0d8e3;border-radius:13px;padding:12px 13px;background:#fff;color:#172033;font:inherit}.professional-booking textarea{min-height:90px;resize:vertical}.professional-slots{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.professional-slot{border:1px solid #cbd5e1;background:#fff;color:#172033;border-radius:12px;padding:10px 13px;font-weight:850;cursor:pointer}.professional-slot.selected{background:#172033;color:#fff;border-color:#172033}.professional-booking-submit{width:100%;border:0;border-radius:15px;padding:14px 18px;background:#2563eb;color:#fff;font:850 16px var(--body);cursor:pointer;box-shadow:0 12px 24px #2563eb2e}.professional-booking-submit:disabled{opacity:.55;cursor:not-allowed}.professional-booking-summary{position:sticky;top:16px}.professional-summary-line{display:flex;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid #edf0f4}.professional-summary-line span{color:#667085}.professional-summary-empty{padding:22px 0;color:#667085}.professional-booking-status{margin-top:12px;padding:12px 14px;border-radius:13px;background:#f2f4f7;color:#475467}.professional-booking-status.error{background:#fff0f0;color:#a21818}.professional-booking-success{text-align:center;padding:34px 16px}.professional-booking-success .check{width:72px;height:72px;border-radius:50%;background:#dcfce7;color:#15803d;display:grid;place-items:center;font-size:34px;margin:0 auto 16px}.professional-booking-success h2{font:850 1.8rem var(--body);margin:0}.professional-booking-success p{color:#667085}.professional-booking-success button{border:0;border-radius:999px;padding:12px 17px;background:#172033;color:#fff;font-weight:850;cursor:pointer}
 @media(max-width:780px){.professional-booking-hero{grid-template-columns:1fr;padding-top:24px}.professional-booking-layout{grid-template-columns:1fr}.professional-booking-summary{position:static;order:-1}.professional-service-grid,.professional-provider-grid{grid-template-columns:1fr}.professional-booking-fields{grid-template-columns:1fr}.professional-booking-card{padding:17px;border-radius:20px}.professional-booking-logo{width:62px;height:62px;border-radius:20px}.professional-booking-contact{display:none}}
+:root[data-theme="dark"] body.professional-booking-mode{background:#05070a;color:#f7f8fb}
+:root[data-theme="dark"] .professional-booking{background:radial-gradient(circle at top right,#11223c 0,transparent 34%),linear-gradient(180deg,#070a0f,#0c1119);color:#f7f8fb}
+:root[data-theme="dark"] .professional-booking-card{background:#111722;border-color:#273142;box-shadow:0 18px 44px #0008}
+:root[data-theme="dark"] .professional-booking-logo{background:#f7f8fb;color:#101827;box-shadow:0 14px 34px #0007}
+:root[data-theme="dark"] .professional-booking-kicker{background:#17345b;color:#d8eaff}
+:root[data-theme="dark"] .professional-booking-address,
+:root[data-theme="dark"] .professional-booking-step p,
+:root[data-theme="dark"] .professional-choice small,
+:root[data-theme="dark"] .professional-summary-line span,
+:root[data-theme="dark"] .professional-summary-empty,
+:root[data-theme="dark"] .professional-booking-success p{color:#aab6c8}
+:root[data-theme="dark"] .professional-booking-contact a,
+:root[data-theme="dark"] .professional-booking-contact button{background:#151d29;border-color:#334155;color:#f7f8fb}
+:root[data-theme="dark"] .professional-booking-step>span{background:#e7edf7;color:#111827}
+:root[data-theme="dark"] .professional-choice{background:#121a26;border-color:#2b3748;color:#f7f8fb}
+:root[data-theme="dark"] .professional-choice:hover{border-color:#5c7392}
+:root[data-theme="dark"] .professional-choice.selected{background:#102849;border-color:#60a5fa;box-shadow:0 0 0 3px #60a5fa22}
+:root[data-theme="dark"] .professional-choice-price{color:#9bc8ff}
+:root[data-theme="dark"] .professional-provider-photo{background:#202b3a}
+:root[data-theme="dark"] .professional-booking-fields label{color:#dce4ef}
+:root[data-theme="dark"] .professional-booking input,
+:root[data-theme="dark"] .professional-booking textarea{background:#0b111b;border-color:#344054;color:#f7f8fb}
+:root[data-theme="dark"] .professional-booking input::placeholder,
+:root[data-theme="dark"] .professional-booking textarea::placeholder{color:#748096}
+:root[data-theme="dark"] .professional-slot{background:#111923;border-color:#344154;color:#f7f8fb}
+:root[data-theme="dark"] .professional-slot.selected{background:#e7edf7;border-color:#e7edf7;color:#111827}
+:root[data-theme="dark"] .professional-summary-line{border-bottom-color:#263143}
+:root[data-theme="dark"] .professional-booking-status{background:#182231;color:#cbd5e1}
+:root[data-theme="dark"] .professional-booking-status.error{background:#3a171b;color:#ffb4bd}
+:root[data-theme="dark"] .professional-booking-success .check{background:#123b2b;color:#83e5b3}
+:root[data-theme="dark"] .professional-booking-success button{background:#e7edf7;color:#111827}
+@media(max-width:780px){.professional-booking-contact{display:flex}}
 </style></head>
 <body class="menu-loading">
 
@@ -2090,5 +2122,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.26</footer></body>
+<footer class="site-version">Versión v1.6.27</footer></body>
 </html>
