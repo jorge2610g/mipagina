@@ -1,0 +1,21 @@
+{
+  "id": "/yummypro-client-app-v2",
+  "name": "YummyPro Cliente",
+  "short_name": "Yummy Cliente",
+  "description": "Menú digital, pedidos y seguimiento para clientes YummyPro",
+  "lang": "es",
+  "start_url": "/?source=yummypro-client-app-v2",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone","minimal-ui"],
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "prefer_related_applications": false,
+  "categories": ["food","shopping"],
+  "icons": [
+    {"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+  ]
+}

@@ -28,7 +28,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="YummyPro">
-<link rel="manifest" href="/client.webmanifest?v=1617">
+<link rel="manifest" href="/yummypro-client.webmanifest?v=1618">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" sizes="192x192" href="/icon-192.png" type="image/png">
 <meta name="theme-color" content="#000000">
@@ -524,7 +524,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   function pushKeyBytes(value){const padding="=".repeat((4-value.length%4)%4),base64=(value+padding).replace(/-/g,"+").replace(/_/g,"/"),raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)))}
   async function registerCustomerPush(){
     if(!currentCustomer||!("serviceWorker" in navigator)||!("PushManager" in window)||Notification.permission!=="granted")return;
-    const registration=await navigator.serviceWorker.register("/client-pwa-sw.js");
+    const registration=await navigator.serviceWorker.register("/yummypro-client-sw.js");
     let subscription=await registration.pushManager.getSubscription();
     if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(WEB_PUSH_PUBLIC_KEY)});
     const json=subscription.toJSON();
@@ -1579,7 +1579,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   }
   async function registerTableQrOrderPush(orderId){
     if(!window.__tableQrContext||!orderId||!("serviceWorker" in navigator)||!("PushManager" in window)||!("Notification" in window)||Notification.permission!=="granted")return false;
-    const registration=await navigator.serviceWorker.register("/client-pwa-sw.js");
+    const registration=await navigator.serviceWorker.register("/yummypro-client-sw.js");
     let subscription=await registration.pushManager.getSubscription();
     if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(WEB_PUSH_PUBLIC_KEY)});
     const json=subscription.toJSON();
@@ -1710,7 +1710,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   update();
 })();
 </script>
-<script id="customer-pwa-v1617">
+<script id="customer-pwa-v1618">
 let yummyCustomerInstallPrompt=null;
 function customerPwaStandalone(){return window.matchMedia?.("(display-mode: standalone)")?.matches===true||window.navigator.standalone===true}
 function refreshCustomerInstallButton(){
@@ -1733,12 +1733,12 @@ window.addEventListener("DOMContentLoaded",async()=>{
  document.getElementById("pwa-install-btn")?.addEventListener("click",installCustomerPwa);
  try{
   if("serviceWorker" in navigator){
-   const migrationKey="yummypro_client_pwa_identity_v1617";
+   const migrationKey="yummypro_client_pwa_identity_v1618";
    if(!localStorage.getItem(migrationKey)){
     const regs=await navigator.serviceWorker.getRegistrations();
     for(const oldReg of regs){
      const script=oldReg.active?.scriptURL||oldReg.waiting?.scriptURL||oldReg.installing?.scriptURL||"";
-     if(script&&!script.endsWith("/client-pwa-sw.js"))await oldReg.unregister().catch(()=>{});
+     if(script&&!script.endsWith("/yummypro-client-sw.js"))await oldReg.unregister().catch(()=>{});
     }
     if("caches" in window){
      const keys=await caches.keys();
@@ -1746,7 +1746,7 @@ window.addEventListener("DOMContentLoaded",async()=>{
     }
     localStorage.setItem(migrationKey,"1");
    }
-   const reg=await navigator.serviceWorker.register("/client-pwa-sw.js",{scope:"/"});
+   const reg=await navigator.serviceWorker.register("/yummypro-client-sw.js",{scope:"/"});
    await reg.update().catch(()=>{});
    navigator.serviceWorker.addEventListener("controllerchange",()=>{
     if(customerPwaStandalone()||window.__customerPwaReloading)return;
@@ -1757,5 +1757,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.17</footer></body>
+<footer class="site-version">Versión v1.6.18</footer></body>
 </html>
