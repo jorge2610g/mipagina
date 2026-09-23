@@ -52,5 +52,5 @@ test('diagnóstico PWA live por dominio',async({request})=>{
   }catch(e){report.push({url,error:String(e)})}
  }
  console.log('PWA_LIVE '+JSON.stringify(report));
- for(const row of report)expect(row.error||row.status,JSON.stringify(report)).not.toBeTruthy();
+ for(const row of report){expect(row.error,JSON.stringify(report)).toBeFalsy();expect(row.status,JSON.stringify(report)).toBe(200);}
 });
