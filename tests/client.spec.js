@@ -30,3 +30,27 @@ async function diagnosePwaInstallability(page,context,url,label){
 }
 
 test('diagnóstico PWA instalable: cliente',async({page,context})=>{await diagnosePwaInstallability(page,context,'/?demo=1','cliente')});
+
+test('diagnóstico PWA live por dominio',async({request})=>{
+ const targets=[
+  'https://menu.yummypro.online/',
+  'https://menu.yummypro.online/yummypro-client-v1619.webmanifest',
+  'https://menu.yummypro.online/yummypro-client-v1619-sw.js',
+  'https://menu.yummypro.online/icon-192.png',
+  'https://menu.yummypro.online/icon-512.png',
+  'https://web.yummypro.online/',
+  'https://web.yummypro.online/restaurant.webmanifest',
+  'https://admin.yummypro.online/',
+  'https://admin.yummypro.online/manifest.webmanifest'
+ ];
+ const report=[];
+ for(const url of targets){
+  try{
+   const res=await request.get(url,{timeout:20000,failOnStatusCode:false});
+   const headers=res.headers();
+   report.push({url,status:res.status(),contentType:headers['content-type']||'',cacheControl:headers['cache-control']||'',server:headers['server']||'',len:(await res.body()).length});
+  }catch(e){report.push({url,error:String(e)})}
+ }
+ console.log('PWA_LIVE '+JSON.stringify(report));
+ for(const row of report)expect(row.error||row.status,JSON.stringify(report)).not.toBeTruthy();
+});
