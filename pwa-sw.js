@@ -1,4 +1,4 @@
-const YUMMYPRO_CLIENT_CACHE="yummypro-client-v1621-installfix";
+const YUMMYPRO_CLIENT_CACHE="yummypro-client-v1623-retail-store";
 const CLIENT_CORE=["/offline.html","/manifest.webmanifest","/pwa-icon.svg","/icon-192.png","/icon-512.png","/apple-touch-icon.png"];
 self.addEventListener("install",event=>{
  event.waitUntil(caches.open(YUMMYPRO_CLIENT_CACHE).then(c=>c.addAll(CLIENT_CORE)));
