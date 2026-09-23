@@ -966,9 +966,1101 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
         const {data,error}=await db.rpc("create_public_professional_appointment",{p_restaurant_id:Number(restaurant.id),p_service_id:Number(state.service.id),p_provider_id:Number(state.provider.id),p_starts_at:state.slot,p_customer_name:name,p_customer_phone:phone,p_customer_email:email||null,p_notes:notes||null});
         if(error)throw error;trackClientEvent("professional_booking_created","booking",{appointment_id:data?.id,service_id:state.service.id,provider_id:state.provider.id});
         const when=new Intl.DateTimeFormat(locale,{dateStyle:"full",timeStyle:"short",timeZone:timezone}).format(new Date(state.slot));
-        const title=data?.status==="confirmed"?"Reserva confirmada":"Solicitud recibida";
-        const depositNote=data?.payment_status==="pending"&&Number(data?.deposit_amount||0)>0?'<p>Anticipo pendiente de <b>'+e(cash(data.deposit_amount))+'</b>. El negocio te indicará cómo pagarlo.</p>':'';
-        app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">✓</div><h2>'+e(title)+'</h2><p>'+e(state.service.name)+' con '+e(state.provider.name)+'<br><b>'+e(when)+'</b></p><p>Tu código de reserva es <b>#'+e(data?.id||"")+'</b>.</p>'+depositNote+'<button type="button" onclick="location.reload()">Crear otra reserva</button></section></div>';
+        const depositPending=data?.payment_status==="pending"&&Number(data?.deposit_amount||0)>0;
+        const mpReady=booking.mercadopago_configured===true;
+        const title=depositPending?"Reserva pendiente de anticipo":(data?.status==="confirmed"?"Reserva confirmada":"Solicitud recibida");
+        const depositNote=depositPending
+          ?'<p>Anticipo requerido: <b>'+e(cash(data.deposit_amount))+'</b>. '+(mpReady?'Págalo ahora para confirmar tu hora.':'Mercado Pago todavía no está configurado en este negocio; contáctalo para coordinar el anticipo.')+'</p>'
+          :'';
+        const payButton=depositPending&&mpReady?'<button id="professional-deposit-pay" type="button">Pagar anticipo con Mercado Pago</button><p id="professional-deposit-status" class="professional-booking-status" hidden></p>':'';
+        app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">'+(depositPending?'
+      }catch(error){status.classList.add("error");status.textContent=String(error?.message||"No se pudo crear la reserva").replace(/^.*?: /,"");trackClientError("professional_booking","booking_create_failure",error?.message||"Error de reserva",false);state.loading=false;submit.disabled=false;submit.textContent="Confirmar reserva";await loadSlots()}
+    });
+    document.getElementById("professional-theme")?.addEventListener("click",()=>{const root=document.documentElement,next=root.getAttribute("data-theme")==="dark"?"light":"dark";root.setAttribute("data-theme",next);try{localStorage.setItem("menu_theme",next)}catch(_){}});
+    updateSummary();
+  }
+    /* =====================  FIN DE LA CONFIGURACIÓN  ===================== */
+
+  const $  = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  const currencyDigits=cur=>{try{return new Intl.NumberFormat("en",{style:"currency",currency:String(cur||"USD").toUpperCase()}).resolvedOptions().maximumFractionDigits}catch(_){return 2}};
+  const fmt=n=>{const cur=String(CONFIG.currency||"CLP").toUpperCase(),loc=CONFIG.locale||"es-CL",value=Number(n||0),digits=currencyDigits(cur),fractional=Math.abs(value-Math.trunc(value))>1e-9,shown=fractional?digits:0;return new Intl.NumberFormat(loc,{style:"currency",currency:cur,minimumFractionDigits:shown,maximumFractionDigits:shown}).format(value)};
+  const norm = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const esc  = s => String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  /* ---------- Ilustraciones ---------- */
+  let uid = 0;
+  const shadow = (cy, rx) => `<ellipse cx="100" cy="${cy}" rx="${rx}" ry="5" fill="#000" opacity=".12"/>`;
+
+  const bunBottom = y => `<path d="M30 ${y}H170V${y+8}Q170 ${y+18} 158 ${y+18}H42Q30 ${y+18} 30 ${y+8}Z" fill="#d98a35"/><path d="M30 ${y}H170V${y+5}H30Z" fill="#b8681f" opacity=".45"/>`;
+  const patty = y => `<rect x="33" y="${y}" width="134" height="20" rx="10" fill="#4e2b1d"/><rect x="40" y="${y+3}" width="120" height="5" rx="2.5" fill="#6d4030" opacity=".85"/>`;
+  const cheese = y => `<path d="M28 ${y}H172V${y+6}H140L132 ${y+17}L124 ${y+6}H74L66 ${y+14}L58 ${y+6}H28Z" fill="#ffb81c"/><path d="M28 ${y}H172V${y+2.5}H28Z" fill="#ffd45e"/>`;
+  const bacon = y => {
+    let d = `M26 ${y+4}q9 -8 18 0`;
+    for (let i = 0; i < 7; i++) d += "t18 0";
+    return `<path d="${d}" fill="none" stroke="#b8403a" stroke-width="7" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#e98f7c" stroke-width="2" stroke-linecap="round" transform="translate(0 -1)"/>`;
+  };
+  const crispy = (y, c) => [[40,3,-18],[62,0,14],[84,3,-6],[106,0,20],[128,3,-14],[146,1,8]]
+    .map(([x, dy, r]) => `<rect x="${x}" y="${y+dy}" width="24" height="7" rx="3.5" fill="${c}" transform="rotate(${r} ${x+12} ${y+dy+3.5})"/>`).join("");
+  const tomato = y => `<rect x="36" y="${y}" width="128" height="8" rx="4" fill="#e63946"/><rect x="46" y="${y+2}" width="108" height="2" rx="1" fill="#f4838b"/>`;
+  const lettuce = y => {
+    let d = `M26 ${y+4}q7.2 -10 14.4 0`;
+    for (let i = 0; i < 9; i++) d += "t14.4 0";
+    return `<path d="${d}L170 ${y+9}L26 ${y+9}Z" fill="#5dbb63"/>`;
+  };
+  const sauce = (y, c) => `<rect x="34" y="${y}" width="132" height="5" rx="2.5" fill="${c}"/><path d="M58 ${y+3}q3.5 11 7 0z" fill="${c}"/><path d="M132 ${y+3}q3 8 6 0z" fill="${c}"/>`;
+  const topBun = (y, id) => `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3ad52"/><stop offset="1" stop-color="#d98a35"/></linearGradient></defs>`
+    + `<path d="M28 ${y+34}C28 ${y+10} 58 ${y} 100 ${y}C142 ${y} 172 ${y+10} 172 ${y+34}Z" fill="url(#${id})"/>`
+    + `<path d="M46 ${y+15}C56 ${y+8} 70 ${y+5} 84 ${y+4}" stroke="#ffd08a" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>`
+    + [[72,13,-20],[100,9,0],[128,14,20],[88,22,10],[116,24,-10]]
+        .map(([x, dy, r]) => `<ellipse cx="${x}" cy="${y+dy}" rx="3.6" ry="1.9" fill="#fff3d0" transform="rotate(${r} ${x} ${y+dy})"/>`).join("");
+
+  function burger(a, id){
+    const P = a.patties || 1, L = [];
+    L.push([18, bunBottom]);
+    for (let i = 0; i < P; i++){
+      L.push([20, patty]);
+      for (let c = 0; c < (a.cheese || 0); c++) L.push([7, cheese]);
+    }
+    if (a.bacon)   L.push([8, bacon]);
+    if (a.onion)   L.push([10, y => crispy(y, "#e2a52f")]);
+    if (a.caramel) L.push([10, y => crispy(y, "#9c5f1c")]);
+    if (a.tomato)  L.push([8, tomato]);
+    if (a.lettuce) L.push([8, lettuce]);
+    if (a.sauce)   L.push([5, y => sauce(y, a.sauce)]);
+    L.push([34, y => topBun(y, id)]);
+    const H = L.reduce((s, l) => s + l[0], 0);
+    let y = 104 - H / 2;
+    const pos = [];
+    for (let i = L.length - 1; i >= 0; i--){ pos[i] = y; y += L[i][0]; }
+    let out = shadow(y + 5, 66);
+    L.forEach((l, i) => { out += l[1](pos[i]); });
+    return out;
+  }
+
+  const fries = a => {
+    let s = shadow(184, 52);
+    for (let i = 0; i < 13; i++){
+      const x = 57 + i * 6.8, top = 44 + ((i * 5) % 4) * 9 + ((i * 3) % 2) * 4, r = ((i % 5) - 2) * 3.2;
+      s += `<rect x="${x}" y="${top}" width="8" height="${118 - top}" rx="2.5" fill="${i % 2 ? "#ffcf3a" : "#f6b820"}" transform="rotate(${r} ${x+4} 116)"/>`;
+    }
+    if (a.cheese){
+      s += `<path d="M56 90Q70 80 82 91T108 89T132 92T146 98V110H56Z" fill="#ffb81c"/>`
+        +  `<rect x="72" y="84" width="10" height="4" rx="2" fill="#b8403a" transform="rotate(-20 77 86)"/>`
+        +  `<rect x="104" y="86" width="10" height="4" rx="2" fill="#b8403a" transform="rotate(15 109 88)"/>`
+        +  `<rect x="126" y="90" width="9" height="4" rx="2" fill="#b8403a" transform="rotate(-10 130 92)"/>`;
+    }
+    return s + `<path d="M52 108H148L140 174Q139 180 133 180H67Q61 180 60 174Z" fill="#d7263d"/><path d="M55 132H145L144 142H56Z" fill="#ffc21a"/>`;
+  };
+
+  const rings = () => {
+    const r = (cx, cy) => `<circle cx="${cx}" cy="${cy}" r="25" fill="none" stroke="#dc9a24" stroke-width="15"/><circle cx="${cx}" cy="${cy}" r="25" fill="none" stroke="#f3c15a" stroke-width="4" stroke-dasharray="40 200" transform="rotate(-100 ${cx} ${cy})"/>`;
+    return shadow(176, 62) + r(72, 128) + r(128, 128) + r(100, 84);
+  };
+
+  const cup = () => shadow(184, 44)
+    + `<path d="M112 54L128 14H150" fill="none" stroke="#ffc21a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`
+    + `<path d="M68 62H132L124 174Q123.5 182 116 182H84Q76.5 182 76 174Z" fill="#f5f4ef"/>`
+    + `<path d="M70.6 92H129.4L127.2 140H72.8Z" fill="#d7263d"/>`
+    + `<circle cx="100" cy="116" r="13" fill="#ffc21a"/>`
+    + `<rect x="60" y="50" width="80" height="14" rx="7" fill="#2b2d33"/>`;
+
+  const lemonade = () => shadow(186, 46)
+    + `<path d="M64 58H136L128 172Q127 182 118 182H82Q73 182 72 172Z" fill="#fff3a0" opacity=".92"/>`
+    + `<rect x="78" y="80" width="26" height="26" rx="5" fill="#fff" opacity=".55" transform="rotate(12 91 93)"/>`
+    + `<rect x="102" y="108" width="24" height="24" rx="5" fill="#fff" opacity=".5" transform="rotate(-10 114 120)"/>`
+    + `<path d="M64 58H136L128 172Q127 182 118 182H82Q73 182 72 172Z" fill="none" stroke="#a9bcc4" stroke-width="4"/>`
+    + `<ellipse cx="84" cy="50" rx="12" ry="6" fill="#3f9e4d" transform="rotate(-30 84 50)"/><ellipse cx="98" cy="44" rx="12" ry="6" fill="#57b862" transform="rotate(20 98 44)"/>`
+    + `<g transform="translate(138 68)"><circle r="22" fill="#ffe14d" stroke="#f2b705" stroke-width="4"/><circle r="15" fill="#fff7b5"/><path d="M0-15V15M-15 0H15M-10.6-10.6L10.6 10.6M10.6-10.6L-10.6 10.6" stroke="#f2b705" stroke-width="2"/></g>`;
+
+  const beer = (a, id) => `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc247"/><stop offset="1" stop-color="#e08a10"/></linearGradient></defs>`
+    + shadow(186, 46)
+    + `<path d="M62 60H138L130 170Q129 182 118 182H82Q71 182 70 170Z" fill="url(#${id})"/>`
+    + `<circle cx="88" cy="128" r="3" fill="#fff" opacity=".6"/><circle cx="108" cy="110" r="2.5" fill="#fff" opacity=".6"/><circle cx="116" cy="146" r="3.2" fill="#fff" opacity=".55"/><circle cx="96" cy="160" r="2.2" fill="#fff" opacity=".6"/>`
+    + `<path d="M62 60H138L130 170Q129 182 118 182H82Q71 182 70 170Z" fill="none" stroke="#c9d6dc" stroke-width="4" opacity=".9"/>`
+    + `<path d="M56 64Q52 40 74 42Q84 28 100 36Q116 26 128 42Q150 40 144 64Z" fill="#fffdf5"/>`;
+
+  const water = () => shadow(186, 42)
+    + `<rect x="88" y="26" width="24" height="16" rx="4" fill="#1e88e5"/>`
+    + `<path d="M84 42H116L128 70V168Q128 182 114 182H86Q72 182 72 168V70Z" fill="#bfe6fa"/>`
+    + `<path d="M72 104H128V138H72Z" fill="#fff"/><path d="M72 121Q86 111 100 121T128 121" fill="none" stroke="#1e88e5" stroke-width="4"/>`;
+
+  const plate = `<ellipse cx="100" cy="160" rx="78" ry="18" fill="#dcdad3"/><ellipse cx="100" cy="156" rx="62" ry="12" fill="#f5f4ef"/>`;
+  const brownie = () => plate
+    + `<rect x="52" y="106" width="96" height="48" rx="7" fill="#4a2a1c"/><rect x="52" y="106" width="96" height="10" rx="5" fill="#63382a"/>`
+    + `<circle cx="100" cy="88" r="27" fill="#fff1cf"/><path d="M80 80Q90 70 100 76T120 78" fill="none" stroke="#f5dca4" stroke-width="4" stroke-linecap="round"/>`
+    + `<path d="M78 90Q88 108 96 92T112 100T124 88" fill="none" stroke="#3a2016" stroke-width="5" stroke-linecap="round"/>`;
+  const flan = () => plate
+    + `<path d="M64 152Q60 102 100 100Q140 102 136 152Z" fill="#f6c453"/>`
+    + `<path d="M63 134Q62 104 100 102Q138 104 137 134Q120 126 100 132Q80 126 63 134Z" fill="#a85a1c"/><path d="M76 138q3 14 8 0z" fill="#a85a1c"/><path d="M118 136q3 11 7 0z" fill="#a85a1c"/>`
+    + `<ellipse cx="100" cy="96" rx="15" ry="10" fill="#fff5dc"/><path d="M92 94Q100 86 108 94" fill="none" stroke="#f0dcae" stroke-width="3"/>`;
+
+  const combo = (a, id) => {
+    const drink = a.d === "beer" ? beer({}, id + "d") : cup();
+    return `<svg x="108" y="8" width="86" height="86" viewBox="0 0 200 200">${drink}</svg>`
+         + `<svg x="112" y="84" width="84" height="84" viewBox="0 0 200 200">${fries(a.f || {})}</svg>`
+         + `<svg x="2" y="44" width="124" height="124" viewBox="0 0 200 200">${burger(a.b, id + "b")}</svg>`;
+  };
+
+  const retailBox = () => '<rect x="42" y="48" width="116" height="112" rx="16" fill="#f4c542"/><path d="M42 78h116" stroke="#1d2430" stroke-width="7"/><path d="M70 48v30M130 48v30" stroke="#1d2430" stroke-width="7"/><path d="M68 108h64M68 128h48" stroke="#1d2430" stroke-width="8" stroke-linecap="round"/><path d="M82 42h36" stroke="#1d2430" stroke-width="10" stroke-linecap="round"/>';
+  const ART = { burger, fries, rings, cup, lemonade, beer, water, brownie, flan, combo, box:retailBox };
+  function svg(a){
+    const id = "g" + (++uid);
+    return `<svg viewBox="0 0 200 200" aria-hidden="true" focusable="false">${ART[a.k](a, id)}</svg>`;
+  }
+  function artSVG(it, oi){
+    if (it.img) return `<img src="${it.img}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
+    const a = Object.assign({}, it.art);
+    const o = it.opts[oi || 0];
+    if (a.k === "burger" && o && o.patties) a.patties = o.patties;
+    return svg(a);
+  }
+
+  /* ---------- Datos ---------- */
+  try {
+    await loadMenuFromCloud();
+    if(!window.__restaurantId) throw new Error("No se pudo identificar el restaurante.");
+    document.body.classList.remove("menu-loading");document.body.classList.add("menu-ready");
+    trackClientEvent("menu_view","menu",{table_qr:!!window.__tableQrContext});
+  } catch (loadError) {
+    console.error(loadError);
+    await trackClientError("menu","menu_load_failure",loadError?.message||"No se pudo cargar el restaurante",false);
+    document.body.innerHTML = `<main style="max-width:620px;margin:12vh auto;padding:28px;font-family:system-ui;text-align:center"><h1>No pudimos cargar este restaurante</h1><p>Revisa que el enlace sea correcto e inténtalo nuevamente.</p><button onclick="location.reload()" style="padding:12px 20px;border:0;border-radius:999px;font-weight:700;cursor:pointer">Reintentar</button></main>`;
+    document.body.classList.remove("menu-loading");document.body.classList.add("menu-ready");
+    return;
+  }
+  if(window.__businessType==="professional"){
+    renderProfessionalPublicBooking();
+    return;
+  }
+  if(window.__demoMode){
+    const accountBtn=document.getElementById("account-btn"),ordersBtn=document.getElementById("orders-btn"),pending=document.getElementById("pending-order-banner"),clearCart=document.getElementById("clear-cart");
+    if(accountBtn)accountBtn.hidden=true;
+    if(ordersBtn)ordersBtn.hidden=true;
+    if(clearCart)clearCart.hidden=true;
+    if(pending)pending.hidden=true;
+  }
+  if(["supermarket","minimarket"].includes(window.__businessType||"")){
+    const ordersBtn=document.getElementById("orders-btn"),lead=document.querySelector(".lead"),trust=document.querySelector(".trust"),heroTitle=document.querySelector("h1");
+    if(ordersBtn){ordersBtn.hidden=false;ordersBtn.textContent="🛒 Mis compras"}
+    if(lead)lead.textContent="Compra productos con stock real, elige retiro o delivery y sigue tu compra desde este mismo lugar.";
+    if(trust)trust.innerHTML="<div>✓ Stock actualizado</div><div>✓ Retiro o delivery</div><div>✓ Pago seguro y medios locales</div><div>✓ Seguimiento de tu compra</div>";
+    if(heroTitle&&/menú|pedido/i.test(heroTitle.textContent||""))heroTitle.textContent=CONFIG.name;
+  }
+  if(window.__tableQrContext){
+    const banner=document.getElementById("table-order-banner"),title=document.getElementById("table-order-title"),status=document.getElementById("table-order-status"),field=document.getElementById("order-type-field"),phone=document.getElementById("f-phone");
+    if(banner)banner.hidden=false;
+    if(title)title.textContent="📱 Pedido por QR · "+window.__tableQrContext.name;
+    if(status)status.textContent="QR";
+    if(field){
+      field.hidden=false;
+      const legend=field.querySelector("legend");if(legend)legend.textContent="¿Dónde quieres recibir tu pedido?";
+      const seg=field.querySelector(".seg");if(seg)seg.innerHTML='<label class="segopt"><input type="radio" name="tipo" value="Mesa" checked><span class="box"><b>🍽️ En la mesa</b><small>'+esc(window.__tableQrContext.name)+'</small></span></label><label class="segopt"><input type="radio" name="tipo" value="Retiro"><span class="box"><b>🛍️ Retiro en mostrador</b><small>Lo recoges cuando esté listo</small></span></label>';
+    }
+    if(phone)phone.required=false;
+    const ordersBtn=document.getElementById("orders-btn");if(ordersBtn){ordersBtn.hidden=false;ordersBtn.textContent="🔔 Mis pedidos"}
+    const lead=document.querySelector(".lead");if(lead)lead.textContent="Elige tus productos, decide si los quieres en "+window.__tableQrContext.name+" o para retirar en mostrador y envíalos directamente a cocina.";
+    const trust=document.querySelector(".trust");if(trust)trust.innerHTML="<div>✓ Agrega productos a un pedido en preparación</div><div>✓ Mesa o retiro en mostrador</div><div>✓ Efectivo, POS o pago en línea</div><div>✓ Seguimiento desde tu teléfono</div>";
+  }
+  const ITEMS = {};
+  const popItems = [];
+  MENU.forEach(cat => cat.items.forEach(it => {
+    it.tone = cat.tone;
+    ITEMS[it.id] = it;
+    if (it.pop) popItems.push(it);
+  }));
+  const cart = new Map();
+  const CART_KEY = "menu_cart_v2";
+  const CUSTOMER_KEY = "menu_customer_v2";
+  const MP_RETURN_ORDER_KEY = "mp_return_order_id";
+  const TABLE_QR_ORDER_KEY = "table_qr_last_order";
+  const TABLE_QR_ORDERS_KEY = "table_qr_orders_v2";
+  const RETAIL_ORDER_REFS_KEY = "retail_online_orders_v1";
+  function readRetailOrderRefs(){
+    let rows=[];try{rows=JSON.parse(localStorage.getItem(RETAIL_ORDER_REFS_KEY)||"[]");if(!Array.isArray(rows))rows=[]}catch(_){rows=[]}
+    return rows.filter(x=>x?.order_id&&x?.tracking_token).slice(0,40);
+  }
+  function saveRetailOrderRef(ref){
+    const rows=readRetailOrderRefs().filter(x=>Number(x.order_id)!==Number(ref.order_id));
+    rows.unshift({...ref,restaurant_id:Number(window.__restaurantId||ref.restaurant_id||0),updated_at:new Date().toISOString()});
+    try{localStorage.setItem(RETAIL_ORDER_REFS_KEY,JSON.stringify(rows.slice(0,40)))}catch(_){}
+  }
+  function updateRetailOrderRef(orderId,patch){
+    const rows=readRetailOrderRefs(),idx=rows.findIndex(x=>Number(x.order_id)===Number(orderId));
+    if(idx>=0){rows[idx]={...rows[idx],...patch,updated_at:new Date().toISOString()};try{localStorage.setItem(RETAIL_ORDER_REFS_KEY,JSON.stringify(rows))}catch(_){}}
+  }
+  function readTableQrOrderRefs(){
+    let rows=[];try{rows=JSON.parse(localStorage.getItem(TABLE_QR_ORDERS_KEY)||"[]");if(!Array.isArray(rows))rows=[]}catch(_){rows=[]}
+    try{const last=JSON.parse(localStorage.getItem(TABLE_QR_ORDER_KEY)||"null");if(last?.order_id&&!rows.some(x=>Number(x.order_id)===Number(last.order_id)))rows.unshift(last)}catch(_){}
+    return rows.filter(x=>x?.order_id&&x?.token).slice(0,25);
+  }
+  function saveTableQrOrderRef(ref){
+    const rows=readTableQrOrderRefs().filter(x=>Number(x.order_id)!==Number(ref.order_id));
+    rows.unshift({...ref,updated_at:new Date().toISOString()});
+    try{localStorage.setItem(TABLE_QR_ORDERS_KEY,JSON.stringify(rows.slice(0,25)));localStorage.setItem(TABLE_QR_ORDER_KEY,JSON.stringify(rows[0]))}catch(_){}
+  }
+  function updateTableQrOrderRef(orderId,patch){
+    const rows=readTableQrOrderRefs();const idx=rows.findIndex(x=>Number(x.order_id)===Number(orderId));
+    if(idx>=0){rows[idx]={...rows[idx],...patch,updated_at:new Date().toISOString()};try{localStorage.setItem(TABLE_QR_ORDERS_KEY,JSON.stringify(rows));if(idx===0)localStorage.setItem(TABLE_QR_ORDER_KEY,JSON.stringify(rows[0]))}catch(_){}}
+  }
+  const trackedOrderId=Number(new URLSearchParams(location.search).get("track_order")||0);
+  if(window.__tableQrContext&&trackedOrderId)saveTableQrOrderRef({order_id:trackedOrderId,token:window.__tableQrContext.token,table_name:window.__tableQrContext.name});
+  function saveCart(){
+    try{ localStorage.setItem(CART_KEY, JSON.stringify([...cart.entries()].map(([k,v])=>[k,{id:v.it.id,opt:v.it.opts.indexOf(v.opt),ex:v.ex.map(x=>x.id),note:v.note,qty:v.qty}]))); }catch(e){}
+  }
+  function restoreCart(){
+    try{ const raw=JSON.parse(localStorage.getItem(CART_KEY)||"[]"); raw.forEach(([k,v])=>{ const it=ITEMS[v.id]; if(!it||it.out) return; const ex=(it.extras||[]).filter(x=>(v.ex||[]).includes(x.id)); cart.set(k,{it,opt:it.opts[v.opt]||it.opts[0],ex,note:v.note||"",qty:v.qty||1}); }); }catch(e){}
+  }
+  const unitOf = v => v.opt.p + v.ex.reduce((s, x) => s + x.p, 0);
+  const lineName = v => v.it.name + (v.opt.l ? " " + v.opt.l : "");
+  const needsSheet = it => it.opts.length > 1 || (it.extras && it.extras.length > 0);
+  const minPrice = it => Math.min(...it.opts.map(o => o.p));
+
+  /* ---------- Portada e información ---------- */
+  document.title = CONFIG.name + (["supermarket","minimarket"].includes(window.__businessType||"") ? " | Tienda online" : " | Menú digital");
+  $("#biz-name").textContent = CONFIG.name; $("#footer-name").textContent = CONFIG.name;
+  $("#hours").textContent = "Todos los días de " + CONFIG.open + " a " + CONFIG.close + "hs";
+  $("#addr").textContent = CONFIG.address;
+  $("#i-hours").textContent = "Todos los días de " + CONFIG.open + " a " + CONFIG.close + "hs";
+  $("#i-addr").textContent = CONFIG.address;
+  $("#i-pay").textContent = CONFIG.payments.join(", ");
+  $("#i-wa").href = "https://wa.me/" + CONFIG.whatsapp;
+  if(window.__demoMode){
+    $("#i-wa").removeAttribute("target");
+    $("#i-wa").href="https://web.yummypro.online/";
+    $("#i-wa").textContent="💬 Crear mi cuenta para usar el menú completo";
+  }
+  if (CONFIG.instagram){ const ig = $("#i-ig"); ig.hidden = false; ig.href = "https://instagram.com/" + CONFIG.instagram.replace("@", ""); }
+  $("#eta-p").textContent = CONFIG.eta.pickup;
+  $("#eta-d").textContent = CONFIG.eta.delivery;
+  $("#hero-art").innerHTML = CONFIG.logo ? '<img src="'+CONFIG.logo+'" alt="'+esc(CONFIG.name)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : svg({ k:"burger", patties:2, cheese:1, bacon:1, tomato:1, lettuce:1, sauce:"#e5533d" });
+  $("#f-pay").innerHTML = CONFIG.payments.map(p => `<option>${p}</option>`).join("");
+  const paymentIcons={"Efectivo":"💵","Transferencia":"🏦","Mercado Pago":"💳","QR Bolivia":"▣"};
+  const payBox=$("#payment-buttons"),paySelected=$("#payment-selected"),mpSafe=$("#mp-safe-note"),altNote=$("#alternative-payment-note");
+  function renderPaymentButtons(){
+    if(!CONFIG.payments.includes($("#f-pay").value))$("#f-pay").value=CONFIG.payments[0]||"";
+    const selected=$("#f-pay").value,hasPayments=CONFIG.payments.length>0;
+    payBox.innerHTML=hasPayments?CONFIG.payments.map(p=>`<button type="button" data-pay="${esc(p)}" aria-pressed="${p===selected}" style="min-height:70px;border:2px solid ${p===selected?"var(--mustard)":"#ddd"};background:${p===selected?"#fff7d6":"#fff"};color:#171717;border-radius:14px;padding:8px;font-weight:800;cursor:pointer"><span style="display:block;font-size:23px;margin-bottom:3px">${paymentIcons[p]||"💳"}</span>${esc(p)}</button>`).join(""):'<div style="grid-column:1/-1;padding:12px;border-radius:12px;background:#fff3cd;color:#664d03;border:1px solid #ffecb5;font-weight:700">Este negocio no tiene métodos de pago habilitados en este momento.</div>';
+    paySelected.textContent=selected?"Seleccionaste: "+selected:"No hay métodos de pago disponibles.";
+    mpSafe.hidden=selected!=="Mercado Pago";
+    const method=CONFIG.paymentMethods.find(m=>m.label===selected);altNote.hidden=!method;altNote.innerHTML=method?`<b>${esc(method.label)}</b>${method.logo_url?`<img src="${esc(method.logo_url)}" alt="Logo de ${esc(method.institution||method.label)}" style="display:block;max-width:100px;max-height:70px;object-fit:contain;margin:10px 0;border-radius:10px;background:#fff;padding:5px">`:""}${method.institution?`<br>Banco / entidad: ${esc(method.institution)}`:""}${method.account_holder?`<br>Titular: ${esc(method.account_holder)}`:""}${method.document_id?`<br>DNI / documento: ${esc(method.document_id)}`:""}${method.account_type?`<br>Tipo de cuenta: ${esc(method.account_type)}`:""}${method.account_identifier?`<br>Cuenta / teléfono: ${esc(method.account_identifier)}`:""}${method.qr_image_url?`<br><img src="${esc(method.qr_image_url)}" alt="QR de pago" style="display:block;max-width:300px;width:100%;margin:14px auto;border-radius:16px;background:#fff;padding:8px"><div style="margin:12px 0;padding:12px;border-radius:12px;background:#fff;border:1px solid #e6c65d"><b>📱 Guarda una captura del QR antes de continuar</b><br><span>Realiza el pago desde tu aplicación bancaria y luego pulsa “Enviar pedido por WhatsApp”. Si el local solicita el comprobante, envíalo directamente en la conversación de WhatsApp.</span></div>`:""}${method.instructions?`<div style="margin-top:10px">${esc(method.instructions)}</div>`:""}<small>Este pedido se coordina únicamente por WhatsApp y no se registrará como pago en línea.</small>`:"";
+    const sendBtn=$("#send");if(sendBtn){sendBtn.disabled=!hasPayments;sendBtn.textContent=!hasPayments?"Sin métodos de pago":selected==="Mercado Pago"?"Pagar con Mercado Pago":selected==="QR Bolivia"?"Generar QR de pago":(["supermarket","minimarket"].includes(window.__businessType||"")?"Confirmar compra":(window.__tableQrContext?"Enviar pedido a cocina":"Enviar pedido por WhatsApp"))}
+  }
+  function syncPaymentMethodUI(){
+    const selected=$("#f-pay").value;
+    // Los avisos de Mercado Pago pertenecen solo a ese método. Al cambiar a otro,
+    // se limpia el estado visual sin borrar el pedido pendiente guardado para una posible verificación posterior.
+    if(!["Mercado Pago","QR Bolivia"].includes(selected)){
+      const err=$("#err");
+      if(err)err.textContent="";
+      const sendBtn=$("#send");
+      if(sendBtn){sendBtn.disabled=!CONFIG.payments.length;sendBtn.textContent=!CONFIG.payments.length?"Sin métodos de pago":(["supermarket","minimarket"].includes(window.__businessType||"")?"Confirmar compra":(window.__tableQrContext?"Enviar pedido a cocina":"Enviar pedido por WhatsApp"));}
+    }
+    renderPaymentButtons();
+    refreshLink();
+  }
+  payBox.addEventListener("click",e=>{const b=e.target.closest("button[data-pay]");if(!b)return;$("#f-pay").value=b.dataset.pay;syncPaymentMethodUI()});
+  $("#f-pay").addEventListener("change",syncPaymentMethodUI);
+  renderPaymentButtons();
+
+  const toMin = s => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
+  const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
+  const openMin=toMin(CONFIG.open), closeMin=toMin(CONFIG.close); const scheduledOpen = openMin===closeMin ? true : (closeMin<=openMin ? (nowMin>=openMin || nowMin<closeMin) : (nowMin>=openMin && nowMin<closeMin)); const isOpen=CONFIG.manualOpenStatus==="open"?true:CONFIG.manualOpenStatus==="closed"?false:scheduledOpen;
+  const pill = $("#status");
+  pill.textContent = isOpen ? "Abierto hasta las " + CONFIG.close + "hs" : "Cerrado, abre a las " + CONFIG.open + "hs";
+  pill.classList.toggle("open",isOpen); pill.classList.toggle("closed",!isOpen); if (!isOpen) { $("#closed-note").hidden = false; $("#closed-note").textContent="El local está cerrado. No se pueden enviar pedidos hasta que vuelva a abrir."; }
+
+  /* ---------- Menú ---------- */
+  function priceHTML(it){
+    const base = it.opts.length > 1 ? "Desde " + fmt(minPrice(it)) : fmt(minPrice(it));
+    let h = `<span>${base}</span>`;
+    if (it.was) h += `<s class="was">${fmt(it.was)}</s><span class="save">Ahorrás ${fmt(it.was - minPrice(it))}</span>`;
+    return h;
+  }
+  function rowHTML(it){
+    return `<article class="item${it.out ? " out" : ""}" data-id="${it.id}" data-s="${norm(it.name + " " + (it.desc || ""))}">`
+      + `<div class="txt">`
+      + (it.badge && !it.was ? `<span class="badge">${it.badge}</span>` : "")
+      + `<h3><button type="button" class="name" data-open="${it.id}">${it.name}</button></h3>`
+      + (it.desc ? `<p class="desc">${it.desc}</p>` : "")
+      + (it.out ? `<span class="tag">Sin stock por hoy</span>` : `<p class="price">${priceHTML(it)}</p>`)
+      + `</div>`
+      + `<div class="tile" data-tone="${it.tone}">${artSVG(it, 0)}<span class="cnt" data-cnt="${it.id}" hidden></span>`
+      + (it.out ? "" : `<button type="button" class="plus" data-plus="${it.id}" aria-label="Agregar ${it.name}">+</button>`)
+      + `</div></article>`;
+  }
+  function popHTML(it){
+    const from = it.opts.length > 1 ? "Desde " + fmt(minPrice(it)) : fmt(minPrice(it));
+    return `<button type="button" class="pop" data-open="${it.id}"><span class="tile" data-tone="${it.tone}">${artSVG(it, 0)}<span class="cnt" data-cnt="${it.id}" hidden></span></span><span class="pn">${it.name}</span><span class="pp">${from}</span></button>`;
+  }
+
+  const menuEl = $("#menu"), navEl = $("#cats");
+  navEl.insertAdjacentHTML("beforeend", `<a class="chip" href="#c-populares" data-cat="populares">Populares</a>`);
+  let html = `<section id="c-populares" data-cat="populares"><h2>Los más pedidos</h2><div class="pops">${popItems.map(popHTML).join("")}</div></section>`;
+  MENU.forEach(cat => {
+    navEl.insertAdjacentHTML("beforeend", `<a class="chip" href="#c-${cat.id}" data-cat="${cat.id}">${cat.name}</a>`);
+    html += `<section id="c-${cat.id}" data-cat="${cat.id}"><h2>${cat.name}</h2><div class="list">${cat.items.map(rowHTML).join("")}</div></section>`;
+  });
+  html += `<p class="empty" id="empty" hidden>No encontramos productos con esa búsqueda.</p>`;
+  menuEl.innerHTML = html;
+
+  /* Chip activo según el scroll */
+  const chips = $$(".chip");
+  function setActive(id){
+    chips.forEach(c => {
+      const on = c.dataset.cat === id;
+      c.classList.toggle("active", on);
+      if (on){ c.setAttribute("aria-current", "true"); navEl.scrollTo({ left: c.offsetLeft - 20, behavior: "smooth" }); }
+      else c.removeAttribute("aria-current");
+    });
+  }
+  setActive("populares");
+  if ("IntersectionObserver" in window){
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setActive(e.target.dataset.cat); }), { rootMargin: "-25% 0px -65% 0px" });
+    $$("section[data-cat]").forEach(s => io.observe(s));
+  }
+
+  /* Buscador */
+  $("#q").addEventListener("input", e => {
+    const q = norm(e.target.value.trim());
+    let any = false;
+    $$(".item").forEach(el => { const show = !q || el.dataset.s.includes(q); el.hidden = !show; if (show) any = true; });
+    $$("section[data-cat]").forEach(s => {
+      if (s.id === "c-populares"){ s.hidden = !!q; return; }
+      s.hidden = ![...s.querySelectorAll(".item")].some(i => !i.hidden);
+    });
+    $("#empty").hidden = any || !q;
+  });
+
+  /* ---------- Carrito ---------- */
+  const live = $("#live");
+  function announce(t){ live.textContent = ""; setTimeout(() => { live.textContent = t; }, 40); }
+
+  function addLine(it, oi, exIds, note, qty){
+    const key = [it.id, oi, exIds.slice().sort().join("+"), note].join("|");
+    const ex = (it.extras || []).filter(x => exIds.includes(x.id));
+    const cur = cart.get(key),requested=(cur?.qty||0)+qty;
+    if(["supermarket","minimarket"].includes(window.__businessType||"")&&Number.isFinite(Number(it.stock))&&requested>Number(it.stock)){announce("Solo quedan "+it.stock+" unidades de "+it.name+".");return false}
+    if (cur) cur.qty += qty; else cart.set(key, { it, opt: it.opts[oi], ex, note, qty });
+    announce("Agregaste " + it.name + (it.opts[oi].l ? " " + it.opts[oi].l : "") + " al pedido.");
+    saveCart(); update(true);return true;
+  }
+  let deliveryFee=0, deliveryDistance=null, deliveryCoords=null, deliveryUnavailable=false;
+  function deliverySelected(){return document.querySelector('input[name="tipo"]:checked')?.value==="Delivery"}
+  function totals(){
+    let n=0, subtotal=0;
+    cart.forEach(v=>{n+=v.qty;subtotal+=v.qty*unitOf(v)});
+    const fee=deliverySelected()?Number(deliveryFee||0):0;
+    return {n,subtotal,fee,t:subtotal+fee};
+  }
+  function haversineKm(a,b,c,d){const R=6371,toRad=x=>x*Math.PI/180,dp=toRad(c-a),dl=toRad(d-b);const q=Math.sin(dp/2)**2+Math.cos(toRad(a))*Math.cos(toRad(c))*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(q))}
+  function applyDeliveryFee(){
+    deliveryUnavailable=false;
+    if(!deliverySelected()){deliveryFee=0;deliveryDistance=null;return}
+    const cost=document.getElementById("delivery-cost-status");
+    if(CONFIG.delivery.mode==="fixed"){deliveryFee=Number(CONFIG.delivery.fixed||0);deliveryDistance=null;if(cost)cost.textContent="Costo del delivery: "+fmt(deliveryFee);return}
+    if(!deliveryCoords||CONFIG.delivery.lat==null||CONFIG.delivery.lng==null){deliveryFee=0;deliveryDistance=null;if(cost)cost.textContent="Selecciona o busca tu dirección para calcular el costo del delivery.";return}
+    deliveryDistance=haversineKm(CONFIG.delivery.lat,CONFIG.delivery.lng,deliveryCoords.lat,deliveryCoords.lng);
+    const zones=[...(CONFIG.delivery.zones||[])].sort((a,b)=>Number(a.max_km)-Number(b.max_km));
+    const zone=zones.find(z=>deliveryDistance<=Number(z.max_km));
+    if(zone) deliveryFee=Number(zone.price||0); else {deliveryFee=0;deliveryUnavailable=true}
+    if(cost)cost.textContent=deliveryUnavailable?"Delivery: fuera de cobertura":("Costo del delivery: "+fmt(deliveryFee)+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":""));
+  }
+
+  const sheet = $("#sheet"), linesEl = $("#lines"), bar = $("#bar");
+  function renderCart(){
+    linesEl.innerHTML = [...cart.entries()].map(([k, v]) =>
+      `<div class="line"><div class="ln"><strong>${lineName(v)}</strong>`
+      + (v.ex.length ? `<span>${v.ex.map(x => x.name).join(", ")}</span>` : "")
+      + (v.note ? `<span class="nt">“${esc(v.note)}”</span>` : "")
+      + `<span>${fmt(unitOf(v))} c/u</span></div>`
+      + `<div class="step"><button type="button" data-k="${esc(k)}" data-a="-1" aria-label="Quitar uno de ${lineName(v)}">−</button><span>${v.qty}</span><button type="button" data-k="${esc(k)}" data-a="1" aria-label="Sumar uno de ${lineName(v)}">+</button></div>`
+      + `<div class="lt">${fmt(v.qty * unitOf(v))}</div></div>`).join("");
+    applyDeliveryFee(); $("#total").textContent=fmt(totals().t);
+    if(deliverySelected()){const h=$("#ship-hint");if(CONFIG.delivery.mode==="fixed")h.textContent="Delivery: "+fmt(deliveryFee);else if(deliveryUnavailable)h.textContent="Tu ubicación está fuera de la zona de delivery.";else if(deliveryDistance!=null)h.textContent="Delivery: "+fmt(deliveryFee)+" · "+deliveryDistance.toFixed(1)+" km";else h.textContent="Usa tu ubicación para calcular el costo del delivery.";}
+    const inCart = new Set([...cart.values()].map(v => v.it.id));
+    const sug = Object.values(ITEMS).filter(it => it.quick && !it.out && !inCart.has(it.id)).slice(0, 4);
+    $("#sug-wrap").hidden = sug.length === 0;
+    $("#sug").innerHTML = sug.map(it =>
+      `<button type="button" class="sug" data-add="${it.id}"><span class="tile" data-tone="${it.tone}">${artSVG(it, 0)}</span><span class="sn">${it.name}</span><span class="sp">+ ${fmt(it.opts[0].p)}</span></button>`).join("");
+  }
+
+  function update(bump){
+    const { n, t } = totals();
+    bar.hidden = n === 0;
+    document.body.classList.toggle("has-cart", n > 0);
+    $("#bar-n").textContent = n;
+    $("#bar-t").textContent = fmt(t);
+    const cnt = {};
+    cart.forEach(v => { cnt[v.it.id] = (cnt[v.it.id] || 0) + v.qty; });
+    $$("[data-cnt]").forEach(el => { const c = cnt[el.dataset.cnt]; el.hidden = !c; if (c) el.textContent = c; });
+    if (sheet.open){ if (n === 0) sheet.close(); else renderCart(); }
+    refreshLink();
+    if (bump){ const b = $("#bar-n"); b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); }
+  }
+
+  /* Clicks del menú */
+  menuEl.addEventListener("click", e => {
+    const plus = e.target.closest("[data-plus]");
+    if (plus){
+      const it = ITEMS[plus.dataset.plus];
+      if (needsSheet(it)){ openDetail(it.id); return; }
+      addLine(it, 0, [], "", 1);
+      plus.classList.add("done"); plus.textContent = "✓";
+      setTimeout(() => { plus.classList.remove("done"); plus.textContent = "+"; }, 800);
+      return;
+    }
+    const op = e.target.closest("[data-open]");
+    if (op){ openDetail(op.dataset.open); return; }
+    const row = e.target.closest(".item");
+    if (row) openDetail(row.dataset.id);
+  });
+
+  /* ---------- Detalle de producto ---------- */
+  const dlgD = $("#detail");
+  let cur = null;
+  const unitCur = () => cur.it.opts[cur.oi].p + (cur.it.extras || []).filter(x => cur.ex.has(x.id)).reduce((s, x) => s + x.p, 0);
+
+  function detailHTML(it){
+    let h = `<div class="d-art" data-tone="${it.tone}"><div class="d-svg" id="d-svg"></div><button type="button" class="close" data-close aria-label="Cerrar">✕</button></div>`
+      + `<div class="d-in"><h2 id="d-title">${it.name}</h2>` + (it.desc ? `<p class="desc">${it.desc}</p>` : "");
+    if (it.opts.length > 1){
+      h += `<fieldset class="grp"><legend>Elegí el tamaño</legend>`
+        + it.opts.map((o, i) => `<label class="pick"><input type="radio" name="opt" value="${i}"${i === 0 ? " checked" : ""}><span class="box"><span>${o.l}</span><span class="pv">${fmt(o.p)}</span></span></label>`).join("")
+        + `</fieldset>`;
+    }
+    if (it.extras && it.extras.length){
+      h += `<fieldset class="grp"><legend>Sumá extras<span class="soft">Opcional</span></legend>`
+        + it.extras.map(x => `<label class="pick"><input type="checkbox" name="ex" value="${x.id}"><span class="box"><span>${x.name}</span><span class="pv">+ ${fmt(x.p)}</span></span></label>`).join("")
+        + `</fieldset>`;
+    }
+    h += `<div class="field"><label for="d-note">Aclaraciones</label><textarea id="d-note" placeholder="Ej: sin pepinillos, bien cocida"></textarea></div></div>`
+      + `<div class="d-foot"><div class="step"><button type="button" data-q="-1" aria-label="Quitar uno">−</button><span id="d-qty">1</span><button type="button" data-q="1" aria-label="Sumar uno">+</button></div><button type="button" class="add" id="d-add"></button></div>`;
+    return h;
+  }
+  function refreshDetail(artToo){
+    if (artToo) $("#d-svg").innerHTML = artSVG(cur.it, cur.oi);
+    $("#d-qty").textContent = cur.qty;
+    $("#d-add").textContent = "Agregar · " + fmt(unitCur() * cur.qty);
+  }
+  function openDetail(id){
+    const it = ITEMS[id];
+    if (!it || it.out) return;
+    cur = { it, oi: 0, ex: new Set(), qty: 1 };
+    dlgD.innerHTML = detailHTML(it);
+    refreshDetail(true);
+    dlgD.showModal();
+    dlgD.scrollTop = 0;
+  }
+  dlgD.addEventListener("change", e => {
+    if (!cur) return;
+    let art = false;
+    if (e.target.name === "opt"){ cur.oi = +e.target.value; art = true; }
+    if (e.target.name === "ex"){ if (e.target.checked) cur.ex.add(e.target.value); else cur.ex.delete(e.target.value); }
+    refreshDetail(art);
+  });
+  dlgD.addEventListener("click", e => {
+    if (!cur) return;
+    if (e.target === dlgD || e.target.closest("[data-close]")){ dlgD.close(); return; }
+    const q = e.target.closest("[data-q]");
+    if (q){ const max=["supermarket","minimarket"].includes(window.__businessType||"")&&Number.isFinite(Number(cur.it.stock))?Math.max(1,Number(cur.it.stock)):20;cur.qty = Math.max(1, Math.min(max, cur.qty + Number(q.dataset.q))); refreshDetail(false); return; }
+    if (e.target.closest("#d-add")){
+      addLine(cur.it, cur.oi, [...cur.ex], $("#d-note").value.trim(), cur.qty);
+      dlgD.close();
+    }
+  });
+  dlgD.addEventListener("close", () => { cur = null; });
+
+  /* ---------- Ventana del pedido ---------- */
+  $("#open-cart").addEventListener("click", () => { renderCart(); $("#err").textContent = ""; $("#sheet-title").textContent=qrOrderEditTarget?.mode==="append"?"Agregar al pedido #"+qrOrderEditTarget.order_code:(qrOrderEditTarget?.mode==="new"?"Pedido adicional":"Tu pedido"); sheet.showModal(); sheet.scrollTop = 0; });
+  $("#close").addEventListener("click", () => sheet.close());
+  sheet.addEventListener("click", e => { if (e.target === sheet) sheet.close(); });
+  linesEl.addEventListener("click", e => {
+    const b = e.target.closest("button[data-k]");
+    if (!b) return;
+    const v = cart.get(b.dataset.k);
+    if (!v) return;
+    const next=v.qty+Number(b.dataset.a),max=["supermarket","minimarket"].includes(window.__businessType||"")&&Number.isFinite(Number(v.it.stock))?Number(v.it.stock):Infinity;
+    if(next>max){announce("Solo quedan "+max+" unidades de "+v.it.name+".");return}
+    v.qty=next;
+    if (v.qty <= 0) cart.delete(b.dataset.k);
+    saveCart(); update();
+  });
+  $("#sug").addEventListener("click", e => {
+    const b = e.target.closest("[data-add]");
+    if (b) addLine(ITEMS[b.dataset.add], 0, [], "", 1);
+  });
+
+  /* ---------- Envío por WhatsApp ---------- */
+  const form = () => ({
+    name: $("#f-name").value.trim(),
+    phone: $("#f-phone").value.trim(),
+    type: document.querySelector('input[name="tipo"]:checked')?.value||(window.__tableQrContext?"Mesa":"Retiro"),
+    addr: $("#f-addr").value.trim(),
+    pay: $("#f-pay").value,
+    notes: $("#f-notes").value.trim()
+  });
+  function buildMessage(){
+    const f = form();
+    const lines = [...cart.values()].map(v => {
+      let s = "• " + v.qty + " × " + lineName(v) + " — " + fmt(v.qty * unitOf(v));
+      if (v.ex.length) s += "\n   Extras: " + v.ex.map(x => x.name).join(", ");
+      if (v.note) s += "\n   Nota: " + v.note;
+      return s;
+    });
+    const out = [
+      "*Nuevo pedido — " + CONFIG.name + "*",
+      "Pedido: #" + Date.now().toString().slice(-6), "",
+      ...lines, "",
+      ...(f.type==="Delivery"?["Subtotal: "+fmt(totals().subtotal),"Delivery: "+fmt(totals().fee)+(deliveryDistance!=null?" ("+deliveryDistance.toFixed(1)+" km)":"")]:[]),
+      "*Total: " + fmt(totals().t) + "*", "",
+      "Nombre: " + f.name,
+      "Teléfono: " + f.phone,
+      f.type === "Delivery" ? "Entrega: Delivery a " + f.addr : "Entrega: Retiro en el local",
+      "Pago: " + f.pay
+    ];
+    if (f.notes) out.push("Aclaraciones: " + f.notes);
+    return out.join("\n");
+  }
+  const send = $("#send");
+  let whatsappOrderUrl=""; function refreshLink(){ whatsappOrderUrl = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(buildMessage()); }
+  function toggleDelivery(){
+    const d = form().type === "Delivery";
+    $("#addr-wrap").hidden = !d;
+    $("#ship-hint").hidden = !d;
+  }
+  $$('input[name="tipo"]').forEach(r=>r.addEventListener("change",()=>{applyDeliveryFee();toggleDelivery();update();refreshLink()}));
+  function initRestaurantAddressAutocomplete(){
+    const input=$("#f-addr");
+    if(!input||input.dataset.mapsReady==="1"||!window.google?.maps?.places?.Autocomplete)return;
+    input.dataset.mapsReady="1";
+    const opts={fields:["formatted_address","geometry","name"],types:["address"],strictBounds:false};
+    if(CONFIG.delivery.lat!=null&&CONFIG.delivery.lng!=null){
+      opts.bounds=new google.maps.LatLngBounds(
+        new google.maps.LatLng(CONFIG.delivery.lat-0.18,CONFIG.delivery.lng-0.18),
+        new google.maps.LatLng(CONFIG.delivery.lat+0.18,CONFIG.delivery.lng+0.18)
+      );
+    }
+    const ac=new google.maps.places.Autocomplete(input,opts);
+    ac.addListener("place_changed",()=>{
+      const place=ac.getPlace();
+      if(!place?.geometry?.location)return;
+      deliveryCoords={lat:place.geometry.location.lat(),lng:place.geometry.location.lng()};
+      input.value=place.formatted_address||place.name||input.value;
+      applyDeliveryFee();
+      $("#gps-status").textContent=deliveryUnavailable?"Fuera de la zona de delivery.":"Dirección ubicada en Google Maps"+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":"");
+      update();refreshLink();
+    });
+    input.addEventListener("input",()=>{deliveryCoords=null;deliveryDistance=null;deliveryFee=0;deliveryUnavailable=false;$("#gps-status").textContent="Selecciona una dirección de las sugerencias de Google Maps o pulsa Buscar esta dirección.";applyDeliveryFee();update();refreshLink();});
+  }
+  if(window.__expressGoogleMapsReady)initRestaurantAddressAutocomplete();
+  else window.addEventListener("express-google-maps-ready",initRestaurantAddressAutocomplete,{once:true});
+  let mapsTries=0;const mapsTimer=setInterval(()=>{mapsTries++;initRestaurantAddressAutocomplete();if($("#f-addr")?.dataset.mapsReady==="1"||mapsTries>30)clearInterval(mapsTimer)},500);
+
+  let deliveryMap=null,deliveryMarker=null,deliveryPicked=null;
+  async function setDeliveryMapPoint(lat,lng,center=true){
+    deliveryPicked={lat:Number(lat),lng:Number(lng)};
+    if(!deliveryMarker){deliveryMarker=new google.maps.Marker({position:deliveryPicked,map:deliveryMap,draggable:true});deliveryMarker.addListener("dragend",e=>setDeliveryMapPoint(e.latLng.lat(),e.latLng.lng(),false));}
+    else deliveryMarker.setPosition(deliveryPicked);
+    if(center)deliveryMap.panTo(deliveryPicked);
+    try{const g=new google.maps.Geocoder(),r=await g.geocode({location:deliveryPicked});document.getElementById("map-picker-address").textContent=r.results?.[0]?.formatted_address||"Ubicación seleccionada";}catch(_){document.getElementById("map-picker-address").textContent="Ubicación seleccionada";}
+  }
+  function openDeliveryMapPicker(){
+    if(!window.google?.maps){$("#gps-status").textContent="Google Maps todavía no está disponible.";return}
+    const dlg=document.getElementById("map-picker-dialog"),mapEl=document.getElementById("map-picker-map");
+    if(!dlg||!mapEl){$("#gps-status").textContent="No se pudo abrir el selector de ubicación.";return}
+    const start=deliveryCoords||(CONFIG.delivery.lat!=null&&CONFIG.delivery.lng!=null?{lat:Number(CONFIG.delivery.lat),lng:Number(CONFIG.delivery.lng)}:{lat:-20.2307,lng:-70.1357});
+    dlg.showModal();
+    setTimeout(()=>{
+      try{
+        if(!deliveryMap){
+          deliveryMap=new google.maps.Map(mapEl,{center:start,zoom:16,mapTypeControl:false,streetViewControl:false,fullscreenControl:false});
+          deliveryMap.addListener("click",e=>setDeliveryMapPoint(e.latLng.lat(),e.latLng.lng()));
+        }
+        google.maps.event.trigger(deliveryMap,"resize");
+        deliveryMap.setCenter(start);
+        deliveryMap.setZoom(16);
+        setDeliveryMapPoint(start.lat,start.lng);
+      }catch(e){
+        console.error("Error cargando mapa de delivery",e);
+        $("#gps-status").textContent="No se pudo cargar Google Maps. Revisa la configuración de la API.";
+      }
+    },300);
+  }
+  $("#search-location-btn").textContent="🗺️ Seleccionar en mapa";
+  $("#search-location-btn").addEventListener("click",openDeliveryMapPicker);
+  $("#map-picker-close").addEventListener("click",()=>$("#map-picker-dialog").close());
+  $("#map-picker-gps").addEventListener("click",()=>{
+    const btn=$("#map-picker-gps"),address=$("#map-picker-address");
+    if(!navigator.geolocation){address.textContent="Este dispositivo no permite obtener tu ubicación.";return}
+    const original=btn.textContent;
+    btn.disabled=true;btn.textContent="⏳ Buscando ubicación…";
+    address.textContent="⏳ Obteniendo tu ubicación actual…";
+    navigator.geolocation.getCurrentPosition(async p=>{
+      try{
+        await setDeliveryMapPoint(p.coords.latitude,p.coords.longitude);
+        btn.textContent="✅ Ubicación encontrada";
+        setTimeout(()=>{btn.textContent=original},1600);
+      }finally{btn.disabled=false}
+    },()=>{
+      btn.disabled=false;btn.textContent="📍 Intentar nuevamente";
+      address.textContent="No se pudo obtener tu ubicación.";
+    },{enableHighAccuracy:true,timeout:12000});
+  });
+  $("#map-picker-confirm").addEventListener("click",async()=>{if(!deliveryPicked)return;deliveryCoords={...deliveryPicked};try{const g=new google.maps.Geocoder(),r=await g.geocode({location:deliveryCoords});const a=r.results?.[0]?.formatted_address||"";if(a)$("#f-addr").value=a;}catch(_){}applyDeliveryFee();update();refreshLink();$("#gps-status").textContent=deliveryUnavailable?"Fuera de la zona de delivery.":"Ubicación seleccionada"+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":"");$("#map-picker-dialog").close();});
+  $("#gps-btn").addEventListener("click",()=>{
+    const st=$("#gps-status");
+    if(!navigator.geolocation){st.textContent="Este dispositivo no permite obtener la ubicación.";return}
+    st.textContent="Obteniendo ubicación…";
+    navigator.geolocation.getCurrentPosition(async p=>{
+      deliveryCoords={lat:p.coords.latitude,lng:p.coords.longitude};
+      let resolvedAddress="";
+      try{
+        if(window.google?.maps?.Geocoder){
+          const geocoder=new google.maps.Geocoder();
+          const result=await geocoder.geocode({location:deliveryCoords});
+          resolvedAddress=result.results?.[0]?.formatted_address||"";
+          if(resolvedAddress)$("#f-addr").value=resolvedAddress;
+        }
+      }catch(e){console.warn("No se pudo convertir GPS a dirección",e)}
+      applyDeliveryFee();
+      st.textContent=deliveryUnavailable?"Fuera de la zona de delivery.":resolvedAddress?("Ubicación cargada · "+resolvedAddress+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":"")):("Ubicación lista"+(deliveryDistance!=null?" · "+deliveryDistance.toFixed(1)+" km":""));
+      update();refreshLink();
+    },()=>{st.textContent="No se pudo obtener la ubicación. Revisa el permiso de GPS."},{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
+  });
+    ["#f-name", "#f-phone", "#f-addr", "#f-pay", "#f-notes"].forEach(s => $(s).addEventListener("input", refreshLink));
+  async function saveOrderToCloud(){
+    if (!db || !cart.size) return false;
+    const f=form();
+    if(currentCustomer&&!window.__tableQrContext){await db.from("customer_profiles").upsert({user_id:currentCustomer.id,full_name:f.name,phone:f.phone,default_address:f.type==="Delivery"?f.addr:null,updated_at:new Date().toISOString()});}
+    if(["supermarket","minimarket"].includes(window.__businessType||"")){
+      const retailItems=[...cart.values()].map(v=>({product_id:Number(v.it.retailProductId||String(v.it.id||"").replace("retail-","")),quantity:Number(v.qty||0)})).filter(x=>x.product_id&&x.quantity>0);
+      const {data,error}=await db.rpc("retail_create_online_order",{
+        p_restaurant_id:Number(window.__restaurantId),
+        p_customer_name:f.name,
+        p_customer_phone:f.phone||"",
+        p_customer_email:currentCustomer?.email||null,
+        p_order_type:f.type==="Delivery"?"Delivery":"Retiro",
+        p_delivery_address:f.type==="Delivery"?f.addr:null,
+        p_delivery_latitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lat:null,
+        p_delivery_longitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lng:null,
+        p_payment_method:f.pay,
+        p_notes:f.notes||null,
+        p_items:retailItems
+      });
+      if(error)throw error;
+      const row=data||{};window.__lastRetailOrder=row;
+      saveRetailOrderRef({order_id:Number(row.order_id),order_code:row.order_code,tracking_token:row.tracking_token,status:row.status,payment_status:row.payment_status,payment_method:row.payment_method,order_type:f.type,total:Number(row.total||0),created_at:new Date().toISOString(),reservation_expires_at:row.reservation_expires_at||null});
+      return Number(row.order_id);
+    }
+    const items=[...cart.values()].map(v=>({product_id:String(v.it.id||"").startsWith("db-")?Number(String(v.it.id).slice(3)):null,option_id:v.opt?.optionId||null,extra_option_ids:v.ex.map(x=>String(x.id||"").startsWith("dbopt-")?Number(String(x.id).slice(6)):null).filter(Number.isFinite),name:lineName(v),qty:v.qty,unit_price:unitOf(v),extras:v.ex.map(x=>x.name),note:v.note||""}));
+    if(window.__tableQrContext){
+      if(qrOrderEditTarget?.mode==="append"){
+        const samePayment=String(f.pay||"").trim().toLowerCase()===String(qrOrderEditTarget.payment_method||"").trim().toLowerCase();
+        const sameDestination=String(f.type||"")===String(qrOrderEditTarget.order_type||"");
+        if(!samePayment||!sameDestination)qrOrderEditTarget={...qrOrderEditTarget,mode:"new"};
+      }
+      if(qrOrderEditTarget?.mode==="append"){
+        const target={...qrOrderEditTarget};
+        const {data,error}=await db.rpc("add_table_qr_order_items",{p_order_id:Number(target.order_id),p_table_token:window.__tableQrContext.token,p_items:items});
+        if(error){console.error("No se pudieron agregar productos al pedido QR",error);throw error;}
+        const row=Array.isArray(data)?data[0]:data;
+        const existing=readTableQrOrderRefs().find(x=>Number(x.order_id)===Number(target.order_id))||{};
+        saveTableQrOrderRef({...existing,order_id:Number(target.order_id),order_code:row?.order_code||target.order_code,token:window.__tableQrContext.token,table_name:window.__tableQrContext.name,order_type:row?.order_type||target.order_type,status:row?.status||"preparacion",ready_notified:false,created_at:row?.created_at||existing.created_at||new Date().toISOString()});
+        lastQrSaveMode="append";qrOrderEditTarget=null;
+        return Number(target.order_id);
+      }
+      const {data,error}=await db.rpc("create_table_qr_order_v2",{
+        p_table_token:window.__tableQrContext.token,
+        p_customer_name:f.name,
+        p_customer_phone:f.phone,
+        p_payment_method:f.pay,
+        p_notes:f.notes,
+        p_items:items,
+        p_order_type:f.type,
+        p_currency_code:CONFIG.currency||"CLP"
+      });
+      if(error){console.error("No se pudo crear el pedido QR",error);throw error;}
+      const row=Array.isArray(data)?data[0]:data;
+      if(!row?.order_id)throw new Error("No se pudo registrar el pedido QR.");
+      const qrRef={order_id:Number(row.order_id),order_code:row.order_code,token:window.__tableQrContext.token,table_name:window.__tableQrContext.name,order_type:row.order_type||f.type,status:"preparacion",ready_notified:false,created_at:new Date().toISOString()};saveTableQrOrderRef(qrRef);if("Notification" in window&&Notification.permission==="granted")setTimeout(()=>registerTableQrOrderPush(Number(row.order_id)),0);
+      lastQrSaveMode=qrOrderEditTarget?.mode==="new"?"additional":"new";qrOrderEditTarget=null;
+      return Number(row.order_id);
+    }
+    const orderCode = "WEB-" + Date.now().toString(36).toUpperCase();
+    const orderRow={
+      restaurant_id:window.__restaurantId||null, order_code:orderCode, customer_name:f.name, customer_phone:f.phone, customer_id:currentCustomer?.id||null, customer_email:currentCustomer?.email||null, order_type:f.type,
+      delivery_address:f.type === "Delivery" ? f.addr : null, payment_method:f.pay,
+      notes:f.notes || null,items,total:totals().t,currency_code:CONFIG.currency||"CLP",delivery_fee:f.type==="Delivery"?totals().fee:0,delivery_distance_km:f.type==="Delivery"?deliveryDistance:null,delivery_latitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lat:null,delivery_longitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lng:null,status:"recibido",payment_status:"pending",payment_verification_status:"not_required",payment_reference:null
+    };
+    const {data,error}=await db.from("restaurant_orders").insert(orderRow).select("id").single();
+    if(error){ console.error("No se pudo guardar el pedido", error); throw error; }
+    localStorage.setItem("last_order_code",orderCode);
+    return data?.id||orderCode;
+  }
+
+  send.onclick = async e => {
+    e.preventDefault();
+    if(window.__tableQrContext)try{await enableTableQrNotifications(true)}catch(_){}
+    if(window.__demoMode){
+      $("#err").innerHTML='Esta es una demostración: puedes explorar el menú, carrito y métodos de pago, pero las acciones reales están desactivadas. <a href="https://web.yummypro.online/" style="font-weight:900;text-decoration:underline">Crea tu restaurante para obtener acceso completo.</a>';
+      return;
+    }
+    const f=form();
+    if(!isOpen){$("#err").textContent="El local está cerrado. No se pueden enviar pedidos en este momento.";return;}
+    let msg="";
+    if(!cart.size)msg="Agregá al menos un producto.";
+    else if(!f.name)msg="Escribí tu nombre.";
+    else if(!f.phone&&!window.__tableQrContext)msg="Ingresa tu número de teléfono.";
+    else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";
+    else if(f.type==="Delivery"&&CONFIG.delivery.mode==="distance"&&!deliveryCoords)msg="Usa tu ubicación para calcular el costo del delivery.";
+    else if(f.type==="Delivery"&&deliveryUnavailable)msg="Tu ubicación está fuera de la zona de delivery.";
+    if(msg){$("#err").textContent=msg;return;}
+    if(["supermarket","minimarket"].includes(window.__businessType||"")){
+      if(f.pay==="Mercado Pago"&&!currentCustomer){$("#err").textContent="Para pagar con Mercado Pago inicia sesión o crea una cuenta para seguir tu compra.";document.getElementById("account-dialog").showModal();return}
+      send.disabled=true;send.textContent=f.pay==="Mercado Pago"?"Abriendo Mercado Pago…":f.pay==="QR Bolivia"?"Generando QR…":"Registrando compra…";
+      try{
+        const retailOrderId=await saveOrderToCloud(),ref=readRetailOrderRefs().find(x=>Number(x.order_id)===Number(retailOrderId)),token=ref?.tracking_token||window.__lastRetailOrder?.tracking_token;
+        if(!retailOrderId||!token)throw new Error("No se pudo crear la compra.");
+        if(f.pay==="Mercado Pago"){
+          localStorage.setItem(MP_RETURN_ORDER_KEY,String(retailOrderId));
+          const resp=await fetch(SUPABASE_URL+"/functions/v1/create-retail-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({order_id:retailOrderId,tracking_token:token,return_url:location.href})});
+          const data=await resp.json();if(!resp.ok||!data?.init_point)throw new Error(data?.error||"No se pudo iniciar Mercado Pago.");
+          updateRetailOrderRef(retailOrderId,{status:"pending_payment",payment_status:"pending",reservation_expires_at:data.expires_at||ref?.reservation_expires_at||null});
+          const reset=()=>{send.disabled=false;send.textContent="Pagar con Mercado Pago";};window.addEventListener("pageshow",reset,{once:true});setTimeout(reset,8000);window.location.href=data.init_point;return
+        }
+        if(f.pay==="QR Bolivia"){
+          const resp=await fetch(SUPABASE_URL+"/functions/v1/create-retail-veripagos-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,order_id:retailOrderId,tracking_token:token})});
+          const data=await resp.json();if(!resp.ok||!data?.qr)throw new Error(data?.error||"No se pudo generar QR Bolivia.");
+          cart.clear();saveCart();update();send.disabled=false;send.textContent="Generar QR de pago";openRestaurantVeripagosQr({...data,tracking_token:token});$("#err").textContent="QR generado. El stock quedó reservado mientras confirmamos el pago.";return
+        }
+        fetch(SUPABASE_URL+"/functions/v1/send-order-push",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({order_id:retailOrderId,kind:"retail_restaurant"})}).catch(()=>{});
+        cart.clear();saveCart();update();send.disabled=false;send.textContent="Confirmar compra";
+        $("#err").textContent="✅ Compra "+(window.__lastRetailOrder?.order_code||("#"+retailOrderId))+" registrada. Puedes seguirla en Mis compras.";
+        await loadRetailOrdersFromRefs(false);
+        return
+      }catch(err){
+        send.disabled=false;renderPaymentButtons();$("#err").textContent="No se pudo completar la compra: "+(err.message||err);await trackClientError("retail","retail_checkout_failure",err.message||String(err),false,{payment_method:f.pay});return
+      }
+    }
+    if(f.pay==="QR Bolivia"){
+      $("#err").textContent="Generando QR Bolivia…";send.disabled=true;send.textContent="Generando QR…";
+      try{
+        const paymentOrderId=await saveOrderToCloud();
+        const resp=await fetch(SUPABASE_URL+"/functions/v1/create-restaurant-veripagos-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,order_id:paymentOrderId})});
+        const data=await resp.json();if(!resp.ok||!data?.qr)throw new Error(data?.error||"No se pudo generar el QR Bolivia.");
+        cart.clear();saveCart();update();send.disabled=false;send.textContent="Generar QR de pago";
+        openRestaurantVeripagosQr({...data,order_id:Number(paymentOrderId)});
+        $("#err").textContent="QR generado. Paga desde tu banco; al volver verificaremos el pago automáticamente.";
+        return;
+      }catch(err){send.disabled=false;send.textContent="Generar QR de pago";$("#err").textContent="No se pudo generar QR Bolivia: "+(err.message||err);return;}
+    }
+    if(f.pay==="Mercado Pago"){
+      if(!currentCustomer&&!window.__tableQrContext){$("#err").textContent="Para pagar con Mercado Pago tienes que iniciar sesión o crear una cuenta para poder hacer seguimiento de tu pedido.";document.getElementById("account-dialog").showModal();return;}
+      $("#err").textContent="Conectando con Mercado Pago…";send.disabled=true;send.textContent="Abriendo Mercado Pago…";
+      try{
+        const paymentOrderId=await saveOrderToCloud();
+        const resp=await fetch(SUPABASE_URL+"/functions/v1/create-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({restaurant_id:window.__restaurantId,title:"Pedido — "+CONFIG.name,amount:totals().t,order_id:paymentOrderId,return_url:location.href})});
+        const data=await resp.json();
+        if(!resp.ok||!data?.init_point)throw new Error(data?.error||"No se pudo iniciar Mercado Pago.");
+        try{localStorage.setItem(MP_RETURN_ORDER_KEY,String(paymentOrderId));}catch(_){}
+        const resetMpButton=()=>{send.disabled=false;send.textContent="Pagar con Mercado Pago";if($("#err").textContent==="Conectando con Mercado Pago…")$("#err").textContent="Volviste desde Mercado Pago. Puedes continuar o intentar el pago nuevamente.";};
+        window.addEventListener("pageshow",resetMpButton,{once:true});
+        document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")resetMpButton();},{once:true});
+        setTimeout(resetMpButton,8000);
+        window.location.href=data.init_point;
+      }catch(err){send.disabled=false;send.textContent="Pagar con Mercado Pago";$("#err").textContent="No se pudo conectar con Mercado Pago: "+(err.message||err);}
+      return;
+    }
+    $("#err").textContent="";
+    send.disabled=true;
+    try{
+      if(window.__tableQrContext){
+        const orderId=await saveOrderToCloud();
+        cart.clear();saveCart();update();
+        send.disabled=false;send.textContent="Enviar pedido a cocina";
+        const destination=f.type==="Retiro"?"retiro en mostrador":window.__tableQrContext.name;
+        $("#err").textContent=lastQrSaveMode==="append"
+          ?"✅ Productos agregados al pedido #"+orderId+". Cocina ya recibió la actualización."
+          :"✅ "+(lastQrSaveMode==="additional"?"Pedido adicional":"Pedido")+" enviado para "+destination+". "+(f.pay==="Efectivo"?"Paga en efectivo cuando te atiendan.":f.pay==="Tarjeta POS"?"Paga con la máquina POS cuando te atiendan.":"Pago seleccionado: "+f.pay+".")+" Pedido #"+orderId;
+        await refreshTableQrOrderStatus();
+        return;
+      }
+      refreshLink();
+      if(!whatsappOrderUrl)throw new Error("No se pudo generar el enlace de WhatsApp.");
+      window.location.href=whatsappOrderUrl;
+      setTimeout(()=>{cart.clear();saveCart();update();send.disabled=false;},500);
+    }catch(err){send.disabled=false;send.textContent=window.__tableQrContext?"Enviar pedido a cocina":"Enviar pedido por WhatsApp";$("#err").textContent="No se pudo enviar el pedido: "+(err.message||err);}
+  };
+
+  // Preferencias y persistencia
+  const savedTheme = localStorage.getItem("menu_theme");
+  document.documentElement.dataset.theme=savedTheme==="light"?"light":"dark";
+  $("#clear-cart").addEventListener("click",()=>{ if(cart.size && confirm("¿Vaciar todo el pedido?")){ cart.clear(); saveCart(); update(); } });
+  try{ const c=JSON.parse(localStorage.getItem(CUSTOMER_KEY)||"{}"); $("#f-name").value=c.name||""; $("#f-phone").value=c.phone||""; $("#f-addr").value=c.addr||""; }catch(e){}
+  ["#f-name","#f-phone","#f-addr"].forEach(sel=>$(sel).addEventListener("change",()=>{try{localStorage.setItem(CUSTOMER_KEY,JSON.stringify({name:$("#f-name").value.trim(),phone:$("#f-phone").value.trim(),addr:$("#f-addr").value.trim()}));}catch(e){}}));
+  restoreCart();
+  // Sincroniza inmediatamente la barra con el carrito restaurado al recargar.
+  // Antes solo se restauraban los datos; la barra seguía oculta hasta modificar el carrito.
+  update();
+  let tableReadyAudioContext=null;
+  function playTableReadySound(){
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+      tableReadyAudioContext=tableReadyAudioContext||new AC();const ac=tableReadyAudioContext;if(ac.state==="suspended")ac.resume();
+      const now=ac.currentTime;
+      for(let i=0;i<14;i++){
+        const start=now+i*.28,o=ac.createOscillator(),g=ac.createGain();o.type=i%2?"square":"sine";o.frequency.value=i%2?1320:980;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(.0001,start);g.gain.exponentialRampToValueAtTime(.24,start+.02);g.gain.exponentialRampToValueAtTime(.0001,start+.2);o.start(start);o.stop(start+.22);
+      }
+    }catch(e){console.warn("No se pudo reproducir aviso de mesa",e)}
+  }
+  async function registerTableQrOrderPush(orderId){
+    if(!window.__tableQrContext||!orderId||!("serviceWorker" in navigator)||!("PushManager" in window)||!("Notification" in window)||Notification.permission!=="granted")return false;
+    const registration=await navigator.serviceWorker.register("/pwa-sw.js");
+    let subscription=await registration.pushManager.getSubscription();
+    if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(WEB_PUSH_PUBLIC_KEY)});
+    const json=subscription.toJSON();
+    const {error}=await db.rpc("register_table_qr_push_subscription",{p_order_id:Number(orderId),p_table_token:window.__tableQrContext.token,p_endpoint:subscription.endpoint,p_p256dh:json.keys?.p256dh,p_auth:json.keys?.auth});
+    if(error)throw error;return true;
+  }
+  async function enableTableQrNotifications(requestPermission=false){
+    if(!window.__tableQrContext||!("Notification" in window))return false;
+    if(requestPermission&&Notification.permission==="default")await Notification.requestPermission();
+    if(Notification.permission!=="granted")return false;
+    for(const ref of readTableQrOrderRefs().filter(x=>x.token===window.__tableQrContext.token&&!["entregado","cancelado"].includes(String(x.status||"")))){
+      try{await registerTableQrOrderPush(Number(ref.order_id))}catch(e){console.warn("No se pudo registrar push QR",e)}
+    }
+    return true;
+  }
+  function notifyTableQrReady(row,ref){
+    if(ref?.ready_notified)return;
+    playTableReadySound();
+    updateTableQrOrderRef(row.order_id,{status:"listo",ready_notified:true});
+  }
+  async function refreshTableQrOrderStatus(){
+    if(!window.__tableQrContext)return null;
+    let saved=readTableQrOrderRefs().find(x=>x.token===window.__tableQrContext.token);
+    if(!saved||!saved.order_id)return null;
+    try{
+      const {data,error}=await db.rpc("get_table_qr_order_status_v2",{p_order_id:Number(saved.order_id),p_table_token:window.__tableQrContext.token});
+      if(error)return null;
+      const row=Array.isArray(data)?data[0]:data;if(!row)return null;
+      row.id=row.order_id;row.order_source="table_qr";row.table_reference=row.table_name;
+      const counter=row.order_type==="Retiro";
+      const labels=counter
+        ? {nuevo:"Pedido recibido",recibido:"Pedido recibido",preparacion:"En preparación",listo:"Listo para retirar en mostrador",entregado:"Retirado en mostrador",cancelado:"Cancelado"}
+        : {nuevo:"Pedido recibido",recibido:"Pedido recibido",preparacion:"En preparación",listo:"Listo para servir",retirado_mesa:"Retirado de cocina · va hacia tu mesa",entregado:"Entregado en tu mesa",cancelado:"Cancelado"};
+      const title=document.getElementById("table-order-title"),txt=document.getElementById("table-order-text"),pill=document.getElementById("table-order-status"),banner=document.getElementById("table-order-banner");
+      if(banner)banner.hidden=false;
+      if(title)title.textContent=(counter?"🛍️ Retiro en mostrador":"🍽️ "+window.__tableQrContext.name)+" · #"+row.order_code;
+      if(txt)txt.textContent=(labels[row.status]||row.status)+" · "+(row.payment_status==="approved"?"Pago confirmado":"Pago pendiente")+" · "+fmt(row.total)+" · Toca para ver seguimiento";
+      if(pill)pill.textContent=counter?"Mostrador":(labels[row.status]||row.status);
+      const ref=readTableQrOrderRefs().find(x=>Number(x.order_id)===Number(row.order_id));
+      if(String(row.status)==="listo")notifyTableQrReady(row,ref);
+      updateTableQrOrderRef(row.order_id,{order_code:row.order_code,status:row.status,table_name:row.table_name,order_type:row.order_type,created_at:row.created_at,ready_notified:ref?.ready_notified||String(row.status)==="listo"});
+      if(document.getElementById("orders-dialog")?.open)await loadTableQrOrders();
+      if(document.getElementById("order-detail-dialog")?.open&&String(openedOrderId)===String(row.order_id))openOrderDetail(row);
+      return row;
+    }catch(e){console.warn("No se pudo actualizar el estado del pedido QR",e);return null}
+  }
+
+  let restaurantVeripagosOrderId=null,restaurantVeripagosTrackingToken=null,restaurantVeripagosPollTimer=null;
+  function ensureRestaurantVeripagosDialog(){
+    let dlg=document.getElementById("restaurant-veripagos-dialog");if(dlg)return dlg;
+    dlg=document.createElement("dialog");dlg.id="restaurant-veripagos-dialog";dlg.style.cssText="width:min(520px,calc(100% - 24px));border:0;border-radius:20px;padding:0;background:var(--panel,#171717);color:inherit;box-shadow:0 24px 80px #0008";
+    dlg.innerHTML='<div style="padding:20px;text-align:center"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;text-align:left"><div><h2 style="margin:0">QR Bolivia · VeriPagos</h2><p class="mut" style="margin:6px 0 0">Escanea o guarda el QR y paga desde tu aplicación bancaria.</p></div><button type="button" id="restaurant-veripagos-close" style="border:0;background:transparent;color:inherit;font-size:22px;cursor:pointer">✕</button></div><img id="restaurant-veripagos-qr" alt="QR de pago Bolivia" style="display:block;width:min(330px,92%);margin:18px auto;background:#fff;padding:10px;border-radius:16px"><div id="restaurant-veripagos-amount" style="font-size:28px;font-weight:900"></div><div id="restaurant-veripagos-state" style="margin-top:14px;padding:12px;border-radius:12px;background:#ffffff12">Esperando pago…</div><button type="button" id="restaurant-veripagos-verify" style="width:100%;margin-top:14px;min-height:48px;border:0;border-radius:12px;font-weight:900;cursor:pointer">Ya pagué · verificar ahora</button><p class="mut" style="margin:10px 0 0">Al volver desde la app de tu banco, YummyPro también verificará el pago automáticamente.</p></div>';
+    document.body.appendChild(dlg);
+    dlg.querySelector("#restaurant-veripagos-close").onclick=closeRestaurantVeripagosQr;
+    dlg.querySelector("#restaurant-veripagos-verify").onclick=verifyRestaurantVeripagosNow;
+    return dlg;
+  }
+  function openRestaurantVeripagosQr(data){
+    const dlg=ensureRestaurantVeripagosDialog();restaurantVeripagosOrderId=Number(data.order_id);restaurantVeripagosTrackingToken=data.tracking_token||readRetailOrderRefs().find(x=>Number(x.order_id)===Number(data.order_id))?.tracking_token||null;
+    const img=dlg.querySelector("#restaurant-veripagos-qr"),amount=dlg.querySelector("#restaurant-veripagos-amount"),state=dlg.querySelector("#restaurant-veripagos-state");
+    if(img)img.src=data.qr;if(amount)amount.textContent=fmt(Number(data.amount||0));if(state)state.textContent="QR generado · esperando confirmación del banco.";
+    if(!dlg.open)dlg.showModal();
+    if(restaurantVeripagosPollTimer)clearInterval(restaurantVeripagosPollTimer);
+    restaurantVeripagosPollTimer=setInterval(verifyRestaurantVeripagosNow,3500);
+  }
+  function closeRestaurantVeripagosQr(){
+    const dlg=document.getElementById("restaurant-veripagos-dialog");if(dlg?.open)dlg.close();
+    if(restaurantVeripagosPollTimer){clearInterval(restaurantVeripagosPollTimer);restaurantVeripagosPollTimer=null}
+  }
+  async function verifyRestaurantVeripagosNow(){
+    if(!restaurantVeripagosOrderId)return;
+    const state=document.getElementById("restaurant-veripagos-state"),retail=["supermarket","minimarket"].includes(window.__businessType||"");
+    try{
+      const endpoint=retail?"verify-retail-veripagos-payment":"verify-restaurant-veripagos-payment";
+      const payload=retail?{order_id:restaurantVeripagosOrderId,tracking_token:restaurantVeripagosTrackingToken}:{order_id:restaurantVeripagosOrderId};
+      const resp=await fetch(SUPABASE_URL+"/functions/v1/"+endpoint,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify(payload)});
+      const data=await resp.json();
+      if(!resp.ok){if(state)state.textContent="No se pudo verificar todavía: "+(data?.error||"intenta nuevamente");return}
+      if(!data.approved){if(state)state.textContent="Pago pendiente · "+(data.status||"esperando confirmación");return}
+      if(state)state.innerHTML="<b>✅ Pago confirmado. Tu compra fue recibida.</b>";
+      if(restaurantVeripagosPollTimer){clearInterval(restaurantVeripagosPollTimer);restaurantVeripagosPollTimer=null}
+      $("#err").textContent=retail?"✅ Pago QR confirmado. Tu compra ya está en preparación.":"✅ Pago QR confirmado. Tu pedido ya está en el restaurante.";
+      if(retail){updateRetailOrderRef(restaurantVeripagosOrderId,{status:"received",payment_status:"approved"});cart.clear();saveCart();update();if(document.getElementById("orders-dialog")?.open)await loadRetailOrdersFromRefs(true)}
+      else if(window.__tableQrContext)await refreshTableQrOrderStatus();else if(currentCustomer){await refreshPendingOrder();if(document.getElementById("orders-dialog")?.open)await loadCustomerOrders();}
+      setTimeout(closeRestaurantVeripagosQr,1200);
+    }catch(e){if(state)state.textContent="No pudimos verificar el pago todavía. Intenta nuevamente."}
+  }
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&restaurantVeripagosOrderId)verifyRestaurantVeripagosNow()});
+  window.addEventListener("pageshow",()=>{if(restaurantVeripagosOrderId)verifyRestaurantVeripagosNow()});
+
+  // Al volver desde Mercado Pago, consulta el estado real del pedido y nunca deja el checkout bloqueado.
+  async function verifyMercadoPagoReturn(){
+    const returnedOrderId=localStorage.getItem(MP_RETURN_ORDER_KEY);
+    if(!returnedOrderId)return;
+    const retail=["supermarket","minimarket"].includes(window.__businessType||""),isMercadoPagoSelected=()=>$("#f-pay").value==="Mercado Pago";
+    if(isMercadoPagoSelected()){send.disabled=false;send.textContent="Pagar con Mercado Pago";}
+    try{
+      for(let n=0;n<6;n++){
+        let check=null;
+        if(retail){
+          const ref=readRetailOrderRefs().find(x=>Number(x.order_id)===Number(returnedOrderId));
+          if(!ref?.tracking_token){localStorage.removeItem(MP_RETURN_ORDER_KEY);return}
+          const {data}=await db.rpc("retail_get_online_order_status",{p_order_id:Number(returnedOrderId),p_tracking_token:ref.tracking_token});check=data||null;
+        }else if(window.__tableQrContext){
+          const {data}=await db.rpc("get_table_qr_order_status_v2",{p_order_id:Number(returnedOrderId),p_table_token:window.__tableQrContext.token});
+          check=Array.isArray(data)?data[0]:data;
+        }else{
+          const result=await db.from("restaurant_orders").select("id,payment_status").eq("id",Number(returnedOrderId)).eq("customer_id",currentCustomer?.id||"00000000-0000-0000-0000-000000000000").maybeSingle();
+          check=result.data;
+        }
+        if(check?.payment_status==="approved"){
+          cart.clear();saveCart();localStorage.removeItem(MP_RETURN_ORDER_KEY);update();
+          if(retail){updateRetailOrderRef(returnedOrderId,{status:check.status||"received",payment_status:"approved",reservation_expires_at:null});if(isMercadoPagoSelected())$("#err").textContent="✅ Pago acreditado. Tu compra fue recibida correctamente.";if(document.getElementById("orders-dialog")?.open)await loadRetailOrdersFromRefs(true)}
+          else{if(isMercadoPagoSelected())$("#err").textContent=window.__tableQrContext?"✅ Pago acreditado. Tu pedido por QR ya fue enviado a cocina.":"✅ Pago acreditado. Tu pedido fue recibido correctamente.";if(window.__tableQrContext)await refreshTableQrOrderStatus()}
+          return;
+        }
+        if(retail&&check?.status==="cancelled"){
+          localStorage.removeItem(MP_RETURN_ORDER_KEY);updateRetailOrderRef(returnedOrderId,{status:"cancelled",payment_status:check.payment_status||"cancelled"});if(isMercadoPagoSelected())$("#err").textContent="La reserva de stock venció o el pago fue cancelado. Vuelve a agregar los productos para crear una compra nueva.";return
+        }
+        if(n<5)await new Promise(r=>setTimeout(r,1500));
+      }
+      if(isMercadoPagoSelected())$("#err").textContent="El pago todavía no aparece acreditado. Puedes volver a Mercado Pago o verificar nuevamente; no se realizará otro cobro desde esta pantalla.";
+    }catch(e){
+      console.error("No se pudo verificar el retorno de Mercado Pago",e);
+      if(isMercadoPagoSelected())$("#err").textContent="No pudimos confirmar el pago todavía. Puedes intentar verificar nuevamente.";
+    }
+  }
+  await verifyMercadoPagoReturn();
+  await refreshTableQrOrderStatus();
+  if(window.__tableQrContext){
+    if("Notification" in window&&Notification.permission==="granted")setTimeout(()=>enableTableQrNotifications(false),0);
+    if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data?.type==="yummypro-push"&&String(e.data?.data?.tag||"").startsWith("table-order-"))refreshTableQrOrderStatus()});
+    setInterval(refreshTableQrOrderStatus,8000);
+  }
+  if(["supermarket","minimarket"].includes(window.__businessType||"")){
+    let retailStatusSnapshot={};
+    const refreshRetailTracking=async()=>{
+      const rows=await loadRetailOrdersFromRefs(false),changed=[];
+      rows.forEach(row=>{const id=Number(row.id||row.order_id),prev=retailStatusSnapshot[id];if(prev&&prev!==row.status)changed.push(row);retailStatusSnapshot[id]=row.status});
+      changed.forEach(row=>notifyCustomerOrder(row));
+      if(document.getElementById("orders-dialog")?.open)await loadRetailOrdersFromRefs(true);
+      if(document.getElementById("order-detail-dialog")?.open&&openedOrderId){const row=rows.find(x=>Number(x.id||x.order_id)===Number(openedOrderId));if(row)openOrderDetail(row)}
+    };
+    loadRetailOrdersFromRefs(false).then(rows=>rows.forEach(row=>retailStatusSnapshot[Number(row.id||row.order_id)]=row.status)).catch(()=>{});
+    setInterval(()=>{if(document.visibilityState==="visible")refreshRetailTracking().catch(()=>{})},8000);
+    document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshRetailTracking().catch(()=>{})});
+  }
+  window.addEventListener("pageshow",()=>{verifyMercadoPagoReturn();refreshTableQrOrderStatus();});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")verifyMercadoPagoReturn();});
+  toggleDelivery();
+  update();
+  // Telemetría de interacción: módulos más usados y errores globales.
+  document.addEventListener("click",e=>{
+    const el=e.target.closest?.("button,a,.chip,.plus");if(!el)return;
+    let module=null,eventName="module_view";
+    if(el.id==="account-btn"||el.id==="tab-login"||el.id==="tab-register")module="account";
+    else if(el.id==="orders-btn"||el.id==="pending-order-open"||el.closest?.("#orders-list"))module="orders";
+    else if(el.id==="open-cart"||el.closest?.("#bar"))module="cart";
+    else if(el.id==="send")module="checkout";
+    else if(el.id==="gps-btn"||el.id==="search-location-btn"||el.id==="map-picker-gps"||el.id==="map-picker-confirm")module="delivery";
+    else if(el.closest?.("#payment-buttons"))module="payment";
+    else if(el.classList?.contains("chip"))module="categories";
+    else if(el.classList?.contains("plus")){module="products";eventName="product_add_attempt"}
+    if(module)trackClientEvent(eventName,module,{element_id:el.id||null});
+  });
+  window.addEventListener("error",e=>trackClientError("javascript","window_error",e.message||"Error JavaScript",false,{file:e.filename||null,line:e.lineno||null}));
+  window.addEventListener("unhandledrejection",e=>trackClientError("javascript","unhandled_rejection",String(e.reason?.message||e.reason||"Promesa rechazada"),false));
+})();
+</script>
+<script id="customer-pwa-v1623">
+let yummyCustomerInstallPrompt=null;
+function customerPwaStandalone(){return window.matchMedia?.("(display-mode: standalone)")?.matches===true||window.navigator.standalone===true}
+function refreshCustomerInstallButton(){
+ const btn=document.getElementById("pwa-install-btn");if(!btn)return;
+ const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(/macintosh/i.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+ btn.hidden=customerPwaStandalone()||(!yummyCustomerInstallPrompt&&!ios);
+}
+async function installCustomerPwa(){
+ const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(/macintosh/i.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+ if(customerPwaStandalone())return;
+ if(ios&&!yummyCustomerInstallPrompt){alert("En iPhone/iPad abre esta página en Safari, toca Compartir y luego Añadir a pantalla de inicio.");return}
+ if(!yummyCustomerInstallPrompt){alert("Abre el menú del navegador y elige Instalar aplicación o Añadir a pantalla principal.");return}
+ const prompt=yummyCustomerInstallPrompt;yummyCustomerInstallPrompt=null;
+ try{await prompt.prompt();await prompt.userChoice}catch(_){}
+ refreshCustomerInstallButton();
+}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();yummyCustomerInstallPrompt=e;refreshCustomerInstallButton()});
+window.addEventListener("appinstalled",()=>{yummyCustomerInstallPrompt=null;refreshCustomerInstallButton()});
+window.addEventListener("DOMContentLoaded",async()=>{
+ document.getElementById("pwa-install-btn")?.addEventListener("click",installCustomerPwa);
+ try{
+  if("serviceWorker" in navigator){
+   const migrationKey="yummypro_client_pwa_identity_v1622";
+   if(!localStorage.getItem(migrationKey)){
+    try{
+     const regs=await navigator.serviceWorker.getRegistrations();
+     await Promise.all(regs.filter(r=>!String(r.active?.scriptURL||r.waiting?.scriptURL||r.installing?.scriptURL||"").endsWith("/pwa-sw.js")).map(r=>r.unregister()));
+    }catch(_){}
+    if("caches" in window){
+     const keys=await caches.keys();
+     await Promise.all(keys.filter(k=>k.startsWith("yummypro-customer-")||k.startsWith("yummypro-client-app-")||k.startsWith("yummypro-client-v")).map(k=>caches.delete(k)));
+    }
+    localStorage.setItem(migrationKey,"1");
+   }
+   const reg=await navigator.serviceWorker.register("/pwa-sw.js",{scope:"/"});
+   await reg.update().catch(()=>{});
+   const activateWaiting=worker=>{
+    if(!worker||!navigator.serviceWorker.controller)return;
+    if(!customerPwaStandalone())worker.postMessage({type:"SKIP_WAITING"});
+   };
+   activateWaiting(reg.waiting);
+   reg.addEventListener("updatefound",()=>{
+    const worker=reg.installing;if(!worker)return;
+    worker.addEventListener("statechange",()=>{if(worker.state==="installed")activateWaiting(worker)});
+   });
+   navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(customerPwaStandalone()||window.__customerPwaReloading)return;
+    window.__customerPwaReloading=true;location.reload();
+   });
+  }
+ }catch(e){console.error("PWA cliente",e)}
+ refreshCustomerInstallButton();
+});
+</script>
+<footer class="site-version">Versión v1.6.25</footer></body>
+</html>
+:'✓')+'</div><h2>'+e(title)+'</h2><p>'+e(state.service.name)+' con '+e(state.provider.name)+'<br><b>'+e(when)+'</b></p><p>Tu código de reserva es <b>#'+e(data?.id||"")+'</b>.</p>'+depositNote+payButton+'<button type="button" onclick="location.reload()">Crear otra reserva</button></section></div>';
+        if(depositPending&&mpReady){
+          const pay=document.getElementById("professional-deposit-pay"),payStatus=document.getElementById("professional-deposit-status");
+          pay?.addEventListener("click",async()=>{
+            pay.disabled=true;pay.textContent="Abriendo Mercado Pago…";if(payStatus){payStatus.hidden=false;payStatus.classList.remove("error");payStatus.textContent="Preparando pago seguro…"}
+            try{
+              const returnRef={id:Number(data.id),token:String(data.public_token||"")};
+              localStorage.setItem("yummypro_professional_payment_return",JSON.stringify(returnRef));
+              const resp=await fetch(SUPABASE_URL+"/functions/v1/create-professional-appointment-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({appointment_id:returnRef.id,public_token:returnRef.token,return_url:location.href})});
+              const payment=await resp.json();
+              if(!resp.ok||!payment?.init_point)throw new Error(payment?.error||"No se pudo iniciar el pago.");
+              window.location.href=payment.init_point;
+            }catch(paymentError){
+              pay.disabled=false;pay.textContent="Pagar anticipo con Mercado Pago";
+              if(payStatus){payStatus.hidden=false;payStatus.classList.add("error");payStatus.textContent=String(paymentError?.message||"No se pudo iniciar el pago.")}
+            }
+          });
+        }
       }catch(error){status.classList.add("error");status.textContent=String(error?.message||"No se pudo crear la reserva").replace(/^.*?: /,"");trackClientError("professional_booking","booking_create_failure",error?.message||"Error de reserva",false);state.loading=false;submit.disabled=false;submit.textContent="Confirmar reserva";await loadSlots()}
     });
     document.getElementById("professional-theme")?.addEventListener("click",()=>{const root=document.documentElement,next=root.getAttribute("data-theme")==="dark"?"light":"dark";root.setAttribute("data-theme",next);try{localStorage.setItem("menu_theme",next)}catch(_){}});
