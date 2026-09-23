@@ -460,7 +460,10 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
       <p id="account-msg" class="account-msg"></p>
     </div>
     <div id="account-auth" hidden>
-      <button class="mini-btn" id="logout-btn" type="button">Cerrar sesión</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="mini-btn" id="customer-push-btn" type="button">🔔 Activar notificaciones</button>
+        <button class="mini-btn" id="logout-btn" type="button">Cerrar sesión</button>
+      </div>
     </div>
   </div>
 </dialog>
@@ -570,7 +573,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     const guest=document.getElementById("account-guest"), auth=document.getElementById("account-auth"), userText=document.getElementById("account-user");
     if(currentCustomer){
       accountBtn.textContent="👤 Mi cuenta"; ordersBtn.hidden=false; guest.hidden=true; auth.hidden=false;
-      if("Notification" in window&&Notification.permission==="granted"){ordersBtn.textContent="🔔 Mis pedidos";registerCustomerPush().catch(e=>console.warn("No se pudo actualizar la suscripción Push",e))}
+      if("Notification" in window&&Notification.permission==="granted"){ordersBtn.textContent="🔔 Mis pedidos";const pb=document.getElementById("customer-push-btn");if(pb){pb.textContent="✅ Notificaciones activadas";pb.disabled=true}registerCustomerPush().catch(e=>console.warn("No se pudo actualizar la suscripción Push",e))}else{const pb=document.getElementById("customer-push-btn");if(pb){const denied=("Notification" in window&&Notification.permission==="denied");pb.textContent=denied?"🔕 Notificaciones bloqueadas":"🔔 Activar notificaciones";pb.disabled=denied}}
       const {data:p}=await db.from("customer_profiles").select("*").eq("user_id",currentCustomer.id).maybeSingle();
       userText.textContent=p?.full_name ? p.full_name+" · "+currentCustomer.email : currentCustomer.email;
       if(p?.full_name && document.getElementById("f-name")) document.getElementById("f-name").value=p.full_name;
@@ -703,6 +706,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
   document.getElementById("account-close").addEventListener("click",()=>document.getElementById("account-dialog").close());
   document.getElementById("orders-close").addEventListener("click",()=>document.getElementById("orders-dialog").close());
   document.getElementById("orders-btn").addEventListener("click",async()=>{if(window.__demoMode)return;await enableOrderNotifications();document.getElementById("orders-dialog").showModal();await loadCustomerOrders();});
+  document.getElementById("customer-push-btn")?.addEventListener("click",async()=>{await enableOrderNotifications();await syncCustomerUI();if("Notification" in window&&Notification.permission==="granted")trackClientEvent("push_enabled","notifications").catch(()=>{})});
   document.getElementById("pending-order-open").addEventListener("click",()=>openOrderDetail(window.__pendingCustomerOrder));
   const tableBanner=document.getElementById("table-order-banner");if(tableBanner){const openTableTracking=async()=>{await enableTableQrNotifications(true);const row=await refreshTableQrOrderStatus();if(row)openOrderDetail(row)};tableBanner.addEventListener("click",openTableTracking);tableBanner.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openTableTracking()}})}
   let openedOrderId=null;
@@ -2394,5 +2398,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.32</footer></body>
+<footer class="site-version">Versión v1.6.33</footer></body>
 </html>
