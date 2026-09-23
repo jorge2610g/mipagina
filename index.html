@@ -1501,6 +1501,26 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     if (!db || !cart.size) return false;
     const f=form();
     if(currentCustomer&&!window.__tableQrContext){await db.from("customer_profiles").upsert({user_id:currentCustomer.id,full_name:f.name,phone:f.phone,default_address:f.type==="Delivery"?f.addr:null,updated_at:new Date().toISOString()});}
+    if(["supermarket","minimarket"].includes(window.__businessType||"")){
+      const retailItems=[...cart.values()].map(v=>({product_id:Number(v.it.retailProductId||String(v.it.id||"").replace("retail-","")),quantity:Number(v.qty||0)})).filter(x=>x.product_id&&x.quantity>0);
+      const {data,error}=await db.rpc("retail_create_online_order",{
+        p_restaurant_id:Number(window.__restaurantId),
+        p_customer_name:f.name,
+        p_customer_phone:f.phone||"",
+        p_customer_email:currentCustomer?.email||null,
+        p_order_type:f.type==="Delivery"?"Delivery":"Retiro",
+        p_delivery_address:f.type==="Delivery"?f.addr:null,
+        p_delivery_latitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lat:null,
+        p_delivery_longitude:f.type==="Delivery"&&deliveryCoords?deliveryCoords.lng:null,
+        p_payment_method:f.pay,
+        p_notes:f.notes||null,
+        p_items:retailItems
+      });
+      if(error)throw error;
+      const row=data||{};window.__lastRetailOrder=row;
+      saveRetailOrderRef({order_id:Number(row.order_id),order_code:row.order_code,tracking_token:row.tracking_token,status:row.status,payment_status:row.payment_status,payment_method:row.payment_method,order_type:f.type,total:Number(row.total||0),created_at:new Date().toISOString(),reservation_expires_at:row.reservation_expires_at||null});
+      return Number(row.order_id);
+    }
     const items=[...cart.values()].map(v=>({product_id:String(v.it.id||"").startsWith("db-")?Number(String(v.it.id).slice(3)):null,option_id:v.opt?.optionId||null,extra_option_ids:v.ex.map(x=>String(x.id||"").startsWith("dbopt-")?Number(String(x.id).slice(6)):null).filter(Number.isFinite),name:lineName(v),qty:v.qty,unit_price:unitOf(v),extras:v.ex.map(x=>x.name),note:v.note||""}));
     if(window.__tableQrContext){
       if(qrOrderEditTarget?.mode==="append"){
