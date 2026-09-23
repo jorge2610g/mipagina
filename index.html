@@ -308,8 +308,21 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
 :root[data-theme="dark"] .infos,
 :root[data-theme="dark"] .pending-order-banner{background:#0b0b0b;color:#fff}
 :root[data-theme="dark"] .closed-note{background:rgba(215,38,61,.18);border:1px solid rgba(215,38,61,.48);color:#fff}
+body.professional-booking-mode{padding:0;background:#f4f7fb;color:#172033}
+body.professional-booking-mode>:not(#professional-booking-app):not(script){display:none!important}
+.professional-booking{min-height:100vh;background:radial-gradient(circle at top right,#dbeafe 0,transparent 34%),linear-gradient(180deg,#f8fbff,#eef3f9);color:#172033;padding-bottom:56px}
+.professional-booking *{box-sizing:border-box}
+.professional-booking-shell{width:min(1080px,calc(100% - 28px));margin:0 auto}
+.professional-booking-hero{padding:42px 0 28px;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+.professional-booking-brand{display:flex;align-items:center;gap:16px}.professional-booking-logo{width:76px;height:76px;border-radius:24px;background:#172033;color:#fff;display:grid;place-items:center;font-size:32px;overflow:hidden;box-shadow:0 14px 34px #17203322}.professional-booking-logo img{width:100%;height:100%;object-fit:cover}.professional-booking h1{font:800 clamp(2rem,6vw,4.2rem)/1.02 var(--body);letter-spacing:-.05em;margin:0}.professional-booking-kicker{display:inline-flex;padding:7px 11px;border-radius:999px;background:#dbeafe;color:#174a7e;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}.professional-booking-address{color:#667085;margin:8px 0 0}.professional-booking-contact{display:flex;gap:9px;flex-wrap:wrap}.professional-booking-contact a,.professional-booking-contact button{padding:11px 14px;border-radius:999px;background:#fff;border:1px solid #dbe3ee;color:#172033;text-decoration:none;font:800 14px/1 var(--body);cursor:pointer}
+.professional-booking-layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}.professional-booking-card{background:#fff;border:1px solid #e1e7ef;border-radius:24px;padding:22px;box-shadow:0 18px 44px #1720330d}.professional-booking-step{display:flex;gap:13px;align-items:flex-start;margin-bottom:16px}.professional-booking-step>span{width:32px;height:32px;border-radius:11px;background:#172033;color:#fff;display:grid;place-items:center;font-weight:900;flex:0 0 auto}.professional-booking-step h2{font:800 1.25rem/1.2 var(--body);margin:2px 0 3px}.professional-booking-step p{margin:0;color:#667085;font-size:14px}
+.professional-service-grid,.professional-provider-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.professional-choice{border:2px solid #e3e8ef;background:#fff;color:#172033;border-radius:18px;padding:15px;text-align:left;cursor:pointer;min-height:116px;transition:.16s}.professional-choice:hover{transform:translateY(-1px);border-color:#9fb5d0}.professional-choice.selected{border-color:#2563eb;background:#eff6ff;box-shadow:0 0 0 3px #2563eb17}.professional-choice strong{display:block;font-size:17px}.professional-choice small{display:block;color:#667085;margin-top:5px}.professional-choice-price{display:block;margin-top:10px;color:#174a7e;font-weight:900}.professional-provider-choice{display:grid;grid-template-columns:46px 1fr;gap:11px;align-items:center}.professional-provider-photo{width:46px;height:46px;border-radius:14px;background:#e8eef6;display:grid;place-items:center;overflow:hidden;font-size:22px}.professional-provider-photo img{width:100%;height:100%;object-fit:cover}
+.professional-booking-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.professional-booking-fields label{font-size:13px;font-weight:800;color:#344054}.professional-booking input,.professional-booking textarea{width:100%;margin-top:6px;border:1px solid #d0d8e3;border-radius:13px;padding:12px 13px;background:#fff;color:#172033;font:inherit}.professional-booking textarea{min-height:90px;resize:vertical}.professional-slots{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.professional-slot{border:1px solid #cbd5e1;background:#fff;color:#172033;border-radius:12px;padding:10px 13px;font-weight:850;cursor:pointer}.professional-slot.selected{background:#172033;color:#fff;border-color:#172033}.professional-booking-submit{width:100%;border:0;border-radius:15px;padding:14px 18px;background:#2563eb;color:#fff;font:850 16px var(--body);cursor:pointer;box-shadow:0 12px 24px #2563eb2e}.professional-booking-submit:disabled{opacity:.55;cursor:not-allowed}.professional-booking-summary{position:sticky;top:16px}.professional-summary-line{display:flex;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid #edf0f4}.professional-summary-line span{color:#667085}.professional-summary-empty{padding:22px 0;color:#667085}.professional-booking-status{margin-top:12px;padding:12px 14px;border-radius:13px;background:#f2f4f7;color:#475467}.professional-booking-status.error{background:#fff0f0;color:#a21818}.professional-booking-success{text-align:center;padding:34px 16px}.professional-booking-success .check{width:72px;height:72px;border-radius:50%;background:#dcfce7;color:#15803d;display:grid;place-items:center;font-size:34px;margin:0 auto 16px}.professional-booking-success h2{font:850 1.8rem var(--body);margin:0}.professional-booking-success p{color:#667085}.professional-booking-success button{border:0;border-radius:999px;padding:12px 17px;background:#172033;color:#fff;font-weight:850;cursor:pointer}
+@media(max-width:780px){.professional-booking-hero{grid-template-columns:1fr;padding-top:24px}.professional-booking-layout{grid-template-columns:1fr}.professional-booking-summary{position:static;order:-1}.professional-service-grid,.professional-provider-grid{grid-template-columns:1fr}.professional-booking-fields{grid-template-columns:1fr}.professional-booking-card{padding:17px;border-radius:20px}.professional-booking-logo{width:62px;height:62px;border-radius:20px}.professional-booking-contact{display:none}}
 </style></head>
 <body class="menu-loading">
+
+<main id="professional-booking-app" class="professional-booking" hidden></main>
 
 <header class="hero">
   <div class="wrap">
@@ -838,6 +851,17 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     const savedZones=Array.isArray(r.delivery_zones)?r.delivery_zones:[];const deliveryMode=(savedZones.length&&r.latitude!=null&&r.longitude!=null)?"distance":(r.delivery_pricing_mode||"fixed");CONFIG.delivery={mode:deliveryMode,fixed:Number(r.delivery_fixed_price||0),zones:savedZones,lat:r.latitude==null?null:Number(r.latitude),lng:r.longitude==null?null:Number(r.longitude)};
     window.__businessType=String(r.business_type||"restaurant").toLowerCase();
     window.__restaurantId=r.id;
+    if(window.__businessType==="professional"){
+      window.__tableQrContext=null;
+      const [publicCatalog,bookingCatalog]=await Promise.all([
+        db.rpc("get_public_professional_catalog",{p_slug:r.slug}),
+        db.rpc("get_professional_public_catalog",{p_restaurant_id:r.id})
+      ]);
+      if(publicCatalog.error)throw new Error("No se pudo cargar la página de reservas: "+publicCatalog.error.message);
+      if(!publicCatalog.data?.restaurant)throw new Error("Este profesional no está disponible para reservas.");
+      window.__professionalCatalog={...publicCatalog.data,booking:bookingCatalog.data?.booking||{timezone:r.timezone,currency_code:r.currency_code,locale:r.locale,max_days:60,min_notice_hours:2}};
+      MENU=[];CONFIG.payments=[];return;
+    }
     if(["supermarket","minimarket"].includes(window.__businessType)){
       window.__tableQrContext=null;
       const [{data:retailRows,error:retailError},{data:countryConfig},{data:paymentMethods}]=await Promise.all([
@@ -897,6 +921,55 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
         if(vpRes.ok&&vp?.configured&&!CONFIG.payments.includes("QR Bolivia"))CONFIG.payments.push("QR Bolivia");
       }catch(e){console.warn("No se pudo consultar QR Bolivia",e)}
     }
+  }
+  function renderProfessionalPublicBooking(){
+    const catalog=window.__professionalCatalog||{},restaurant=catalog.restaurant||{},booking=catalog.booking||{},services=Array.isArray(catalog.services)?catalog.services:[],providers=Array.isArray(catalog.providers)?catalog.providers:[],app=document.getElementById("professional-booking-app");
+    if(!app)return;
+    const e=value=>String(value??"").replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#039;"}[c]));
+    const locale=booking.locale||restaurant.locale||"es-CL",timezone=booking.timezone||restaurant.timezone||"America/Santiago",currency=booking.currency_code||restaurant.currency_code||"CLP";
+    const cash=value=>new Intl.NumberFormat(locale,{style:"currency",currency,maximumFractionDigits:Math.abs(Number(value||0)%1)>0?2:0}).format(Number(value||0));
+    const localDate=value=>new Intl.DateTimeFormat("en-CA",{timeZone:timezone,year:"numeric",month:"2-digit",day:"2-digit"}).format(value||new Date());
+    const addDays=(dateText,days)=>{const d=new Date(dateText+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)};
+    const state={service:null,provider:null,date:localDate(),slot:null,loading:false};
+    document.body.classList.add("professional-booking-mode");app.hidden=false;document.title=(restaurant.name||"Reservas")+" | Reservas online";
+    app.innerHTML='<div class="professional-booking-shell"><header class="professional-booking-hero"><div class="professional-booking-brand"><div class="professional-booking-logo">'+(restaurant.logo_url?'<img src="'+e(restaurant.logo_url)+'" alt="">':'✦')+'</div><div><span class="professional-booking-kicker">Reservas online</span><h1>'+e(restaurant.name||"Servicios profesionales")+'</h1><p class="professional-booking-address">'+e(restaurant.address||"Selecciona un servicio y reserva tu hora")+'</p></div></div><div class="professional-booking-contact">'+(restaurant.whatsapp?'<a href="https://wa.me/'+e(String(restaurant.whatsapp).replace(/\D/g,""))+'" target="_blank" rel="noopener">WhatsApp</a>':'')+'<button id="professional-theme" type="button">◐ Tema</button></div></header><div class="professional-booking-layout"><div><section class="professional-booking-card"><div class="professional-booking-step"><span>1</span><div><h2>Elige el servicio</h2><p>Duración y precio visibles antes de reservar.</p></div></div><div id="public-professional-services" class="professional-service-grid"></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>2</span><div><h2>Elige al profesional</h2><p>Solo mostramos quienes atienden el servicio seleccionado.</p></div></div><div id="public-professional-providers" class="professional-provider-grid"><p class="professional-summary-empty">Primero selecciona un servicio.</p></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>3</span><div><h2>Fecha y hora</h2><p>Los horarios ocupados o bloqueados no aparecen.</p></div></div><label style="font-weight:800">Fecha<input id="public-professional-date" type="date" value="'+e(state.date)+'" min="'+e(state.date)+'" max="'+e(addDays(state.date,Number(booking.max_days||60)))+'"></label><div id="public-professional-slots" class="professional-slots"><p class="professional-summary-empty">Elige servicio y profesional para consultar horarios.</p></div></section><section class="professional-booking-card" style="margin-top:18px"><div class="professional-booking-step"><span>4</span><div><h2>Tus datos</h2><p>Los usaremos únicamente para gestionar esta reserva.</p></div></div><div class="professional-booking-fields"><label>Nombre completo<input id="public-professional-name" autocomplete="name" required></label><label>Teléfono<input id="public-professional-phone" type="tel" autocomplete="tel" required></label><label>Correo (opcional)<input id="public-professional-email" type="email" autocomplete="email"></label><label>Nota (opcional)<textarea id="public-professional-notes" placeholder="Información importante para la atención"></textarea></label></div><button id="public-professional-submit" class="professional-booking-submit" type="button" disabled>Confirmar reserva</button><div id="public-professional-status" class="professional-booking-status" hidden></div></section></div><aside class="professional-booking-card professional-booking-summary"><span class="professional-booking-kicker">Tu reserva</span><div id="public-professional-summary"><p class="professional-summary-empty">Selecciona un servicio para comenzar.</p></div></aside></div></div>';
+    const serviceBox=document.getElementById("public-professional-services"),providerBox=document.getElementById("public-professional-providers"),dateInput=document.getElementById("public-professional-date"),slotBox=document.getElementById("public-professional-slots"),submit=document.getElementById("public-professional-submit"),status=document.getElementById("public-professional-status"),summary=document.getElementById("public-professional-summary");
+    serviceBox.innerHTML=services.map(s=>'<button class="professional-choice" type="button" data-service="'+Number(s.id)+'"><strong>'+e(s.name)+'</strong><small>'+e(s.description||"Servicio profesional")+'</small><span class="professional-choice-price">'+e(cash(s.price))+' · '+Number(s.duration_minutes)+' min</span></button>').join("")||'<p class="professional-summary-empty">Este negocio todavía no publicó servicios.</p>';
+    function updateSummary(){
+      const dateLabel=state.date?new Intl.DateTimeFormat(locale,{dateStyle:"long",timeZone:"UTC"}).format(new Date(state.date+"T12:00:00Z")):"—",timeLabel=state.slot?new Intl.DateTimeFormat(locale,{hour:"2-digit",minute:"2-digit",timeZone:timezone}).format(new Date(state.slot)):"—";
+      summary.innerHTML=state.service?'<div class="professional-summary-line"><span>Servicio</span><b>'+e(state.service.name)+'</b></div><div class="professional-summary-line"><span>Profesional</span><b>'+e(state.provider?.name||"Por elegir")+'</b></div><div class="professional-summary-line"><span>Fecha</span><b>'+e(dateLabel)+'</b></div><div class="professional-summary-line"><span>Hora</span><b>'+e(timeLabel)+'</b></div><div class="professional-summary-line"><span>Duración</span><b>'+Number(state.service.duration_minutes)+' min</b></div><div class="professional-summary-line"><span>Total</span><b>'+e(cash(state.service.price))+'</b></div>'+(Number(booking.deposit_amount||0)>0?'<div class="professional-summary-line"><span>Anticipo requerido</span><b>'+e(cash(booking.deposit_amount))+'</b></div>':''):'<p class="professional-summary-empty">Selecciona un servicio para comenzar.</p>';
+      submit.disabled=!(state.service&&state.provider&&state.slot)||state.loading;
+    }
+    function renderProviders(){
+      const allowed=providers.filter(p=>(p.service_ids||[]).map(Number).includes(Number(state.service?.id)));
+      providerBox.innerHTML=allowed.map(p=>'<button class="professional-choice professional-provider-choice" type="button" data-provider="'+Number(p.id)+'"><span class="professional-provider-photo">'+(p.photo_url?'<img src="'+e(p.photo_url)+'" alt="">':'👤')+'</span><span><strong>'+e(p.name)+'</strong><small>'+e(p.specialty||"Profesional")+'</small></span></button>').join("")||'<p class="professional-summary-empty">No hay profesionales disponibles para este servicio.</p>';
+    }
+    async function loadSlots(){
+      state.slot=null;updateSummary();if(!state.service||!state.provider||!state.date){slotBox.innerHTML='<p class="professional-summary-empty">Completa servicio, profesional y fecha.</p>';return}
+      slotBox.innerHTML='<p class="professional-summary-empty">Buscando horarios disponibles…</p>';
+      const {data,error}=await db.rpc("get_professional_available_slots",{p_restaurant_id:Number(restaurant.id),p_service_id:Number(state.service.id),p_provider_id:Number(state.provider.id),p_date:state.date});
+      if(error){slotBox.innerHTML='<p class="professional-summary-empty">No pudimos consultar los horarios. Intenta nuevamente.</p>';trackClientError("professional_booking","slots_load_failure",error.message||"Error de horarios",false);return}
+      slotBox.innerHTML=(data||[]).map(row=>'<button class="professional-slot" type="button" data-slot="'+e(row.slot_start)+'">'+e(new Intl.DateTimeFormat(locale,{hour:"2-digit",minute:"2-digit",timeZone:timezone}).format(new Date(row.slot_start)))+'</button>').join("")||'<p class="professional-summary-empty">No quedan horarios disponibles para esta fecha.</p>';
+    }
+    serviceBox.addEventListener("click",event=>{const button=event.target.closest("[data-service]");if(!button)return;state.service=services.find(x=>Number(x.id)===Number(button.dataset.service));state.provider=null;state.slot=null;serviceBox.querySelectorAll(".professional-choice").forEach(x=>x.classList.toggle("selected",x===button));renderProviders();slotBox.innerHTML='<p class="professional-summary-empty">Ahora elige un profesional.</p>';updateSummary();trackClientEvent("professional_service_selected","booking",{service_id:state.service?.id})});
+    providerBox.addEventListener("click",event=>{const button=event.target.closest("[data-provider]");if(!button)return;state.provider=providers.find(x=>Number(x.id)===Number(button.dataset.provider));state.slot=null;providerBox.querySelectorAll(".professional-choice").forEach(x=>x.classList.toggle("selected",x===button));updateSummary();loadSlots();trackClientEvent("professional_provider_selected","booking",{provider_id:state.provider?.id})});
+    dateInput.addEventListener("change",()=>{state.date=dateInput.value;loadSlots()});
+    slotBox.addEventListener("click",event=>{const button=event.target.closest("[data-slot]");if(!button)return;state.slot=button.dataset.slot;slotBox.querySelectorAll(".professional-slot").forEach(x=>x.classList.toggle("selected",x===button));updateSummary()});
+    submit.addEventListener("click",async()=>{
+      const name=document.getElementById("public-professional-name").value.trim(),phone=document.getElementById("public-professional-phone").value.trim(),email=document.getElementById("public-professional-email").value.trim(),notes=document.getElementById("public-professional-notes").value.trim();
+      status.hidden=false;status.classList.remove("error");if(!name||!phone){status.classList.add("error");status.textContent="Completa tu nombre y teléfono.";return}
+      state.loading=true;submit.disabled=true;submit.textContent="Confirmando reserva…";
+      try{
+        const {data,error}=await db.rpc("create_public_professional_appointment",{p_restaurant_id:Number(restaurant.id),p_service_id:Number(state.service.id),p_provider_id:Number(state.provider.id),p_starts_at:state.slot,p_customer_name:name,p_customer_phone:phone,p_customer_email:email||null,p_notes:notes||null});
+        if(error)throw error;trackClientEvent("professional_booking_created","booking",{appointment_id:data?.id,service_id:state.service.id,provider_id:state.provider.id});
+        const when=new Intl.DateTimeFormat(locale,{dateStyle:"full",timeStyle:"short",timeZone:timezone}).format(new Date(state.slot));
+        const title=data?.status==="confirmed"?"Reserva confirmada":"Solicitud recibida";
+        const depositNote=data?.payment_status==="pending"&&Number(data?.deposit_amount||0)>0?'<p>Anticipo pendiente de <b>'+e(cash(data.deposit_amount))+'</b>. El negocio te indicará cómo pagarlo.</p>':'';
+        app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">✓</div><h2>'+e(title)+'</h2><p>'+e(state.service.name)+' con '+e(state.provider.name)+'<br><b>'+e(when)+'</b></p><p>Tu código de reserva es <b>#'+e(data?.id||"")+'</b>.</p>'+depositNote+'<button type="button" onclick="location.reload()">Crear otra reserva</button></section></div>';
+      }catch(error){status.classList.add("error");status.textContent=String(error?.message||"No se pudo crear la reserva").replace(/^.*?: /,"");trackClientError("professional_booking","booking_create_failure",error?.message||"Error de reserva",false);state.loading=false;submit.disabled=false;submit.textContent="Confirmar reserva";await loadSlots()}
+    });
+    document.getElementById("professional-theme")?.addEventListener("click",()=>{const root=document.documentElement,next=root.getAttribute("data-theme")==="dark"?"light":"dark";root.setAttribute("data-theme",next);try{localStorage.setItem("menu_theme",next)}catch(_){}});
+    updateSummary();
   }
     /* =====================  FIN DE LA CONFIGURACIÓN  ===================== */
 
@@ -1046,6 +1119,10 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
     await trackClientError("menu","menu_load_failure",loadError?.message||"No se pudo cargar el restaurante",false);
     document.body.innerHTML = `<main style="max-width:620px;margin:12vh auto;padding:28px;font-family:system-ui;text-align:center"><h1>No pudimos cargar este restaurante</h1><p>Revisa que el enlace sea correcto e inténtalo nuevamente.</p><button onclick="location.reload()" style="padding:12px 20px;border:0;border-radius:999px;font-weight:700;cursor:pointer">Reintentar</button></main>`;
     document.body.classList.remove("menu-loading");document.body.classList.add("menu-ready");
+    return;
+  }
+  if(window.__businessType==="professional"){
+    renderProfessionalPublicBooking();
     return;
   }
   if(window.__demoMode){
@@ -1956,5 +2033,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.24</footer></body>
+<footer class="site-version">Versión v1.6.25</footer></body>
 </html>
