@@ -1,11 +1,7 @@
-const YUMMYPRO_CUSTOMER_CACHE="yummypro-client-app-v1616";
+const YUMMYPRO_CUSTOMER_CACHE="yummypro-client-v1617";
 const CUSTOMER_CORE=["/offline.html","/client.webmanifest","/icon-192.png","/icon-512.png","/apple-touch-icon.png"];
-self.addEventListener("install",event=>{
- event.waitUntil(caches.open(YUMMYPRO_CUSTOMER_CACHE).then(c=>c.addAll(CUSTOMER_CORE)).then(()=>self.skipWaiting()));
-});
-self.addEventListener("activate",event=>{
- event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>(k.startsWith("yummypro-customer-")||k.startsWith("yummypro-client-app-"))&&k!==YUMMYPRO_CUSTOMER_CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
-});
+self.addEventListener("install",event=>{event.waitUntil(caches.open(YUMMYPRO_CUSTOMER_CACHE).then(c=>c.addAll(CUSTOMER_CORE)).then(()=>self.skipWaiting()))});
+self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>(k.startsWith("yummypro-customer-")||k.startsWith("yummypro-client-app-")||k.startsWith("yummypro-client-"))&&k!==YUMMYPRO_CUSTOMER_CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener("message",event=>{if(event.data?.type==="SKIP_WAITING")self.skipWaiting()});
 self.addEventListener("fetch",event=>{
  const req=event.request;if(req.method!=="GET")return;

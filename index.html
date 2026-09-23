@@ -12,7 +12,7 @@
     const params=new URLSearchParams(location.search);
     const standalone=window.matchMedia?.("(display-mode: standalone)")?.matches===true||window.navigator.standalone===true;
     const platformHost=location.hostname.replace(/^www\./,"")==="menu.yummypro.online";
-    if(platformHost&&(standalone||["pwa","client-pwa-v2"].includes(params.get("source")))&&!params.get("r")&&!params.get("table")&&!params.get("demo")&&!params.get("track_order")){
+    if(platformHost&&(standalone||["pwa","client-pwa-v2","client-pwa-v3"].includes(params.get("source")))&&!params.get("r")&&!params.get("table")&&!params.get("demo")&&!params.get("track_order")){
       const last=localStorage.getItem("yummypro_last_restaurant");
       if(last){
         params.set("r",last);params.delete("source");
@@ -28,7 +28,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="YummyPro">
-<link rel="manifest" href="/client.webmanifest?v=1616">
+<link rel="manifest" href="/client.webmanifest?v=1617">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" sizes="192x192" href="/icon-192.png" type="image/png">
 <meta name="theme-color" content="#000000">
@@ -1710,7 +1710,7 @@ html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;h
   update();
 })();
 </script>
-<script id="customer-pwa-v1616">
+<script id="customer-pwa-v1617">
 let yummyCustomerInstallPrompt=null;
 function customerPwaStandalone(){return window.matchMedia?.("(display-mode: standalone)")?.matches===true||window.navigator.standalone===true}
 function refreshCustomerInstallButton(){
@@ -1733,7 +1733,20 @@ window.addEventListener("DOMContentLoaded",async()=>{
  document.getElementById("pwa-install-btn")?.addEventListener("click",installCustomerPwa);
  try{
   if("serviceWorker" in navigator){
-   const reg=await navigator.serviceWorker.register("/client-pwa-sw.js");
+   const migrationKey="yummypro_client_pwa_identity_v1617";
+   if(!localStorage.getItem(migrationKey)){
+    const regs=await navigator.serviceWorker.getRegistrations();
+    for(const oldReg of regs){
+     const script=oldReg.active?.scriptURL||oldReg.waiting?.scriptURL||oldReg.installing?.scriptURL||"";
+     if(script&&!script.endsWith("/client-pwa-sw.js"))await oldReg.unregister().catch(()=>{});
+    }
+    if("caches" in window){
+     const keys=await caches.keys();
+     await Promise.all(keys.filter(k=>k.startsWith("yummypro-customer-")||k.startsWith("yummypro-client-app-")).map(k=>caches.delete(k)));
+    }
+    localStorage.setItem(migrationKey,"1");
+   }
+   const reg=await navigator.serviceWorker.register("/client-pwa-sw.js",{scope:"/"});
    await reg.update().catch(()=>{});
    navigator.serviceWorker.addEventListener("controllerchange",()=>{
     if(customerPwaStandalone()||window.__customerPwaReloading)return;
@@ -1744,5 +1757,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.16</footer></body>
+<footer class="site-version">Versión v1.6.17</footer></body>
 </html>
