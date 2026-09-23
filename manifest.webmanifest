@@ -1,7 +1,7 @@
 {
   "id": "/",
   "name": "YummyPro Cliente",
-  "short_name": "YummyPro",
+  "short_name": "YummyPro Cliente",
   "description": "Menú digital, pedidos y seguimiento para clientes YummyPro",
   "lang": "es",
   "start_url": "/?source=pwa",
@@ -9,9 +9,28 @@
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
-  "categories": ["food","shopping"],
+  "categories": [
+    "food",
+    "shopping"
+  ],
   "icons": [
-    {"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
-    {"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
