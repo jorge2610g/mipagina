@@ -287,7 +287,7 @@ section[data-cat]{padding-top:38px}section[data-cat] h2{font-size:clamp(1.35rem,
 html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;height:auto}input,select,textarea,button{max-width:100%}@media(max-width:900px){.wrap{width:min(100% - 24px,1180px)!important;margin-left:auto!important;margin-right:auto!important}.top,.row.between{gap:10px;flex-wrap:wrap}.tabs{display:flex!important;overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch;padding-bottom:6px}.tabs .tab{flex:0 0 auto!important}.grid{grid-template-columns:1fr!important}.span4,.span5,.span6,.span7,.span8,.span12{grid-column:1/-1!important;width:100%!important}.card{max-width:100%!important}}@media(max-width:600px){body{font-size:15px}.wrap{width:min(100% - 16px,1180px)!important}.top{align-items:flex-start!important}.top>.row{width:100%;display:flex;flex-wrap:wrap}.card{padding:16px!important}.row{flex-wrap:wrap}input,select,textarea{width:100%!important;min-width:0!important}button,.btn{min-height:44px}table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}}
 
 /* =========================================================
-   YummyPro Menú Público · Rediseño completo v1.6.44
+   YummyPro Menú Público · Rediseño completo v1.6.45
    Inspirado en una app premium de delivery; conserva toda la lógica.
    ========================================================= */
 :root{
@@ -1543,6 +1543,25 @@ body.vertical-professional .professional-booking-summary{
   body.vertical-professional .professional-choice{min-height:96px;padding:13px!important}
   body.vertical-professional .professional-booking-summary{order:-1!important}
 }
+
+
+/* v1.6.45 · Salida segura de pagos profesionales */
+.professional-return-shell{padding-top:min(9vh,72px)!important}
+.professional-return-actions{
+  display:flex;justify-content:center;gap:9px;flex-wrap:wrap;margin-top:16px
+}
+.professional-return-actions button{
+  min-height:44px;padding:11px 16px;border:0;border-radius:13px;
+  background:#211c3c;color:#fff;font:850 14px var(--body);cursor:pointer
+}
+.professional-return-actions button.secondary{
+  background:#f2f1f7;color:#302953;border:1px solid #ded9eb
+}
+@media(max-width:780px){
+  .professional-return-shell{padding-top:22px!important}
+  .professional-return-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .professional-return-actions button{width:100%}
+}
 </style></head>
 <body class="menu-loading">
 
@@ -2274,24 +2293,49 @@ body.vertical-professional .professional-booking-summary{
     const addDays=(dateText,days)=>{const d=new Date(dateText+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)};
     const paymentReturnKey="yummypro_professional_payment_return";
     const paymentRedirectKey="yummypro_professional_mp_redirecting";
+    const currentProfessionalId=Number(restaurant.id||window.__restaurantId||0);
     const paymentReturnRaw=localStorage.getItem(paymentReturnKey);
+    const paymentReturnMaxAgeMs=2*60*60*1000;
+    const readProfessionalReturnRef=raw=>{try{return JSON.parse(raw||"null")}catch(_){return null}};
+    const hasMercadoPagoReturnParams=()=>{
+      const q=new URLSearchParams(location.search);
+      return ["payment_id","collection_id","collection_status","preference_id","merchant_order_id","external_reference"].some(k=>q.has(k))
+        || ["approved","pending","rejected","cancelled","in_process"].includes(String(q.get("status")||"").toLowerCase());
+    };
+    const professionalReturnIsRedirecting=()=>{try{return sessionStorage.getItem(paymentRedirectKey)==="1"}catch(_){return false}};
+    const clearProfessionalPaymentReturn=()=>{
+      try{localStorage.removeItem(paymentReturnKey)}catch(_){}
+      try{sessionStorage.removeItem(paymentRedirectKey)}catch(_){}
+    };
+    const validProfessionalPaymentReturn=raw=>{
+      const ref=readProfessionalReturnRef(raw);
+      if(!ref?.id||!ref?.token)return null;
+      const redirecting=professionalReturnIsRedirecting();
+      const fromPaymentProvider=hasMercadoPagoReturnParams();
+      const refRestaurantId=Number(ref.restaurant_id||0);
+      if(refRestaurantId&&currentProfessionalId&&refRestaurantId!==currentProfessionalId)return null;
+      if(ref.created_at&&Date.now()-Number(ref.created_at)>paymentReturnMaxAgeMs)return null;
+      // Referencias antiguas no identificaban el negocio: solo se aceptan si esta navegación
+      // viene realmente del flujo de Mercado Pago. Así no bloquean páginas abiertas desde Admin.
+      if(!refRestaurantId&&!redirecting&&!fromPaymentProvider)return null;
+      return ref;
+    };
     const resumeProfessionalPaymentReturn=()=>{
-      let redirecting=false;try{redirecting=sessionStorage.getItem(paymentRedirectKey)==="1"}catch(_){}
-      if(!redirecting||!localStorage.getItem(paymentReturnKey))return;
+      if(!professionalReturnIsRedirecting()||!validProfessionalPaymentReturn(localStorage.getItem(paymentReturnKey)))return;
       if(document.getElementById("professional-return-status"))return;
-      if(document.getElementById("professional-mp-pay")){
-        try{sessionStorage.removeItem(paymentRedirectKey)}catch(_){}
-        location.reload();
-      }
+      if(document.getElementById("professional-mp-pay"))location.reload();
     };
     window.addEventListener("pageshow",()=>setTimeout(resumeProfessionalPaymentReturn,0));
     document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(resumeProfessionalPaymentReturn,180)});
     const renderProfessionalPaymentReturn=async raw=>{
-      let ref=null;try{ref=JSON.parse(raw||"null")}catch(_){}
+      const ref=validProfessionalPaymentReturn(raw);
       try{sessionStorage.removeItem(paymentRedirectKey)}catch(_){}
-      if(!ref?.id||!ref?.token){localStorage.removeItem(paymentReturnKey);location.reload();return}
+      if(!ref){clearProfessionalPaymentReturn();return false}
       document.body.classList.add("professional-booking-mode");app.hidden=false;
-      app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">↻</div><h2>Revisando estado del pago</h2><p>Consultamos Mercado Pago para confirmar el resultado. La reserva solo se crea cuando el pago esté aprobado.</p><p id="professional-return-status" class="professional-booking-status">Verificando…</p></section></div>';
+      app.innerHTML='<div class="professional-booking-shell professional-return-shell"><section class="professional-booking-card professional-booking-success"><div class="check">↻</div><h2>Revisando estado del pago</h2><p>Consultamos Mercado Pago para confirmar el resultado. La reserva solo se crea cuando el pago esté aprobado.</p><p id="professional-return-status" class="professional-booking-status">Verificando…</p><div class="professional-return-actions"><button type="button" id="professional-return-back">Volver a reservas</button><button type="button" id="professional-return-exit" class="secondary">Salir</button></div></section></div>';
+      const goBackToProfessional=()=>{clearProfessionalPaymentReturn();location.reload()};
+      document.getElementById("professional-return-back")?.addEventListener("click",goBackToProfessional);
+      document.getElementById("professional-return-exit")?.addEventListener("click",()=>{clearProfessionalPaymentReturn();if(history.length>1)history.back();else location.href=location.origin});
       let automaticChecks=0;
       const check=async(manual=false)=>{
         const box=document.getElementById("professional-return-status");
@@ -2305,7 +2349,14 @@ body.vertical-professional .professional-booking-summary{
             body:JSON.stringify({intent_id:Number(ref.id),public_token:String(ref.token)})
           });
         }catch(_){}
-        const {data,error}=await db.rpc("get_public_professional_booking_payment_status",{p_intent_id:Number(ref.id),p_public_token:String(ref.token)});
+        let data=null,error=null;
+        try{
+          const result=await Promise.race([
+            db.rpc("get_public_professional_booking_payment_status",{p_intent_id:Number(ref.id),p_public_token:String(ref.token)}),
+            new Promise((_,reject)=>setTimeout(()=>reject(new Error("timeout")),12000))
+          ]);
+          data=result?.data;error=result?.error;
+        }catch(timeoutError){error=timeoutError}
         if(error||!data){
           box.classList.add("error");
           box.innerHTML='No pudimos verificar el pago ahora. <button id="professional-return-refresh" type="button">Intentar de nuevo</button>';
@@ -2314,12 +2365,12 @@ body.vertical-professional .professional-booking-summary{
         }
         const when=new Intl.DateTimeFormat(data.locale||locale,{dateStyle:"full",timeStyle:"short",timeZone:data.timezone||timezone}).format(new Date(data.starts_at));
         if(data.payment_status==="approved"&&data.appointment_id){
-          localStorage.removeItem(paymentReturnKey);
+          clearProfessionalPaymentReturn();
           app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">✓</div><h2>Pago aprobado y reserva creada</h2><p>'+e(data.service_name)+' con '+e(data.provider_name)+'<br><b>'+e(when)+'</b></p><p>Tu reserva es <b>#'+e(data.appointment_id)+'</b>. Pagado: <b>'+e(cash(data.paid_amount||data.amount_due||0))+'</b>.</p><button type="button" onclick="localStorage.setItem(\'yummypro_professional_open_reservations\',\'1\');location.reload()">Ver mis reservas</button><button type="button" onclick="location.reload()">Volver a reservas</button></section></div>';
           return;
         }
         if(["rejected","cancelled","expired"].includes(String(data.payment_status||""))||["rejected","cancelled","expired"].includes(String(data.status||""))){
-          localStorage.removeItem(paymentReturnKey);
+          clearProfessionalPaymentReturn();
           app.innerHTML='<div class="professional-booking-shell" style="padding-top:9vh"><section class="professional-booking-card professional-booking-success"><div class="check">!</div><h2>El pago no se completó</h2><p><b>No se creó ninguna reserva.</b> El horario se libera para que puedas intentarlo nuevamente.</p><button type="button" onclick="location.reload()">Elegir otro horario</button></section></div>';
           return;
         }
@@ -2334,7 +2385,11 @@ body.vertical-professional .professional-booking-summary{
       };
       await check(false);
     };
-    if(paymentReturnRaw){renderProfessionalPaymentReturn(paymentReturnRaw);return}
+    if(paymentReturnRaw){
+      const validReturn=validProfessionalPaymentReturn(paymentReturnRaw);
+      if(validReturn){renderProfessionalPaymentReturn(paymentReturnRaw);return}
+      clearProfessionalPaymentReturn();
+    }
     const state={service:null,provider:null,date:localDate(),slot:null,loading:false};
     const professionalAccountMarkup='<div id="professional-account-overlay" class="professional-overlay" hidden><section class="professional-overlay-card"><div class="professional-overlay-head"><div><span class="professional-booking-kicker">Cuenta cliente</span><h2>Mi cuenta</h2></div><button id="professional-account-close" class="professional-overlay-close" type="button" aria-label="Cerrar">✕</button></div><p id="professional-account-user" class="professional-booking-address">Inicia sesión para guardar y seguir tus reservas.</p><div id="professional-account-guest"><div class="professional-auth-tabs"><button id="professional-login-tab" class="active" type="button">Iniciar sesión</button><button id="professional-register-tab" type="button">Crear cuenta</button></div><form id="professional-login-form" class="professional-auth-form"><input id="professional-login-email" type="email" autocomplete="email" placeholder="Correo electrónico" required><input id="professional-login-password" type="password" autocomplete="current-password" placeholder="Contraseña" minlength="6" required><button class="professional-auth-primary" type="submit">Entrar a mi cuenta</button></form><form id="professional-register-form" class="professional-auth-form" hidden><input id="professional-register-name" type="text" autocomplete="name" placeholder="Nombre y apellido" required><input id="professional-register-phone" type="tel" autocomplete="tel" placeholder="Teléfono" required><input id="professional-register-email" type="email" autocomplete="email" placeholder="Correo electrónico" required><input id="professional-register-password" type="password" autocomplete="new-password" placeholder="Contraseña (mínimo 6 caracteres)" minlength="6" required><button class="professional-auth-primary" type="submit">Crear mi cuenta</button></form><p id="professional-account-message" class="professional-account-message"></p></div><div id="professional-account-auth" hidden><p>Tu cuenta está conectada.</p><button id="professional-logout" class="professional-auth-secondary" type="button">Cerrar sesión</button></div></section></div><div id="professional-reservations-overlay" class="professional-overlay" hidden><section class="professional-overlay-card"><div class="professional-overlay-head"><div><span class="professional-booking-kicker">Seguimiento</span><h2>Mis reservas</h2></div><button id="professional-reservations-close" class="professional-overlay-close" type="button" aria-label="Cerrar">✕</button></div><div class="professional-reservations-refresh"><span id="professional-reservations-updated">Se actualiza automáticamente.</span><button id="professional-reservations-reload" type="button">Actualizar</button></div><div id="professional-reservations-list" class="professional-reservation-list"><p class="professional-summary-empty">Inicia sesión para ver tus reservas.</p></div></section></div>';
     document.body.classList.add("professional-booking-mode");app.hidden=false;document.title=(restaurant.name||"Reservas")+" | Reservas online";
@@ -2527,14 +2582,20 @@ body.vertical-professional .professional-booking-summary{
         const methodsHtml=(mpReady?'<button class="professional-payment-method" id="professional-mp-pay" type="button"><b>Mercado Pago</b><span>Pago online seguro · la reserva se crea al aprobarse</span></button>':'')+
           manualMethods.map(m=>'<button class="professional-payment-method" type="button" data-professional-payment-method="'+e(m.id)+'"><b>'+e(m.label||"Otro método")+'</b><span>'+e([m.institution,m.method_type==="bank_transfer"?"Transferencia":m.method_type].filter(Boolean).join(" · "))+'</span></button>').join("");
 
-        app.innerHTML='<div class="professional-booking-shell" style="padding-top:5vh"><section class="professional-booking-card professional-booking-success"><div class="check">⌛</div><h2>Completa el pago</h2><p>'+e(state.service.name)+' con '+e(state.provider.name)+'<br><b>'+e(when)+'</b></p><div class="professional-payment-summary"><span>'+e(paymentType)+'</span><strong>'+e(cash(paymentDue))+'</strong><span>Total del servicio: '+e(cash(totalAmount))+'</span></div><p class="professional-booking-status"><b>Aún no existe una reserva.</b> Este horario está bloqueado temporalmente mientras completas el pago.</p><h3>Elige cómo pagar</h3><div id="professional-payment-methods" class="professional-payment-methods">'+methodsHtml+'</div><div id="professional-payment-manual"></div><p id="professional-payment-status" class="professional-booking-status" hidden></p></section></div>';
+        app.innerHTML='<div class="professional-booking-shell" style="padding-top:5vh"><section class="professional-booking-card professional-booking-success"><div class="check">⌛</div><h2>Completa el pago</h2><p>'+e(state.service.name)+' con '+e(state.provider.name)+'<br><b>'+e(when)+'</b></p><div class="professional-payment-summary"><span>'+e(paymentType)+'</span><strong>'+e(cash(paymentDue))+'</strong><span>Total del servicio: '+e(cash(totalAmount))+'</span></div><p class="professional-booking-status"><b>Aún no existe una reserva.</b> Este horario está bloqueado temporalmente mientras completas el pago.</p><h3>Elige cómo pagar</h3><div id="professional-payment-methods" class="professional-payment-methods">'+methodsHtml+'</div><div id="professional-payment-manual"></div><p id="professional-payment-status" class="professional-booking-status" hidden></p><div class="professional-return-actions"><button type="button" id="professional-payment-back" class="secondary">← Volver a reservas</button></div></section></div>';
+        document.getElementById("professional-payment-back")?.addEventListener("click",()=>{clearProfessionalPaymentReturn();location.reload()});
 
         const payStatus=document.getElementById("professional-payment-status");
         document.getElementById("professional-mp-pay")?.addEventListener("click",async event=>{
           const pay=event.currentTarget;pay.disabled=true;pay.innerHTML='<b>Abriendo Mercado Pago…</b><span>Preparando pago seguro</span>';
           if(payStatus){payStatus.hidden=false;payStatus.classList.remove("error");payStatus.textContent="Preparando pago seguro…"}
           try{
-            const returnRef={id:Number(data.intent_id),token:String(data.public_token||"")};
+            const returnRef={
+              id:Number(data.intent_id),
+              token:String(data.public_token||""),
+              restaurant_id:currentProfessionalId,
+              created_at:Date.now()
+            };
             localStorage.setItem(paymentReturnKey,JSON.stringify(returnRef));
             const resp=await fetch(SUPABASE_URL+"/functions/v1/create-professional-appointment-payment",{
               method:"POST",
@@ -3741,5 +3802,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.44</footer></body>
+<footer class="site-version">Versión v1.6.45</footer></body>
 </html>
