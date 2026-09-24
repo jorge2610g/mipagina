@@ -287,341 +287,339 @@ section[data-cat]{padding-top:38px}section[data-cat] h2{font-size:clamp(1.35rem,
 html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;height:auto}input,select,textarea,button{max-width:100%}@media(max-width:900px){.wrap{width:min(100% - 24px,1180px)!important;margin-left:auto!important;margin-right:auto!important}.top,.row.between{gap:10px;flex-wrap:wrap}.tabs{display:flex!important;overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch;padding-bottom:6px}.tabs .tab{flex:0 0 auto!important}.grid{grid-template-columns:1fr!important}.span4,.span5,.span6,.span7,.span8,.span12{grid-column:1/-1!important;width:100%!important}.card{max-width:100%!important}}@media(max-width:600px){body{font-size:15px}.wrap{width:min(100% - 16px,1180px)!important}.top{align-items:flex-start!important}.top>.row{width:100%;display:flex;flex-wrap:wrap}.card{padding:16px!important}.row{flex-wrap:wrap}input,select,textarea{width:100%!important;min-width:0!important}button,.btn{min-height:44px}table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}}
 
 /* =========================================================
-   YummyPro Menú Público · Rediseño premium v1.6.36
-   Solo presentación: conserva lógica, eventos, carrito y pagos.
+   YummyPro Menú Público · Rediseño completo v1.6.37
+   Inspirado en una app premium de delivery; conserva toda la lógica.
    ========================================================= */
 :root{
   --menu-accent:var(--mustard);
-  --menu-accent-ink:#16120a;
-  --menu-card:#ffffff;
-  --menu-page:#f7f7f5;
-  --menu-border:#ecebe7;
-  --menu-shadow:0 10px 35px rgba(28,25,18,.08);
-  --menu-shadow-strong:0 18px 50px rgba(28,25,18,.14);
+  --menu-accent-ink:#17130b;
+  --menu-page:#f6f6f3;
+  --menu-card:#fff;
+  --menu-soft:#f1f1ee;
+  --menu-border:#e8e7e2;
+  --menu-ink:#17191e;
+  --menu-shadow:0 8px 26px rgba(24,22,16,.08);
+  --menu-shadow-lg:0 18px 55px rgba(24,22,16,.14);
 }
 :root[data-theme="dark"]{
-  --menu-card:#111318;
-  --menu-page:#08090b;
-  --menu-border:#24272e;
-  --menu-shadow:0 10px 35px rgba(0,0,0,.32);
-  --menu-shadow-strong:0 18px 55px rgba(0,0,0,.48);
+  --menu-page:#08090b;--menu-card:#111318;--menu-soft:#181b20;--menu-border:#262a31;--menu-ink:#fff;
+  --menu-shadow:0 8px 26px rgba(0,0,0,.34);--menu-shadow-lg:0 18px 55px rgba(0,0,0,.5)
 }
-body:not(.professional-booking-mode){
-  background:var(--menu-page)!important;
-  letter-spacing:-.012em;
-}
-body:not(.professional-booking-mode) .wrap{max-width:1180px}
+body:not(.professional-booking-mode){background:var(--menu-page)!important;color:var(--ink)}
+body:not(.professional-booking-mode) .wrap{max-width:1160px}
 
-/* Cabecera tipo app */
+/* App header */
 body:not(.professional-booking-mode) .hero{
-  background:var(--menu-card)!important;
-  color:var(--ink)!important;
-  border-radius:0!important;
-  padding:18px 0 22px!important;
-  border-bottom:1px solid var(--menu-border);
-  box-shadow:none!important;
+  padding:14px 0 16px!important;background:var(--menu-card)!important;color:var(--ink)!important;
+  border-radius:0!important;border-bottom:1px solid var(--menu-border);box-shadow:none!important
 }
 body:not(.professional-booking-mode) .hero:before,
 body:not(.professional-booking-mode) .hero:after{display:none!important}
-body:not(.professional-booking-mode) .hero-top{align-items:center!important;gap:14px}
-body:not(.professional-booking-mode) .hero-meta{
-  order:2;flex:1;min-width:0;
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap
-}
+.menu-appbar{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.menu-brand{display:flex;align-items:center;gap:12px;min-width:0}
 body:not(.professional-booking-mode) .hero-art{
-  order:1;width:72px!important;height:72px!important;
-  border:0!important;border-radius:21px!important;
-  background:color-mix(in srgb,var(--menu-accent) 16%,var(--menu-card))!important;
-  box-shadow:none!important;padding:7px!important;transform:none!important
+  width:58px!important;height:58px!important;flex:none;border:0!important;border-radius:17px!important;
+  padding:5px!important;background:color-mix(in srgb,var(--menu-accent) 15%,var(--menu-card))!important;
+  box-shadow:none!important;transform:none!important
 }
-body:not(.professional-booking-mode) .hero-meta .pill{
-  order:1;background:#e9f8ef!important;color:#11783d!important;
-  border:1px solid #ccebd7;border-radius:999px;padding:6px 10px;font-size:.77rem
-}
-body:not(.professional-booking-mode) .hero-meta p{
-  margin:0!important;padding:0!important;background:none!important;
-  color:var(--muted);font-weight:600;font-size:.78rem
-}
+.menu-brand-copy{min-width:0}
 body:not(.professional-booking-mode) .hero h1{
-  margin:12px 0 0!important;
-  font-family:var(--body)!important;font-weight:900!important;
-  font-size:clamp(1.7rem,4vw,2.45rem)!important;
-  line-height:1.08!important;letter-spacing:-.045em!important;
-  max-width:none!important
+  margin:0!important;font-family:var(--body)!important;font-size:1.38rem!important;font-weight:950!important;
+  line-height:1.05!important;letter-spacing:-.045em!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
 }
-body:not(.professional-booking-mode) .lead{
-  margin:5px 0 0!important;color:var(--muted);
-  font-size:.93rem!important;line-height:1.45;max-width:64ch!important
+.menu-status-line{display:flex;align-items:center;gap:7px;margin-top:5px;min-width:0}
+body:not(.professional-booking-mode) .hero .pill{
+  padding:4px 8px!important;border-radius:999px;background:#eaf8ef!important;color:#117640!important;
+  font-size:.67rem!important;font-weight:850!important
 }
+.menu-status-line #hours{font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu-app-actions{display:flex;gap:7px;flex:none}
+.app-circle{
+  width:40px;height:40px;border:1px solid var(--menu-border);border-radius:50%;background:var(--menu-card);color:var(--ink);
+  display:grid;place-items:center;font-size:1.05rem;cursor:pointer
+}
+body:not(.professional-booking-mode) .lead{margin:9px 0 0!important;font-size:.82rem!important;color:var(--muted);max-width:70ch!important}
+.quick-order-selector{
+  display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:14px;padding:4px;
+  border-radius:16px;background:var(--menu-soft);border:1px solid var(--menu-border)
+}
+.quick-order-selector button{
+  min-height:43px;border:0;border-radius:12px;background:transparent;color:var(--ink);font-weight:850;cursor:pointer
+}
+.quick-order-selector button.active{
+  background:var(--menu-accent);color:var(--menu-accent-ink);box-shadow:0 6px 18px color-mix(in srgb,var(--menu-accent) 25%,transparent)
+}
+.menu-location-row{
+  display:flex;align-items:center;gap:8px;margin-top:10px;padding:0 4px;color:var(--muted);font-size:.78rem;font-weight:650
+}
+.menu-location-icon{width:24px;height:24px;display:grid;place-items:center;border-radius:9px;background:color-mix(in srgb,var(--menu-accent) 12%,var(--menu-card))}
 body:not(.professional-booking-mode) .top-actions{
-  margin-top:15px!important;display:flex!important;gap:8px!important;
-  overflow-x:auto;flex-wrap:nowrap!important;padding-bottom:2px;scrollbar-width:none
+  display:flex!important;gap:7px!important;overflow-x:auto;flex-wrap:nowrap!important;margin-top:11px!important;scrollbar-width:none
 }
 body:not(.professional-booking-mode) .top-actions::-webkit-scrollbar{display:none}
 body:not(.professional-booking-mode) .mini-btn{
-  flex:0 0 auto;min-height:38px!important;padding:7px 12px!important;
-  background:var(--surface)!important;color:var(--ink)!important;
-  border:1px solid var(--menu-border)!important;border-radius:12px!important;
-  box-shadow:none!important;font-size:.79rem!important
+  flex:0 0 auto;min-height:34px!important;padding:6px 10px!important;border:1px solid var(--menu-border)!important;
+  border-radius:11px!important;background:var(--menu-card)!important;color:var(--ink)!important;box-shadow:none!important;font-size:.7rem!important
 }
 
-/* Buscador grande */
-body:not(.professional-booking-mode) .search{
-  margin-top:14px!important;z-index:6
-}
+/* Search + categories */
+.menu-discovery{background:var(--menu-page)}
+body:not(.professional-booking-mode) .search{margin-top:12px!important}
 body:not(.professional-booking-mode) .search input{
-  height:56px!important;border:1px solid var(--menu-border)!important;
-  border-radius:17px!important;background:var(--menu-card)!important;
-  box-shadow:none!important;padding-left:51px!important;
-  font-size:.96rem!important
+  height:52px!important;padding-left:49px!important;border:1px solid var(--menu-border)!important;border-radius:16px!important;
+  background:var(--menu-card)!important;box-shadow:none!important;font-size:.91rem!important
 }
-body:not(.professional-booking-mode) .search svg{left:19px!important;color:var(--muted)}
-
-/* Categorías con icono */
+body:not(.professional-booking-mode) .search svg{left:18px!important;color:var(--muted)}
 body:not(.professional-booking-mode) .navbar{
-  position:sticky;top:0;z-index:12;margin-top:8px!important;
-  border:0!important;background:color-mix(in srgb,var(--menu-page) 92%,transparent)!important;
-  backdrop-filter:blur(18px)
+  position:sticky;top:0;z-index:14;margin-top:5px!important;background:color-mix(in srgb,var(--menu-page) 93%,transparent)!important;
+  border:0!important;backdrop-filter:blur(18px)
 }
-body:not(.professional-booking-mode) .cats{
-  gap:10px!important;padding:10px 0 12px!important
-}
+body:not(.professional-booking-mode) .cats{gap:9px!important;padding:9px 0 11px!important}
 body:not(.professional-booking-mode) .chip{
-  display:flex!important;flex-direction:column;align-items:center;justify-content:center;
-  gap:5px;min-width:76px;height:70px;padding:7px 9px!important;
-  border:1px solid var(--menu-border)!important;border-radius:18px!important;
-  background:var(--menu-card)!important;color:var(--ink)!important;
-  box-shadow:none!important;font-size:.72rem!important;line-height:1.05
+  display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  min-width:70px;height:64px;padding:6px 8px!important;border:1px solid var(--menu-border)!important;border-radius:17px!important;
+  background:var(--menu-card)!important;color:var(--ink)!important;box-shadow:none!important;font-size:.66rem!important;line-height:1!important
 }
 body:not(.professional-booking-mode) .chip .cat-ico{
-  display:grid;place-items:center;width:34px;height:31px;
-  font-size:1.22rem;border-radius:11px;
-  background:color-mix(in srgb,var(--menu-accent) 11%,var(--surface))
+  width:30px;height:28px;display:grid;place-items:center;border-radius:10px;font-size:1.08rem;
+  background:color-mix(in srgb,var(--menu-accent) 10%,var(--menu-soft))
 }
 body:not(.professional-booking-mode) .chip.active{
-  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;
-  border-color:var(--menu-accent)!important;box-shadow:0 8px 22px color-mix(in srgb,var(--menu-accent) 25%,transparent)!important
+  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;border-color:var(--menu-accent)!important;
+  box-shadow:0 7px 20px color-mix(in srgb,var(--menu-accent) 22%,transparent)!important
 }
 body:not(.professional-booking-mode) .chip.active .cat-ico{background:rgba(255,255,255,.38)}
 
-/* Títulos */
-body:not(.professional-booking-mode) section[data-cat]{
-  padding-top:28px!important;scroll-margin-top:98px!important
+/* Hero promo inside menu */
+.menu-promo-card{
+  position:relative;display:grid;grid-template-columns:1.05fr .95fr;min-height:210px;margin-top:15px;
+  border-radius:24px;overflow:hidden;background:#17130e;color:#fff;box-shadow:var(--menu-shadow-lg)
 }
-body:not(.professional-booking-mode) .section-title-row{
-  display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px
+.menu-promo-copy{padding:25px 22px;position:relative;z-index:2;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+.promo-overline{font-size:.65rem;font-weight:900;letter-spacing:.13em;color:#ffd66b}
+.menu-promo-copy h2{margin:6px 0 5px!important;font-family:var(--body)!important;font-size:clamp(1.55rem,4vw,2.4rem)!important;font-weight:950!important;letter-spacing:-.05em!important}
+.menu-promo-copy p{margin:0;max-width:36ch;color:#e5dfd5;font-size:.83rem;line-height:1.45}
+.menu-promo-copy button{
+  margin-top:15px;min-height:40px;padding:0 15px;border:0;border-radius:12px;background:var(--menu-accent);color:var(--menu-accent-ink);
+  font-weight:900;cursor:pointer
 }
-body:not(.professional-booking-mode) .section-title-row h2{
-  font-family:var(--body)!important;font-weight:900!important;
-  font-size:1.35rem!important;letter-spacing:-.035em!important
-}
-body:not(.professional-booking-mode) .section-kicker{
-  color:var(--muted);font-size:.75rem;font-weight:650
-}
+.menu-promo-art{min-width:0;overflow:hidden;background:#2a2018}
+.menu-promo-art img{width:100%;height:100%;object-fit:cover}
+.menu-promo-art>svg{width:100%;height:100%;padding:10%;background:#f4ead8}
 
-/* Más vendidos */
-body:not(.professional-booking-mode) .pops{
-  gap:12px!important;margin:0 -20px!important;padding:3px 20px 10px!important
-}
+/* Sections + best sellers */
+body:not(.professional-booking-mode) section[data-cat]{padding-top:26px!important;scroll-margin-top:92px!important}
+.section-title-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:11px}
+.section-title-row h2{font-family:var(--body)!important;font-size:1.28rem!important;font-weight:950!important;letter-spacing:-.04em!important}
+.section-kicker{font-size:.69rem;color:var(--muted);font-weight:700}
+body:not(.professional-booking-mode) .pops{gap:10px!important;margin:0 -12px!important;padding:2px 12px 10px!important}
 body:not(.professional-booking-mode) .pop{
-  width:174px!important;padding:0 0 12px!important;
-  background:var(--menu-card)!important;border-radius:20px!important;
-  box-shadow:var(--menu-shadow)!important;overflow:hidden!important
+  width:154px!important;padding:0 0 11px!important;border:1px solid var(--menu-border)!important;border-radius:17px!important;
+  background:var(--menu-card)!important;box-shadow:var(--menu-shadow)!important;overflow:hidden!important
 }
-body:not(.professional-booking-mode) .pop .tile{
-  width:174px!important;height:142px!important;border-radius:0!important;background:var(--surface)!important
-}
-body:not(.professional-booking-mode) .pop .tile img{border-radius:0!important}
-body:not(.professional-booking-mode) .pop .pn,
-body:not(.professional-booking-mode) .pop .pp{padding:0 12px}
-body:not(.professional-booking-mode) .pop .pn{
-  margin-top:9px;font-size:.91rem;font-weight:850;letter-spacing:-.02em
-}
-body:not(.professional-booking-mode) .pop .pp{color:var(--ink)!important;font-weight:850}
+body:not(.professional-booking-mode) .pop .tile{width:154px!important;height:122px!important;border-radius:0!important;background:var(--menu-soft)!important}
+body:not(.professional-booking-mode) .pop .tile img{border-radius:0!important;object-fit:cover!important}
+body:not(.professional-booking-mode) .pop .pn{margin-top:8px;padding:0 10px;font-size:.86rem;font-weight:900}
+body:not(.professional-booking-mode) .pop .pp{padding:0 10px;color:var(--ink)!important;font-size:.86rem;font-weight:900}
 
-/* Productos: tarjetas visuales */
+/* Product grid */
 body:not(.professional-booking-mode) .list{
-  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  gap:12px!important;margin-top:0!important
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important;margin-top:0!important
 }
 body:not(.professional-booking-mode) .item{
-  display:flex!important;flex-direction:column!important;align-items:stretch!important;
-  min-height:100%!important;padding:0 0 14px!important;gap:0!important;
-  border:1px solid var(--menu-border)!important;border-radius:20px!important;
-  background:var(--menu-card)!important;box-shadow:var(--menu-shadow)!important;
-  overflow:hidden!important;position:relative
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;position:relative;overflow:hidden!important;
+  min-height:100%!important;padding:0 0 11px!important;gap:0!important;border:1px solid var(--menu-border)!important;border-radius:18px!important;
+  background:var(--menu-card)!important;box-shadow:var(--menu-shadow)!important
 }
 body:not(.professional-booking-mode) .item .tile{
-  order:1;width:100%!important;height:auto!important;aspect-ratio:1.24/1!important;
-  border-radius:0!important;background:var(--surface)!important;overflow:hidden!important
+  order:1;width:100%!important;height:auto!important;aspect-ratio:1.28/1!important;border-radius:0!important;background:var(--menu-soft)!important;overflow:hidden!important
 }
-body:not(.professional-booking-mode) .item .tile img{
-  border-radius:0!important;object-fit:cover!important;transition:transform .28s ease
-}
-@media(hover:hover){
- body:not(.professional-booking-mode) .item:hover .tile img{transform:scale(1.035)}
-}
-body:not(.professional-booking-mode) .item .txt{
-  order:2;padding:12px 13px 0!important;display:flex;flex-direction:column;flex:1
-}
-body:not(.professional-booking-mode) .item h3{margin:0!important}
-body:not(.professional-booking-mode) .item .name{
-  font-size:.98rem!important;font-weight:900!important;line-height:1.18!important;letter-spacing:-.025em
-}
+body:not(.professional-booking-mode) .item .tile img{border-radius:0!important;object-fit:cover!important;transition:transform .25s ease}
+@media(hover:hover){body:not(.professional-booking-mode) .item:hover .tile img{transform:scale(1.035)}}
+body:not(.professional-booking-mode) .item .txt{order:2;display:flex;flex-direction:column;flex:1;padding:10px 10px 0!important}
+body:not(.professional-booking-mode) .item .name{font-size:.9rem!important;font-weight:950!important;line-height:1.16!important;letter-spacing:-.025em}
 body:not(.professional-booking-mode) .item .desc{
-  font-size:.79rem!important;line-height:1.32!important;margin:5px 0 0!important;
-  -webkit-line-clamp:2!important;min-height:2.1em
+  margin:5px 0 0!important;font-size:.71rem!important;line-height:1.32!important;-webkit-line-clamp:2!important;min-height:1.88em
 }
-body:not(.professional-booking-mode) .item .price{
-  margin:auto 0 0!important;padding-top:10px;font-size:1rem!important;font-weight:900!important
-}
+body:not(.professional-booking-mode) .item .price{margin:auto 0 0!important;padding-top:9px;font-size:.91rem!important;font-weight:950!important}
 body:not(.professional-booking-mode) .item .badge{
-  position:absolute;top:10px;left:10px;z-index:2;margin:0!important;
-  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;
-  box-shadow:0 5px 16px rgba(0,0,0,.12)
+  position:absolute;z-index:3;top:8px;left:8px;margin:0!important;padding:4px 8px!important;
+  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;font-size:.62rem!important;box-shadow:0 4px 12px rgba(0,0,0,.15)
 }
 body:not(.professional-booking-mode) .item .plus{
-  right:10px!important;bottom:10px!important;width:38px!important;height:38px!important;
-  border:0!important;background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;
-  box-shadow:0 7px 20px color-mix(in srgb,var(--menu-accent) 34%,transparent)!important
+  right:8px!important;bottom:8px!important;width:34px!important;height:34px!important;border:0!important;
+  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;font-size:1.15rem!important;
+  box-shadow:0 7px 18px color-mix(in srgb,var(--menu-accent) 32%,transparent)!important
 }
 body:not(.professional-booking-mode) .cnt{
-  left:auto!important;right:9px!important;top:9px!important;border:0!important;
-  background:var(--ink)!important;color:var(--bg)!important
+  left:auto!important;right:8px!important;top:8px!important;border:0!important;background:#111!important;color:#fff!important
 }
 
-/* Información secundaria más ligera */
-body:not(.professional-booking-mode) .trust{
-  margin-top:34px!important;grid-template-columns:repeat(4,1fr)!important;gap:10px!important
-}
+/* Trust/info */
+body:not(.professional-booking-mode) .trust{grid-template-columns:1fr 1fr!important;gap:8px!important;margin-top:28px!important}
 body:not(.professional-booking-mode) .trust div{
-  min-height:70px!important;padding:13px!important;border:1px solid var(--menu-border)!important;
-  background:var(--menu-card)!important;box-shadow:none!important;border-radius:15px!important
+  min-height:60px!important;padding:11px!important;border:1px solid var(--menu-border)!important;border-radius:14px!important;
+  background:var(--menu-card)!important;box-shadow:none!important;font-size:.74rem!important
 }
 body:not(.professional-booking-mode) .infos{
-  margin-top:24px!important;padding:22px!important;
-  border:1px solid var(--menu-border)!important;border-radius:22px!important;
+  margin:20px 0 34px!important;padding:17px!important;border:1px solid var(--menu-border)!important;border-radius:20px!important;
   background:var(--menu-card)!important;box-shadow:none!important
 }
 
-/* Barra carrito */
+/* Floating order bar */
 body:not(.professional-booking-mode) .bar{
-  padding:10px 14px calc(10px + env(safe-area-inset-bottom))!important;
-  background:linear-gradient(to top,var(--menu-page) 75%,transparent)!important
+  padding:9px 12px calc(9px + env(safe-area-inset-bottom))!important;
+  background:linear-gradient(to top,var(--menu-page) 76%,transparent)!important
 }
 body:not(.professional-booking-mode) .bar button{
-  max-width:620px!important;min-height:58px!important;border-radius:17px!important;
-  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;
-  box-shadow:var(--menu-shadow-strong)!important
+  min-height:56px!important;max-width:610px!important;border-radius:17px!important;background:var(--menu-accent)!important;
+  color:var(--menu-accent-ink)!important;box-shadow:var(--menu-shadow-lg)!important
 }
-body:not(.professional-booking-mode) .bar .n{
-  background:var(--menu-accent-ink)!important;color:var(--menu-accent)!important
-}
+body:not(.professional-booking-mode) .bar .n{background:#17130b!important;color:var(--menu-accent)!important}
 
-/* Detalle producto premium */
+/* Product detail */
 body:not(.professional-booking-mode) #detail{
-  max-width:590px!important;border-radius:28px 28px 0 0!important;background:var(--menu-card)!important
+  max-width:570px!important;max-height:96dvh!important;border-radius:28px 28px 0 0!important;background:var(--menu-card)!important;box-shadow:var(--menu-shadow-lg)!important
 }
-body:not(.professional-booking-mode) #detail .d-art{
-  height:min(48vh,390px)!important;background:var(--surface)!important
-}
+body:not(.professional-booking-mode) #detail .d-art{height:min(43vh,380px)!important;background:var(--menu-soft)!important}
 body:not(.professional-booking-mode) #detail .d-art img{object-fit:cover!important}
-body:not(.professional-booking-mode) #detail .d-in{padding:22px 20px 12px!important}
+body:not(.professional-booking-mode) #detail .d-art .close{
+  top:12px!important;left:12px!important;right:auto!important;background:rgba(255,255,255,.92)!important;color:#111!important;font-size:1.2rem
+}
+body:not(.professional-booking-mode) #detail .d-in{padding:18px 18px 8px!important}
+.d-meta-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.d-category{display:inline-flex;padding:5px 9px;border-radius:999px;background:color-mix(in srgb,var(--menu-accent) 14%,var(--menu-card));color:#966400;font-size:.68rem;font-weight:900}
+.d-base-price{font-size:1.05rem;font-weight:950;color:#c67d00}
 body:not(.professional-booking-mode) #detail .d-in h2{
-  font-family:var(--body)!important;font-size:1.65rem!important;font-weight:950!important;letter-spacing:-.04em
+  margin:8px 0 0!important;font-family:var(--body)!important;font-size:1.72rem!important;font-weight:950!important;letter-spacing:-.05em!important
 }
-body:not(.professional-booking-mode) #detail .pick .box,
-body:not(.professional-booking-mode) #detail .segopt .box{
-  border-color:var(--menu-border)!important;background:var(--menu-card)!important
+body:not(.professional-booking-mode) #detail .d-in>.desc{margin:7px 0 0!important;font-size:.88rem!important;line-height:1.45!important;color:var(--muted)}
+.d-quantity-title{margin-top:15px;font-size:.76rem;font-weight:850;color:var(--muted)}
+body:not(.professional-booking-mode) #detail .grp{margin-top:20px!important}
+body:not(.professional-booking-mode) #detail .grp legend{font-size:.98rem;font-weight:950}
+.required-pill{float:right;margin-left:10px;padding:3px 7px;border-radius:999px;background:color-mix(in srgb,var(--menu-accent) 12%,var(--menu-card));color:#a86e00;font-size:.61rem}
+.grp-help{margin:-5px 0 9px;color:var(--muted);font-size:.76rem}
+body:not(.professional-booking-mode) #detail .pick .box{
+  min-height:51px!important;padding:0 13px!important;border:1px solid var(--menu-border)!important;border-radius:13px!important;background:var(--menu-card)!important
 }
-body:not(.professional-booking-mode) #detail .pick input:checked + .box,
-body:not(.professional-booking-mode) #detail .segopt input:checked + .box{
-  border-color:var(--menu-accent)!important;
-  box-shadow:inset 0 0 0 1px var(--menu-accent)!important;
-  background:color-mix(in srgb,var(--menu-accent) 8%,var(--menu-card))!important
+body:not(.professional-booking-mode) #detail .pick input:checked + .box{
+  border-color:var(--menu-accent)!important;box-shadow:inset 0 0 0 1px var(--menu-accent)!important;background:color-mix(in srgb,var(--menu-accent) 8%,var(--menu-card))!important
 }
+.extra-pick .box{justify-content:flex-start!important}
+.extra-check{
+  width:22px;height:22px;border:1px solid var(--menu-border);border-radius:7px;display:grid;place-items:center;color:transparent;background:var(--menu-card);flex:none
+}
+.extra-pick input:checked + .box .extra-check{background:var(--menu-accent);border-color:var(--menu-accent);color:var(--menu-accent-ink)}
+.extra-name{flex:1}
+.d-note-field textarea{background:var(--menu-soft)!important}
 body:not(.professional-booking-mode) #detail .d-foot{
-  padding:12px 16px calc(12px + env(safe-area-inset-bottom))!important;
-  background:color-mix(in srgb,var(--menu-card) 94%,transparent)!important;
-  backdrop-filter:blur(16px)
+  gap:10px!important;padding:11px 14px calc(11px + env(safe-area-inset-bottom))!important;
+  background:color-mix(in srgb,var(--menu-card) 94%,transparent)!important;backdrop-filter:blur(16px)
 }
+body:not(.professional-booking-mode) #detail .step{border-color:var(--menu-border)!important;background:var(--menu-soft)}
 body:not(.professional-booking-mode) #detail .add{
-  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;
-  border-radius:16px!important;min-height:56px!important
+  min-height:54px!important;border-radius:16px!important;background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;font-weight:950!important
 }
 
-/* Carrito */
+/* Cart + checkout */
 body:not(.professional-booking-mode) #sheet{
-  max-width:620px!important;border-radius:28px 28px 0 0!important;background:var(--menu-card)!important
+  max-width:620px!important;max-height:96dvh!important;border-radius:28px 28px 0 0!important;background:var(--menu-card)!important;box-shadow:var(--menu-shadow-lg)!important
 }
-body:not(.professional-booking-mode) #sheet .sheet{padding:22px 18px calc(24px + env(safe-area-inset-bottom))!important}
+body:not(.professional-booking-mode) #sheet .sheet{padding:18px 16px calc(22px + env(safe-area-inset-bottom))!important}
+.sheet-eyebrow{font-size:.61rem;font-weight:900;letter-spacing:.13em;color:var(--muted)}
 body:not(.professional-booking-mode) #sheet .sheet-head h2{
-  font-family:var(--body)!important;font-size:1.65rem!important;font-weight:950!important;letter-spacing:-.04em
+  margin:2px 0 0!important;font-family:var(--body)!important;font-size:1.65rem!important;font-weight:950!important;letter-spacing:-.05em!important
 }
-body:not(.professional-booking-mode) #sheet .line{padding:16px 0!important}
+.order-mode-card{margin:12px 0 8px!important}
+body:not(.professional-booking-mode) #sheet .seg{padding:4px;background:var(--menu-soft);border-radius:15px;gap:4px}
 body:not(.professional-booking-mode) #sheet .segopt .box{
-  border-radius:15px!important;border-color:var(--menu-border)!important
+  border:0!important;border-radius:12px!important;background:transparent!important;padding:9px 11px!important;text-align:center
 }
 body:not(.professional-booking-mode) #sheet .segopt input:checked + .box{
-  border-color:var(--menu-accent)!important;background:color-mix(in srgb,var(--menu-accent) 9%,var(--menu-card))!important
+  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;box-shadow:0 5px 16px color-mix(in srgb,var(--menu-accent) 20%,transparent)!important
 }
-body:not(.professional-booking-mode) #sheet .send{
-  min-height:58px!important;border-radius:17px!important;
-  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important
+.cart-lines{margin-top:5px}
+body:not(.professional-booking-mode) #sheet .line{
+  display:grid!important;grid-template-columns:74px minmax(0,1fr) auto!important;gap:11px!important;align-items:center!important;
+  padding:12px 0!important;border-bottom:1px solid var(--menu-border)!important
 }
+.cart-thumb{width:74px;height:74px;border-radius:14px;overflow:hidden;background:var(--menu-soft)}
+.cart-thumb img,.cart-thumb svg{width:100%;height:100%;object-fit:cover}
+body:not(.professional-booking-mode) #sheet .ln strong{font-size:.9rem;font-weight:900}
+body:not(.professional-booking-mode) #sheet .ln span{font-size:.71rem;line-height:1.32}
+.cart-line-actions{display:flex;flex-direction:column;align-items:flex-end;gap:9px}
+body:not(.professional-booking-mode) #sheet .lt{font-size:.82rem;font-weight:900}
+body:not(.professional-booking-mode) #sheet .step{border-color:var(--menu-border)!important;background:var(--menu-soft)}
+body:not(.professional-booking-mode) #sheet .step button{width:32px!important;height:32px!important;font-size:1rem!important}
+.cart-totals-card{margin-top:13px;padding:14px 0;border-top:1px solid var(--menu-border);border-bottom:1px solid var(--menu-border)}
+.cart-total-line{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:.82rem}
+.cart-total-line strong{font-size:.86rem}
+body:not(.professional-booking-mode) #sheet .totalrow{padding:10px 0 0!important;font-size:1rem!important}
+body:not(.professional-booking-mode) #sheet .totalrow strong{font-family:var(--body)!important;font-size:1.35rem!important;font-weight:950!important}
+.almost-ready{display:flex;gap:10px;align-items:center;margin-top:13px;padding:12px;border-radius:15px;background:#edf8ee;color:#1f6939}
+.almost-ready>span{font-size:1.3rem}
+.almost-ready b{display:block;font-size:.82rem}.almost-ready small{display:block;margin-top:2px;font-size:.68rem;color:#568063}
+.cart-section-title{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:18px}
+.cart-section-title .sub{margin:0!important;font-size:.96rem!important;font-weight:950!important}
+.cart-section-title span{font-size:.65rem;color:var(--muted)}
+body:not(.professional-booking-mode) #sheet .sugs{gap:8px!important}
 body:not(.professional-booking-mode) #sheet .sug{
-  width:118px!important;background:var(--menu-card)!important;
-  border:1px solid var(--menu-border);border-radius:16px;overflow:hidden;padding-bottom:9px!important
+  width:110px!important;padding:0 0 8px!important;border:1px solid var(--menu-border);border-radius:14px;background:var(--menu-card)!important;overflow:hidden
 }
-body:not(.professional-booking-mode) #sheet .sug .tile{
-  width:118px!important;height:92px!important;border-radius:0!important
-}
+body:not(.professional-booking-mode) #sheet .sug .tile{width:110px!important;height:84px!important;border-radius:0!important}
 body:not(.professional-booking-mode) #sheet .sn,
-body:not(.professional-booking-mode) #sheet .sp{padding:0 9px}
-
-/* Desktop */
-@media(min-width:900px){
- body:not(.professional-booking-mode) .list{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:16px!important}
- body:not(.professional-booking-mode) .item .tile{aspect-ratio:1.42/1!important}
- body:not(.professional-booking-mode) .pop{width:205px!important}
- body:not(.professional-booking-mode) .pop .tile{width:205px!important;height:160px!important}
+body:not(.professional-booking-mode) #sheet .sp{padding:0 8px}
+.checkout-fields{margin-top:19px;padding-top:16px;border-top:1px solid var(--menu-border)}
+.checkout-title{margin-bottom:4px}.checkout-title span{display:block;font-size:1rem;font-weight:950}.checkout-title small{color:var(--muted);font-size:.7rem}
+body:not(.professional-booking-mode) #sheet .field{margin-top:13px!important}
+body:not(.professional-booking-mode) #sheet .field>label{font-size:.77rem;font-weight:850}
+body:not(.professional-booking-mode) #sheet input,
+body:not(.professional-booking-mode) #sheet textarea,
+body:not(.professional-booking-mode) #sheet select{
+  border-color:var(--menu-border)!important;border-radius:13px!important;background:var(--menu-soft)!important
+}
+.location-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}
+.location-actions button{min-height:42px;border:1px solid var(--menu-border);border-radius:12px;background:var(--menu-card);font-size:.72rem;font-weight:800}
+#payment-buttons{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:7px!important;margin-top:7px!important}
+#payment-buttons button{min-height:50px!important;border-radius:12px!important}
+#payment-selected{margin-top:7px;font-size:.72rem;font-weight:800}
+#mp-safe-note{margin-top:7px;padding:9px 10px;border-radius:11px;background:#e8f3ff;color:#174a7e;font-size:.7rem;font-weight:750}
+#alternative-payment-note{margin-top:7px;padding:10px;border-radius:11px;background:#fff8df;border:1px solid #f0cf68;color:#4e3b00;font-size:.7rem}
+body:not(.professional-booking-mode) #sheet .send{
+  width:100%;min-height:56px!important;margin-top:4px!important;border:0!important;border-radius:16px!important;
+  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;font-weight:950!important;font-size:.94rem!important
 }
 
-/* Mobile refinado */
-@media(max-width:719px){
- body:not(.professional-booking-mode) .wrap{width:min(100% - 24px,1180px)!important}
- body:not(.professional-booking-mode) .hero{padding:14px 0 16px!important}
- body:not(.professional-booking-mode) .hero-art{width:58px!important;height:58px!important;border-radius:17px!important}
- body:not(.professional-booking-mode) .hero-meta{gap:4px 8px!important}
- body:not(.professional-booking-mode) .hero h1{font-size:1.55rem!important;margin-top:9px!important}
- body:not(.professional-booking-mode) .lead{font-size:.82rem!important}
- body:not(.professional-booking-mode) .top-actions{margin-top:11px!important}
- body:not(.professional-booking-mode) .mini-btn{min-height:34px!important;font-size:.72rem!important}
- body:not(.professional-booking-mode) .search{margin-top:10px!important}
- body:not(.professional-booking-mode) .search input{height:52px!important}
- body:not(.professional-booking-mode) .navbar .wrap{width:100%!important;padding-left:12px;padding-right:12px}
- body:not(.professional-booking-mode) .cats{padding-top:8px!important}
- body:not(.professional-booking-mode) .chip{min-width:69px;height:64px;font-size:.68rem!important}
- body:not(.professional-booking-mode) .chip .cat-ico{width:31px;height:28px;font-size:1.08rem}
- body:not(.professional-booking-mode) section[data-cat]{padding-top:22px!important}
- body:not(.professional-booking-mode) .pops{margin:0 -12px!important;padding-left:12px!important;padding-right:12px!important}
- body:not(.professional-booking-mode) .pop{width:156px!important}
- body:not(.professional-booking-mode) .pop .tile{width:156px!important;height:125px!important}
- body:not(.professional-booking-mode) .list{gap:9px!important}
- body:not(.professional-booking-mode) .item{border-radius:17px!important;padding-bottom:11px!important}
- body:not(.professional-booking-mode) .item .txt{padding:10px 10px 0!important}
- body:not(.professional-booking-mode) .item .name{font-size:.9rem!important}
- body:not(.professional-booking-mode) .item .desc{font-size:.72rem!important}
- body:not(.professional-booking-mode) .item .price{font-size:.91rem!important;padding-top:8px!important}
- body:not(.professional-booking-mode) .item .plus{width:34px!important;height:34px!important;right:8px!important;bottom:8px!important}
- body:not(.professional-booking-mode) .trust{grid-template-columns:1fr 1fr!important}
- body:not(.professional-booking-mode) .trust div{font-size:.76rem!important;min-height:62px!important}
- body:not(.professional-booking-mode) .infos{margin-left:0!important;margin-right:0!important;padding:17px!important}
- body:not(.professional-booking-mode) .site-version{padding-bottom:105px!important}
+/* Desktop: spacious menu, modal centered */
+@media(min-width:760px){
+ body:not(.professional-booking-mode) .hero{padding:18px 0 20px!important}
+ .menu-appbar{align-items:center}
+ body:not(.professional-booking-mode) .hero-art{width:68px!important;height:68px!important}
+ body:not(.professional-booking-mode) .hero h1{font-size:1.7rem!important}
+ .quick-order-selector{max-width:430px}
+ .menu-location-row{max-width:650px}
+ body:not(.professional-booking-mode) .list{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:15px!important}
+ body:not(.professional-booking-mode) .item .tile{aspect-ratio:1.45/1!important}
+ body:not(.professional-booking-mode) .pop{width:190px!important}
+ body:not(.professional-booking-mode) .pop .tile{width:190px!important;height:145px!important}
+ body:not(.professional-booking-mode) .trust{grid-template-columns:repeat(4,1fr)!important}
+ body:not(.professional-booking-mode) #detail,
+ body:not(.professional-booking-mode) #sheet{margin:auto!important;border-radius:28px!important;max-height:calc(100dvh - 40px)!important}
 }
-@media(max-width:370px){
- body:not(.professional-booking-mode) .list{grid-template-columns:1fr!important}
- body:not(.professional-booking-mode) .item .tile{aspect-ratio:1.55/1!important}
+
+/* Compact phones */
+@media(max-width:380px){
+ body:not(.professional-booking-mode) .wrap{width:min(100% - 18px,1160px)!important}
+ .menu-brand-copy{max-width:190px}
+ body:not(.professional-booking-mode) .hero h1{font-size:1.2rem!important}
+ .menu-app-actions{gap:4px}.app-circle{width:36px;height:36px}
+ body:not(.professional-booking-mode) .chip{min-width:64px}
+ body:not(.professional-booking-mode) .list{grid-template-columns:1fr 1fr!important}
+ body:not(.professional-booking-mode) .item .name{font-size:.84rem!important}
+ body:not(.professional-booking-mode) #sheet .line{grid-template-columns:64px minmax(0,1fr)!important}
+ .cart-thumb{width:64px;height:64px}
+ .cart-line-actions{grid-column:2;flex-direction:row;align-items:center;justify-content:space-between;width:100%}
+ #payment-buttons{grid-template-columns:1fr 1fr!important}
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -720,29 +718,56 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
 
 <header class="hero">
   <div class="wrap">
-    <div class="hero-top">
-      <div class="hero-meta">
-        <span class="pill" id="status"></span>
-        <p id="hours"></p>
-        <p id="addr"></p>
+    <div class="menu-appbar">
+      <div class="menu-brand">
+        <div class="hero-art" id="hero-art"></div>
+        <div class="menu-brand-copy">
+          <h1 id="biz-name">Cargando restaurante…</h1>
+          <div class="menu-status-line">
+            <span class="pill" id="status"></span>
+            <span id="hours"></span>
+          </div>
+        </div>
       </div>
-      <div class="hero-art" id="hero-art"></div>
+      <div class="menu-app-actions">
+        <button class="app-circle" id="account-btn" type="button" aria-label="Mi cuenta">👤</button>
+        <button class="app-circle" id="orders-btn" type="button" hidden aria-label="Mis pedidos">🧾</button>
+      </div>
     </div>
-    <h1 id="biz-name">Cargando restaurante…</h1>
-    <p class="lead">Hamburguesas armadas al momento. Elegí, personalizá y enviá tu pedido por WhatsApp.</p><div class="top-actions"><button class="mini-btn" id="pwa-install-btn" type="button" hidden>📲 Instalar app</button><button class="mini-btn" id="theme-toggle" type="button" onclick="toggleMenuTheme()">◐ Cambiar tema</button><script>function toggleMenuTheme(){var h=document.documentElement;var next=h.getAttribute("data-theme")==="dark"?"light":"dark";h.setAttribute("data-theme",next);try{localStorage.setItem("menu_theme",next)}catch(e){}}</script><button class="mini-btn" id="clear-cart" type="button">Vaciar pedido</button><button class="mini-btn" id="account-btn" type="button">👤 Iniciar sesión</button><button class="mini-btn" id="orders-btn" type="button" hidden>📦 Mis pedidos</button></div>
+
+    <p class="lead">Elegí tus favoritos, personalizá el pedido y compra directamente al local.</p>
+
+    <div class="quick-order-selector" id="quick-order-selector" aria-label="Tipo de pedido">
+      <button type="button" data-quick-type="Delivery"><span>🛵</span> Delivery</button>
+      <button type="button" data-quick-type="Retiro" class="active"><span>🏪</span> Retiro</button>
+    </div>
+
+    <div class="menu-location-row">
+      <span class="menu-location-icon">📍</span>
+      <span id="addr"></span>
+    </div>
+
+    <div class="top-actions">
+      <button class="mini-btn" id="pwa-install-btn" type="button" hidden>📲 Instalar app</button>
+      <button class="mini-btn" id="theme-toggle" type="button" onclick="toggleMenuTheme()">◐ Tema</button>
+      <script>function toggleMenuTheme(){var h=document.documentElement;var next=h.getAttribute("data-theme")==="dark"?"light":"dark";h.setAttribute("data-theme",next);try{localStorage.setItem("menu_theme",next)}catch(e){}}</script>
+      <button class="mini-btn" id="clear-cart" type="button">🗑️ Vaciar pedido</button>
+    </div>
   </div>
 </header>
 
-<div class="wrap">
-  <div class="search">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-    <input type="search" id="q" placeholder="Buscar en el menú" aria-label="Buscar en el menú" autocomplete="off">
-  </div>
-</div>
-
-<div class="navbar">
+<div class="menu-discovery">
   <div class="wrap">
-    <nav class="cats" id="cats" aria-label="Categorías del menú"></nav>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input type="search" id="q" placeholder="Buscar platos, bebidas, etc." aria-label="Buscar en el menú" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="navbar">
+    <div class="wrap">
+      <nav class="cats" id="cats" aria-label="Categorías del menú"></nav>
+    </div>
   </div>
 </div>
 
@@ -820,66 +845,80 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
 <dialog id="sheet" aria-labelledby="sheet-title">
   <div class="sheet">
     <div class="sheet-head">
-      <h2 id="sheet-title">Tu pedido</h2>
+      <div>
+        <span class="sheet-eyebrow">RESUMEN</span>
+        <h2 id="sheet-title">Tu pedido</h2>
+      </div>
       <button type="button" class="close" id="close" aria-label="Cerrar pedido">✕</button>
     </div>
+
     <p class="closed-note" id="closed-note" hidden>El local está cerrado ahora. Podés enviar el pedido y lo atendemos cuando abra.</p>
 
-    <div id="lines"></div>
-
-    <div id="sug-wrap" hidden>
-      <p class="sub">Sumá a tu pedido</p>
-      <div class="sugs" id="sug"></div>
-    </div>
-
-    <div class="totalrow"><span>Total</span><strong id="total">$0</strong></div>
-    <p class="hint" id="ship-hint" hidden>El costo de envío se confirma por WhatsApp.</p>
-
-    <fieldset class="field" id="order-type-field">
-      <legend>¿Cómo lo querés?</legend>
+    <fieldset class="field order-mode-card" id="order-type-field">
+      <legend class="sr">¿Cómo lo querés?</legend>
       <div class="seg">
-        <label class="segopt"><input type="radio" name="tipo" value="Retiro" checked><span class="box"><b>Retiro</b><small id="eta-p"></small></span></label>
-        <label class="segopt"><input type="radio" name="tipo" value="Delivery"><span class="box"><b>Delivery</b><small id="eta-d"></small></span></label>
+        <label class="segopt"><input type="radio" name="tipo" value="Retiro" checked><span class="box"><b>🏪 Retiro</b><small id="eta-p"></small></span></label>
+        <label class="segopt"><input type="radio" name="tipo" value="Delivery"><span class="box"><b>🛵 Delivery</b><small id="eta-d"></small></span></label>
       </div>
     </fieldset>
 
-    <div class="field">
-      <label for="f-name">Tu nombre</label>
-      <input type="text" id="f-name" autocomplete="name">
+    <div id="lines" class="cart-lines"></div>
+
+    <div class="cart-totals-card">
+      <div class="cart-total-line"><span>Subtotal</span><strong id="cart-subtotal">$0</strong></div>
+      <div class="cart-total-line" id="cart-delivery-row" hidden><span>Delivery</span><strong id="cart-delivery">$0</strong></div>
+      <div class="totalrow"><span>Total</span><strong id="total">$0</strong></div>
+      <p class="hint" id="ship-hint" hidden>El costo de envío se confirma por WhatsApp.</p>
     </div>
 
-    <div class="field" id="addr-wrap" hidden>
-      <label for="f-addr">Dirección de entrega</label>
-      <input type="text" id="f-addr" autocomplete="off" placeholder="Escribe tu dirección y selecciónala de Google Maps">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-        <button type="button" id="gps-btn" style="flex:1;min-width:220px">📍 Usar mi ubicación</button>
-        <button type="button" id="search-location-btn" style="flex:1;min-width:220px">🔎 Buscar esta dirección</button>
+    <div class="almost-ready"><span>🌿</span><div><b>¡Estás a solo un paso!</b><small>Revisa tu pedido y completa tus datos para continuar.</small></div></div>
+
+    <div id="sug-wrap" hidden>
+      <div class="cart-section-title"><p class="sub">¿Te tienta algo más?</p><span>Agrega con un toque</span></div>
+      <div class="sugs" id="sug"></div>
+    </div>
+
+    <div class="checkout-fields">
+      <div class="checkout-title"><span>Datos del pedido</span><small>Solo te pediremos lo necesario.</small></div>
+
+      <div class="field">
+        <label for="f-name">Tu nombre</label>
+        <input type="text" id="f-name" autocomplete="name">
       </div>
-      <small id="gps-status" style="display:block;margin-top:6px"></small>
-      <strong id="delivery-cost-status" style="display:block;margin-top:8px"></strong>
-    </div>
 
-    <div class="field">
-      <label for="f-phone">Número de teléfono *</label>
-      <input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej: 9 1234 5678" required>
-    </div>
+      <div class="field" id="addr-wrap" hidden>
+        <label for="f-addr">Dirección de entrega</label>
+        <input type="text" id="f-addr" autocomplete="off" placeholder="Escribe tu dirección y selecciónala de Google Maps">
+        <div class="location-actions">
+          <button type="button" id="gps-btn">📍 Usar mi ubicación</button>
+          <button type="button" id="search-location-btn">🗺️ Seleccionar en mapa</button>
+        </div>
+        <small id="gps-status"></small>
+        <strong id="delivery-cost-status"></strong>
+      </div>
 
-    <div class="field">
-      <label>Forma de pago</label>
-      <div id="payment-buttons" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px"></div>
-      <select id="f-pay" aria-label="Forma de pago" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px"></select>
-      <div id="payment-selected" style="margin-top:8px;font-size:13px;font-weight:700"></div>
-      <div id="mp-safe-note" hidden style="margin-top:8px;padding:10px 12px;border-radius:12px;background:#e8f3ff;color:#174a7e;font-size:13px;font-weight:700">🔒 Checkout de pago seguro con Mercado Pago</div>
-      <div id="alternative-payment-note" hidden style="margin-top:8px;padding:12px;border-radius:12px;background:#fff8df;border:1px solid #f0cf68;color:#4e3b00;font-size:13px"></div>
-    </div>
+      <div class="field">
+        <label for="f-phone">Número de teléfono *</label>
+        <input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej: 9 1234 5678" required>
+      </div>
 
-    <div class="field">
-      <label for="f-notes">Aclaraciones generales</label>
-      <textarea id="f-notes" placeholder="Ej: timbre roto, tocar la puerta"></textarea>
-    </div>
+      <div class="field payment-field">
+        <label>Forma de pago</label>
+        <div id="payment-buttons"></div>
+        <select id="f-pay" aria-label="Forma de pago" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px"></select>
+        <div id="payment-selected"></div>
+        <div id="mp-safe-note" hidden>🔒 Checkout de pago seguro con Mercado Pago</div>
+        <div id="alternative-payment-note" hidden></div>
+      </div>
 
-    <p class="err" id="err" role="alert"></p>
-    <button type="button" class="send" id="send">Enviar pedido por WhatsApp</button>
+      <div class="field">
+        <label for="f-notes">Aclaraciones generales</label>
+        <textarea id="f-notes" placeholder="Ej: timbre roto, tocar la puerta"></textarea>
+      </div>
+
+      <p class="err" id="err" role="alert"></p>
+      <button type="button" class="send" id="send">Enviar pedido por WhatsApp</button>
+    </div>
   </div>
 </dialog>
 
@@ -1306,7 +1345,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
       const rows=retailRows||[],slugifyRetail=v=>String(v||"general").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"general";
       const groups=new Map();
       rows.forEach(p=>{const cat=String(p.category||"General").trim()||"General";if(!groups.has(cat))groups.set(cat,[]);groups.get(cat).push({id:"retail-"+p.id,retailProductId:Number(p.id),name:p.name,desc:[p.brand,p.description].filter(Boolean).join(" · "),badge:p.current_stock<=p.minimum_stock?"Últimas unidades":"",pop:false,img:p.image_url||"",opts:[{l:"",p:Number(p.price||0)}],extras:[],was:null,out:Number(p.current_stock||0)<=0,stock:Number(p.current_stock||0),unit:p.unit||"unidad",barcode:p.barcode||"",allowFractional:!!p.allow_fractional,art:{k:"box"}})});
-      MENU=[...groups.entries()].map(([name,items],i)=>({id:slugifyRetail(name),name,tone:i%2?"cool":"warm",items}));
+      MENU=[...groups.entries()].map(([name,items],i)=>({id:slugifyRetail(name),name,tone:i%2?"cool":"warm",items:items.map(it=>({...it,category:name}))}));
       CONFIG.paymentMethods=(paymentMethods||[]).filter(m=>String(m.method_type||"").toLowerCase()!=="bank_transfer"||r.accept_bank_transfer!==false);
       const methodNames=CONFIG.paymentMethods.map(m=>m.label);
       CONFIG.payments=[...(r.accept_cash!==false?["Efectivo"]:[]),...methodNames];
@@ -1336,7 +1375,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     ]);
     const activeCats=(cats||[]),visibleProds=(prods||[]),groups=optionGroups||[],allOptions=productOptions||[];
     const mapCloudProduct=p=>{const base=Number(p.price)||0,productGroups=groups.filter(g=>g.product_id===p.id),single=productGroups.find(g=>g.selection_type==="single"),multiple=productGroups.filter(g=>g.selection_type==="multiple"),singleOptions=single?allOptions.filter(o=>o.group_id===single.id):[],opts=singleOptions.length?singleOptions.map(o=>({l:o.name,p:base+Number(o.price_delta||0),optionId:o.id})).concat(single.required?[]:[{l:"Sin "+single.name.toLowerCase(),p:base}]):[{l:"",p:base}],extras=multiple.flatMap(g=>allOptions.filter(o=>o.group_id===g.id).map(o=>({id:"dbopt-"+o.id,name:o.name,p:Number(o.price_delta||0),group:g.name})));return{id:"db-"+p.id,name:p.name,desc:p.description||"",badge:p.badge||"",pop:!!p.featured,img:p.image_url||"",opts,extras,was:p.compare_price?Number(p.compare_price):null,art:{k:"burger"}}};
-    const uncategorized=visibleProds.filter(p=>!p.category_id||!activeCats.some(cat=>cat.id===p.category_id));MENU=activeCats.map(cat=>({id:cat.slug,name:cat.name,tone:"warm",items:visibleProds.filter(p=>p.category_id===cat.id).map(mapCloudProduct)}));if(uncategorized.length)MENU.push({id:"general",name:"General",tone:"warm",items:uncategorized.map(mapCloudProduct)});
+    const uncategorized=visibleProds.filter(p=>!p.category_id||!activeCats.some(cat=>cat.id===p.category_id));MENU=activeCats.map(cat=>({id:cat.slug,name:cat.name,tone:"warm",items:visibleProds.filter(p=>p.category_id===cat.id).map(mapCloudProduct).map(it=>({...it,category:cat.name}))}));if(uncategorized.length)MENU.push({id:"general",name:"General",tone:"warm",items:uncategorized.map(mapCloudProduct).map(it=>({...it,category:"General"}))});
     CONFIG.paymentMethods=(paymentMethods||[]).filter(m=>String(m.method_type||"").toLowerCase()!=="bank_transfer"||r.accept_bank_transfer!==false);const methodNames=CONFIG.paymentMethods.map(m=>m.label);CONFIG.payments=[...(r.accept_cash!==false?["Efectivo"]:[]),...methodNames];if(window.__tableQrContext&&!CONFIG.payments.includes("Tarjeta POS"))CONFIG.payments.splice(Math.min(1,CONFIG.payments.length),0,"Tarjeta POS");if(countryConfig?.mercadopago_enabled&&r.accept_mercadopago!==false)CONFIG.payments.push("Mercado Pago");window.__restaurantId=r.id;
     // Mercado Pago solo se ofrece cuando la conexión del restaurante fue validada.
     try{
@@ -2014,7 +2053,17 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     return "•";
   }
   navEl.insertAdjacentHTML("beforeend", `<a class="chip" href="#c-populares" data-cat="populares"><span class="cat-ico">🔥</span><span>Populares</span></a>`);
-  let html = `<section id="c-populares" data-cat="populares"><div class="section-title-row"><h2>Más vendidos</h2><span class="section-kicker">Favoritos del local</span></div><div class="pops">${popItems.map(popHTML).join("")}</div></section>`;
+  const promoItem=popItems[0]||Object.values(ITEMS).find(it=>!it.out);
+  const promoHtml=promoItem?`<section class="menu-promo-card" aria-label="Producto destacado">
+    <div class="menu-promo-copy">
+      <span class="promo-overline">DESTACADO</span>
+      <h2>${promoItem.name}</h2>
+      <p>${promoItem.desc||"Uno de los favoritos del local. Pídelo a tu gusto."}</p>
+      <button type="button" data-open="${promoItem.id}">Ver producto <span>→</span></button>
+    </div>
+    <div class="menu-promo-art">${artSVG(promoItem,0)}</div>
+  </section>`:"";
+  let html = promoHtml+`<section id="c-populares" data-cat="populares"><div class="section-title-row"><h2>Más vendidos</h2><span class="section-kicker">Ver favoritos →</span></div><div class="pops">${popItems.map(popHTML).join("")}</div></section>`;
   MENU.forEach(cat => {
     navEl.insertAdjacentHTML("beforeend", `<a class="chip" href="#c-${cat.id}" data-cat="${cat.id}"><span class="cat-ico">${categoryIcon(cat.name)}</span><span>${cat.name}</span></a>`);
     html += `<section id="c-${cat.id}" data-cat="${cat.id}"><div class="section-title-row"><h2>${cat.name}</h2></div><div class="list">${cat.items.map(rowHTML).join("")}</div></section>`;
@@ -2086,15 +2135,34 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
   }
 
   const sheet = $("#sheet"), linesEl = $("#lines"), bar = $("#bar");
+  const quickOrderSelector=$("#quick-order-selector");
+  function syncQuickOrderSelector(){
+    if(!quickOrderSelector)return;
+    if(window.__tableQrContext){quickOrderSelector.hidden=true;return}
+    const selected=document.querySelector('input[name="tipo"]:checked')?.value||"Retiro";
+    quickOrderSelector.querySelectorAll("[data-quick-type]").forEach(btn=>btn.classList.toggle("active",btn.dataset.quickType===selected));
+  }
+  quickOrderSelector?.addEventListener("click",e=>{
+    const btn=e.target.closest("[data-quick-type]");if(!btn)return;
+    const radio=document.querySelector('input[name="tipo"][value="'+btn.dataset.quickType+'"]');
+    if(radio){radio.checked=true;radio.dispatchEvent(new Event("change",{bubbles:true}));syncQuickOrderSelector()}
+  });
+  document.querySelectorAll('input[name="tipo"]').forEach(r=>r.addEventListener("change",syncQuickOrderSelector));
+  syncQuickOrderSelector();
   function renderCart(){
     linesEl.innerHTML = [...cart.entries()].map(([k, v]) =>
-      `<div class="line"><div class="ln"><strong>${lineName(v)}</strong>`
-      + (v.ex.length ? `<span>${v.ex.map(x => x.name).join(", ")}</span>` : "")
+      `<div class="line"><div class="cart-thumb">${artSVG(v.it,v.oi||0)}</div><div class="ln"><strong>${lineName(v)}</strong>`
+      + (v.ex.length ? `<span>+ ${v.ex.map(x => x.name).join(", ")}</span>` : "")
       + (v.note ? `<span class="nt">“${esc(v.note)}”</span>` : "")
       + `<span>${fmt(unitOf(v))} c/u</span></div>`
-      + `<div class="step"><button type="button" data-k="${esc(k)}" data-a="-1" aria-label="Quitar uno de ${lineName(v)}">−</button><span>${v.qty}</span><button type="button" data-k="${esc(k)}" data-a="1" aria-label="Sumar uno de ${lineName(v)}">+</button></div>`
-      + `<div class="lt">${fmt(v.qty * unitOf(v))}</div></div>`).join("");
-    applyDeliveryFee(); $("#total").textContent=fmt(totals().t);
+      + `<div class="cart-line-actions"><div class="lt">${fmt(v.qty * unitOf(v))}</div><div class="step"><button type="button" data-k="${esc(k)}" data-a="-1" aria-label="Quitar uno de ${lineName(v)}">−</button><span>${v.qty}</span><button type="button" data-k="${esc(k)}" data-a="1" aria-label="Sumar uno de ${lineName(v)}">+</button></div></div></div>`).join("");
+    applyDeliveryFee();
+    const sum=totals();
+    $("#total").textContent=fmt(sum.t);
+    const subtotalEl=$("#cart-subtotal"),deliveryEl=$("#cart-delivery"),deliveryRow=$("#cart-delivery-row");
+    if(subtotalEl)subtotalEl.textContent=fmt(sum.subtotal);
+    if(deliveryEl)deliveryEl.textContent=fmt(sum.fee||0);
+    if(deliveryRow)deliveryRow.hidden=!deliverySelected();
     if(deliverySelected()){const h=$("#ship-hint");if(CONFIG.delivery.mode==="fixed")h.textContent="Delivery: "+fmt(deliveryFee);else if(deliveryUnavailable)h.textContent="Tu ubicación está fuera de la zona de delivery.";else if(deliveryDistance!=null)h.textContent="Delivery: "+fmt(deliveryFee)+" · "+deliveryDistance.toFixed(1)+" km";else h.textContent="Usa tu ubicación para calcular el costo del delivery.";}
     const inCart = new Set([...cart.values()].map(v => v.it.id));
     const sug = Object.values(ITEMS).filter(it => it.quick && !it.out && !inCart.has(it.id)).slice(0, 4);
@@ -2140,23 +2208,26 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
   const unitCur = () => cur.it.opts[cur.oi].p + (cur.it.extras || []).filter(x => cur.ex.has(x.id)).reduce((s, x) => s + x.p, 0);
 
   function detailHTML(it){
-    let h = `<div class="d-art" data-tone="${it.tone}"><div class="d-svg" id="d-svg"></div><button type="button" class="close" data-close aria-label="Cerrar">✕</button></div>`
-      + `<div class="d-in"><h2 id="d-title">${it.name}</h2>` + (it.desc ? `<p class="desc">${it.desc}</p>` : "");
+    const category=it.category||"Menú";
+    let h = `<div class="d-art" data-tone="${it.tone}"><div class="d-svg" id="d-svg"></div><button type="button" class="close" data-close aria-label="Cerrar">←</button></div>`
+      + `<div class="d-in"><div class="d-meta-row"><span class="d-category">${category}</span><span class="d-base-price">${fmt(minPrice(it))}</span></div><h2 id="d-title">${it.name}</h2>`
+      + (it.desc ? `<p class="desc">${it.desc}</p>` : "")
+      + `<div class="d-quantity-title"><span>Cantidad</span></div>`;
     if (it.opts.length > 1){
-      h += `<fieldset class="grp"><legend>Elegí el tamaño</legend>`
-        + it.opts.map((o, i) => `<label class="pick"><input type="radio" name="opt" value="${i}"${i === 0 ? " checked" : ""}><span class="box"><span>${o.l}</span><span class="pv">${fmt(o.p)}</span></span></label>`).join("")
+      h += `<fieldset class="grp"><legend>Selecciona una opción <span class="required-pill">Obligatorio</span></legend>`
+        + it.opts.map((o, i) => `<label class="pick"><input type="radio" name="opt" value="${i}"${i === 0 ? " checked" : ""}><span class="box"><span>${o.l||"Opción "+(i+1)}</span><span class="pv">${fmt(o.p)}</span></span></label>`).join("")
         + `</fieldset>`;
     }
     if (it.extras && it.extras.length){
-      h += `<fieldset class="grp"><legend>Sumá extras<span class="soft">Opcional</span></legend>`
-        + it.extras.map(x => `<label class="pick"><input type="checkbox" name="ex" value="${x.id}"><span class="box"><span>${x.name}</span><span class="pv">+ ${fmt(x.p)}</span></span></label>`).join("")
+      h += `<fieldset class="grp extras-group"><legend>Extras <span class="soft">Opcional</span></legend><p class="grp-help">Hazlo aún más irresistible.</p>`
+        + it.extras.map(x => `<label class="pick extra-pick"><input type="checkbox" name="ex" value="${x.id}"><span class="box"><span class="extra-check">✓</span><span class="extra-name">${x.name}</span><span class="pv">+ ${fmt(x.p)}</span></span></label>`).join("")
         + `</fieldset>`;
     }
-    h += `<div class="field"><label for="d-note">Aclaraciones</label><textarea id="d-note" placeholder="Ej: sin pepinillos, bien cocida"></textarea></div></div>`
+    h += `<div class="field d-note-field"><label for="d-note">Aclaraciones</label><textarea id="d-note" placeholder="Ej: sin pepinillos, bien cocida"></textarea></div></div>`
       + `<div class="d-foot"><div class="step"><button type="button" data-q="-1" aria-label="Quitar uno">−</button><span id="d-qty">1</span><button type="button" data-q="1" aria-label="Sumar uno">+</button></div><button type="button" class="add" id="d-add"></button></div>`;
     return h;
   }
-  function refreshDetail(artToo){
+    function refreshDetail(artToo){
     if (artToo) $("#d-svg").innerHTML = artSVG(cur.it, cur.oi);
     $("#d-qty").textContent = cur.qty;
     $("#d-add").textContent = "Agregar · " + fmt(unitCur() * cur.qty);
@@ -2759,5 +2830,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.36</footer></body>
+<footer class="site-version">Versión v1.6.37</footer></body>
 </html>
