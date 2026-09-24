@@ -287,7 +287,7 @@ section[data-cat]{padding-top:38px}section[data-cat] h2{font-size:clamp(1.35rem,
 html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;height:auto}input,select,textarea,button{max-width:100%}@media(max-width:900px){.wrap{width:min(100% - 24px,1180px)!important;margin-left:auto!important;margin-right:auto!important}.top,.row.between{gap:10px;flex-wrap:wrap}.tabs{display:flex!important;overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch;padding-bottom:6px}.tabs .tab{flex:0 0 auto!important}.grid{grid-template-columns:1fr!important}.span4,.span5,.span6,.span7,.span8,.span12{grid-column:1/-1!important;width:100%!important}.card{max-width:100%!important}}@media(max-width:600px){body{font-size:15px}.wrap{width:min(100% - 16px,1180px)!important}.top{align-items:flex-start!important}.top>.row{width:100%;display:flex;flex-wrap:wrap}.card{padding:16px!important}.row{flex-wrap:wrap}input,select,textarea{width:100%!important;min-width:0!important}button,.btn{min-height:44px}table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}}
 
 /* =========================================================
-   YummyPro Menú Público · Rediseño completo v1.6.42
+   YummyPro Menú Público · Rediseño completo v1.6.43
    Inspirado en una app premium de delivery; conserva toda la lógica.
    ========================================================= */
 :root{
@@ -1289,6 +1289,91 @@ body:not(.professional-booking-mode) #detail .d-foot .add{width:100%}
 
   .menu-location-row{
     margin-top:7px!important
+  }
+}
+
+
+/* =========================================================
+   v1.6.43 · Móvil ancho real
+   Corrige navegadores móviles que renderizan con viewport tipo escritorio.
+   No altera escritorio con mouse/pointer fino.
+   ========================================================= */
+@media (pointer:coarse){
+  body:not(.professional-booking-mode) .hero>.wrap,
+  body:not(.professional-booking-mode) .menu-discovery>.wrap,
+  body:not(.professional-booking-mode) .navbar>.wrap,
+  body:not(.professional-booking-mode) #menu,
+  body:not(.professional-booking-mode) .wrap.infos,
+  body:not(.professional-booking-mode) section.wrap[aria-label="Ventajas"],
+  body:not(.professional-booking-mode) .wrap{
+    width:calc(100% - 20px)!important;
+    max-width:none!important;
+    margin-left:auto!important;
+    margin-right:auto!important
+  }
+
+  /* El grupo superior deja de estar encerrado en 520 px en teléfono */
+  .business-compact,
+  body:not(.professional-booking-mode) .lead,
+  .quick-order-selector,
+  .menu-location-row{
+    width:100%!important;
+    max-width:none!important;
+    margin-left:auto!important;
+    margin-right:auto!important
+  }
+
+  /* Barra de búsqueda y categorías también ocupan todo el ancho útil */
+  body:not(.professional-booking-mode) .search{
+    width:100%!important;
+    max-width:none!important
+  }
+  body:not(.professional-booking-mode) .navbar .wrap{
+    width:100%!important;
+    max-width:none!important;
+    padding-left:10px!important;
+    padding-right:10px!important
+  }
+
+  /* Banner y secciones aprovechan el ancho completo del teléfono */
+  .menu-promo-card{
+    width:100%!important;
+    max-width:none!important
+  }
+  body:not(.professional-booking-mode) .pops{
+    margin-left:-10px!important;
+    margin-right:-10px!important;
+    padding-left:10px!important;
+    padding-right:10px!important
+  }
+
+  /* Mantener exactamente dos columnas pero con tarjetas más anchas */
+  body:not(.professional-booking-mode) .list{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px!important
+  }
+
+  /* El carrito inferior se adapta al ancho total real */
+  body:not(.professional-booking-mode) .bar{
+    padding-left:10px!important;
+    padding-right:10px!important
+  }
+  body:not(.professional-booking-mode) .bar button{
+    width:100%!important;
+    max-width:none!important
+  }
+}
+
+@media (pointer:coarse) and (max-width:520px){
+  body:not(.professional-booking-mode) .hero>.wrap,
+  body:not(.professional-booking-mode) .menu-discovery>.wrap,
+  body:not(.professional-booking-mode) #menu,
+  body:not(.professional-booking-mode) .wrap{
+    width:calc(100% - 14px)!important
+  }
+  body:not(.professional-booking-mode) .navbar .wrap{
+    padding-left:7px!important;
+    padding-right:7px!important
   }
 }
 </style></head>
@@ -3463,5 +3548,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.42</footer></body>
+<footer class="site-version">Versión v1.6.43</footer></body>
 </html>
