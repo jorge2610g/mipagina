@@ -287,7 +287,7 @@ section[data-cat]{padding-top:38px}section[data-cat] h2{font-size:clamp(1.35rem,
 html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;height:auto}input,select,textarea,button{max-width:100%}@media(max-width:900px){.wrap{width:min(100% - 24px,1180px)!important;margin-left:auto!important;margin-right:auto!important}.top,.row.between{gap:10px;flex-wrap:wrap}.tabs{display:flex!important;overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch;padding-bottom:6px}.tabs .tab{flex:0 0 auto!important}.grid{grid-template-columns:1fr!important}.span4,.span5,.span6,.span7,.span8,.span12{grid-column:1/-1!important;width:100%!important}.card{max-width:100%!important}}@media(max-width:600px){body{font-size:15px}.wrap{width:min(100% - 16px,1180px)!important}.top{align-items:flex-start!important}.top>.row{width:100%;display:flex;flex-wrap:wrap}.card{padding:16px!important}.row{flex-wrap:wrap}input,select,textarea{width:100%!important;min-width:0!important}button,.btn{min-height:44px}table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}}
 
 /* =========================================================
-   YummyPro Menú Público · Rediseño completo v1.6.45
+   YummyPro Menú Público · Rediseño completo v1.6.46
    Inspirado en una app premium de delivery; conserva toda la lógica.
    ========================================================= */
 :root{
@@ -1562,6 +1562,112 @@ body.vertical-professional .professional-booking-summary{
   .professional-return-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
   .professional-return-actions button{width:100%}
 }
+
+
+/* =========================================================
+   v1.6.46 · Ajustes específicos de Retail / Minimarket
+   ========================================================= */
+body.vertical-retail .yp-burger{
+  color:var(--retail-blue)!important;
+  width:36px!important;
+  height:36px!important
+}
+body.vertical-retail .yp-burger svg{
+  width:100%!important;
+  height:100%!important
+}
+
+/* Carrusel retail: tarjetas completas, compactas y sin cortes laterales */
+body.vertical-retail #c-populares .pops{
+  margin-left:0!important;
+  margin-right:0!important;
+  padding:3px 2px 15px!important;
+  gap:10px!important;
+  overflow-x:auto!important;
+  scroll-padding-left:2px!important;
+  overscroll-behavior-inline:contain;
+  -webkit-overflow-scrolling:touch
+}
+body.vertical-retail #c-populares .pop{
+  flex:0 0 158px!important;
+  width:158px!important;
+  min-height:220px!important;
+  height:auto!important;
+  overflow:hidden!important;
+  border-radius:16px!important;
+  scroll-snap-align:start!important;
+  box-shadow:none!important
+}
+body.vertical-retail #c-populares .pop-open{
+  display:flex!important;
+  flex-direction:column!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:220px!important;
+  padding:0 0 11px!important
+}
+body.vertical-retail #c-populares .pop .tile{
+  flex:none!important;
+  width:100%!important;
+  height:122px!important;
+  aspect-ratio:auto!important;
+  border-radius:0!important;
+  overflow:hidden!important
+}
+body.vertical-retail #c-populares .pop .tile img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important
+}
+body.vertical-retail #c-populares .pop .pn{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+  overflow:hidden!important;
+  min-height:2.15em!important;
+  margin:8px 10px 0!important;
+  padding:0!important;
+  font-size:.78rem!important;
+  line-height:1.08!important
+}
+body.vertical-retail #c-populares .pop .pd{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:1!important;
+  overflow:hidden!important;
+  min-height:1.1em!important;
+  margin:4px 10px 5px!important;
+  font-size:.61rem!important
+}
+body.vertical-retail #c-populares .pop .pp{
+  margin-top:auto!important;
+  padding:0 44px 0 10px!important;
+  font-size:.82rem!important
+}
+body.vertical-retail #c-populares .pop-add{
+  right:9px!important;
+  bottom:9px!important;
+  width:32px!important;
+  height:32px!important
+}
+
+body.vertical-retail #detail .d-note-field label::after{
+  content:" del producto";
+  color:var(--muted);
+  font-weight:700
+}
+
+/* En teléfonos angostos caben dos tarjetas retail bien proporcionadas */
+@media(pointer:coarse) and (max-width:520px){
+  body.vertical-retail #c-populares .pop{
+    flex-basis:calc((100vw - 44px)/2)!important;
+    width:calc((100vw - 44px)/2)!important;
+    min-width:142px!important
+  }
+  body.vertical-retail #c-populares .pop .tile{
+    height:118px!important
+  }
+}
 </style></head>
 <body class="menu-loading">
 
@@ -2805,6 +2911,11 @@ body.vertical-professional .professional-booking-summary{
       verticalLabel.hidden=!isRetailBusiness;
       verticalLabel.textContent=resolvedBusinessType==="supermarket"?"Supermercado":resolvedBusinessType==="minimarket"?"Minimarket":"Retail";
     }
+    const brandIcon=document.querySelector(".yp-burger");
+    if(brandIcon&&isRetailBusiness){
+      brandIcon.innerHTML='<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M11 18h26l-2.4 20H13.4L11 18Z" stroke="currentColor" stroke-width="2.7" stroke-linejoin="round"/><path d="M17 18c.7-5.8 3.2-9 7-9s6.3 3.2 7 9" stroke="currentColor" stroke-width="2.7" stroke-linecap="round"/><path d="M18 26h12M18 31h9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>';
+      brandIcon.setAttribute("aria-label","Tienda");
+    }
     trackClientEvent("menu_view","menu",{table_qr:!!window.__tableQrContext,business_type:resolvedBusinessType});
   } catch (loadError) {
     console.error(loadError);
@@ -3034,6 +3145,13 @@ body.vertical-professional .professional-booking-summary{
   });
   html += `<p class="empty" id="empty" hidden>No encontramos productos con esa búsqueda.</p>`;
   menuEl.innerHTML = html;
+  if(isRetailVertical){
+    const retailPopulars=document.querySelector("#c-populares .pops");
+    if(retailPopulars){
+      retailPopulars.scrollLeft=0;
+      requestAnimationFrame(()=>{retailPopulars.scrollLeft=0});
+    }
+  }
 
   /* Chip activo según el scroll */
   const chips = $$(".chip");
@@ -3175,6 +3293,8 @@ body.vertical-professional .professional-booking-summary{
 
   function detailHTML(it){
     const category=it.category||"Menú";
+    const isRetailDetail=["supermarket","minimarket","retail"].includes(window.__businessType||"");
+    const notePlaceholder=isRetailDetail?"Ej: si no hay esta marca, no reemplazar":"Ej: sin pepinillos, bien cocida";
     let h = `<div class="d-art" data-tone="${it.tone}"><div class="d-svg" id="d-svg"></div><button type="button" class="close" data-close aria-label="Cerrar">←</button><div class="d-action-pills"><button type="button" class="d-action" data-fav aria-label="Favorito">♡</button><button type="button" class="d-action" data-share aria-label="Compartir">↗</button></div></div>`
       + `<div class="d-in"><div class="d-meta-row"><span class="d-category">${category}</span><span class="d-base-price">${fmt(minPrice(it))}</span></div><h2 id="d-title">${it.name}</h2>`
       + (it.desc ? `<p class="desc">${it.desc}</p>` : "")
@@ -3189,7 +3309,7 @@ body.vertical-professional .professional-booking-summary{
         + it.extras.map(x => `<label class="pick extra-pick"><input type="checkbox" name="ex" value="${x.id}"><span class="box"><span class="extra-check">✓</span><span class="extra-name">${x.name}</span><span class="pv">+ ${fmt(x.p)}</span></span></label>`).join("")
         + `</fieldset>`;
     }
-    h += `<div class="field d-note-field"><label for="d-note">Aclaraciones</label><textarea id="d-note" placeholder="Ej: sin pepinillos, bien cocida"></textarea></div></div>`
+    h += `<div class="field d-note-field"><label for="d-note">Aclaraciones</label><textarea id="d-note" placeholder="${notePlaceholder}"></textarea></div></div>`
       + `<div class="d-foot"><button type="button" class="add" id="d-add"></button></div>`;
     return h;
   }
@@ -3802,5 +3922,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.45</footer></body>
+<footer class="site-version">Versión v1.6.46</footer></body>
 </html>
