@@ -285,6 +285,344 @@ section[data-cat]{padding-top:38px}section[data-cat] h2{font-size:clamp(1.35rem,
 @media(max-width:390px){.hero-art{width:78px;height:78px}.hero h1{font-size:1.8rem}.top-actions{grid-template-columns:1fr}.item{grid-template-columns:minmax(0,1fr) 92px}.item .tile{width:92px;height:92px}.trust{grid-template-columns:1fr}.pops{margin-right:-12px}.pop{width:148px}.pop .tile{width:148px;height:148px}}
 /* Responsive hardening */
 html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;height:auto}input,select,textarea,button{max-width:100%}@media(max-width:900px){.wrap{width:min(100% - 24px,1180px)!important;margin-left:auto!important;margin-right:auto!important}.top,.row.between{gap:10px;flex-wrap:wrap}.tabs{display:flex!important;overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch;padding-bottom:6px}.tabs .tab{flex:0 0 auto!important}.grid{grid-template-columns:1fr!important}.span4,.span5,.span6,.span7,.span8,.span12{grid-column:1/-1!important;width:100%!important}.card{max-width:100%!important}}@media(max-width:600px){body{font-size:15px}.wrap{width:min(100% - 16px,1180px)!important}.top{align-items:flex-start!important}.top>.row{width:100%;display:flex;flex-wrap:wrap}.card{padding:16px!important}.row{flex-wrap:wrap}input,select,textarea{width:100%!important;min-width:0!important}button,.btn{min-height:44px}table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}}
+
+/* =========================================================
+   YummyPro Menú Público · Rediseño premium v1.6.36
+   Solo presentación: conserva lógica, eventos, carrito y pagos.
+   ========================================================= */
+:root{
+  --menu-accent:var(--mustard);
+  --menu-accent-ink:#16120a;
+  --menu-card:#ffffff;
+  --menu-page:#f7f7f5;
+  --menu-border:#ecebe7;
+  --menu-shadow:0 10px 35px rgba(28,25,18,.08);
+  --menu-shadow-strong:0 18px 50px rgba(28,25,18,.14);
+}
+:root[data-theme="dark"]{
+  --menu-card:#111318;
+  --menu-page:#08090b;
+  --menu-border:#24272e;
+  --menu-shadow:0 10px 35px rgba(0,0,0,.32);
+  --menu-shadow-strong:0 18px 55px rgba(0,0,0,.48);
+}
+body:not(.professional-booking-mode){
+  background:var(--menu-page)!important;
+  letter-spacing:-.012em;
+}
+body:not(.professional-booking-mode) .wrap{max-width:1180px}
+
+/* Cabecera tipo app */
+body:not(.professional-booking-mode) .hero{
+  background:var(--menu-card)!important;
+  color:var(--ink)!important;
+  border-radius:0!important;
+  padding:18px 0 22px!important;
+  border-bottom:1px solid var(--menu-border);
+  box-shadow:none!important;
+}
+body:not(.professional-booking-mode) .hero:before,
+body:not(.professional-booking-mode) .hero:after{display:none!important}
+body:not(.professional-booking-mode) .hero-top{align-items:center!important;gap:14px}
+body:not(.professional-booking-mode) .hero-meta{
+  order:2;flex:1;min-width:0;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap
+}
+body:not(.professional-booking-mode) .hero-art{
+  order:1;width:72px!important;height:72px!important;
+  border:0!important;border-radius:21px!important;
+  background:color-mix(in srgb,var(--menu-accent) 16%,var(--menu-card))!important;
+  box-shadow:none!important;padding:7px!important;transform:none!important
+}
+body:not(.professional-booking-mode) .hero-meta .pill{
+  order:1;background:#e9f8ef!important;color:#11783d!important;
+  border:1px solid #ccebd7;border-radius:999px;padding:6px 10px;font-size:.77rem
+}
+body:not(.professional-booking-mode) .hero-meta p{
+  margin:0!important;padding:0!important;background:none!important;
+  color:var(--muted);font-weight:600;font-size:.78rem
+}
+body:not(.professional-booking-mode) .hero h1{
+  margin:12px 0 0!important;
+  font-family:var(--body)!important;font-weight:900!important;
+  font-size:clamp(1.7rem,4vw,2.45rem)!important;
+  line-height:1.08!important;letter-spacing:-.045em!important;
+  max-width:none!important
+}
+body:not(.professional-booking-mode) .lead{
+  margin:5px 0 0!important;color:var(--muted);
+  font-size:.93rem!important;line-height:1.45;max-width:64ch!important
+}
+body:not(.professional-booking-mode) .top-actions{
+  margin-top:15px!important;display:flex!important;gap:8px!important;
+  overflow-x:auto;flex-wrap:nowrap!important;padding-bottom:2px;scrollbar-width:none
+}
+body:not(.professional-booking-mode) .top-actions::-webkit-scrollbar{display:none}
+body:not(.professional-booking-mode) .mini-btn{
+  flex:0 0 auto;min-height:38px!important;padding:7px 12px!important;
+  background:var(--surface)!important;color:var(--ink)!important;
+  border:1px solid var(--menu-border)!important;border-radius:12px!important;
+  box-shadow:none!important;font-size:.79rem!important
+}
+
+/* Buscador grande */
+body:not(.professional-booking-mode) .search{
+  margin-top:14px!important;z-index:6
+}
+body:not(.professional-booking-mode) .search input{
+  height:56px!important;border:1px solid var(--menu-border)!important;
+  border-radius:17px!important;background:var(--menu-card)!important;
+  box-shadow:none!important;padding-left:51px!important;
+  font-size:.96rem!important
+}
+body:not(.professional-booking-mode) .search svg{left:19px!important;color:var(--muted)}
+
+/* Categorías con icono */
+body:not(.professional-booking-mode) .navbar{
+  position:sticky;top:0;z-index:12;margin-top:8px!important;
+  border:0!important;background:color-mix(in srgb,var(--menu-page) 92%,transparent)!important;
+  backdrop-filter:blur(18px)
+}
+body:not(.professional-booking-mode) .cats{
+  gap:10px!important;padding:10px 0 12px!important
+}
+body:not(.professional-booking-mode) .chip{
+  display:flex!important;flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;min-width:76px;height:70px;padding:7px 9px!important;
+  border:1px solid var(--menu-border)!important;border-radius:18px!important;
+  background:var(--menu-card)!important;color:var(--ink)!important;
+  box-shadow:none!important;font-size:.72rem!important;line-height:1.05
+}
+body:not(.professional-booking-mode) .chip .cat-ico{
+  display:grid;place-items:center;width:34px;height:31px;
+  font-size:1.22rem;border-radius:11px;
+  background:color-mix(in srgb,var(--menu-accent) 11%,var(--surface))
+}
+body:not(.professional-booking-mode) .chip.active{
+  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;
+  border-color:var(--menu-accent)!important;box-shadow:0 8px 22px color-mix(in srgb,var(--menu-accent) 25%,transparent)!important
+}
+body:not(.professional-booking-mode) .chip.active .cat-ico{background:rgba(255,255,255,.38)}
+
+/* Títulos */
+body:not(.professional-booking-mode) section[data-cat]{
+  padding-top:28px!important;scroll-margin-top:98px!important
+}
+body:not(.professional-booking-mode) .section-title-row{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px
+}
+body:not(.professional-booking-mode) .section-title-row h2{
+  font-family:var(--body)!important;font-weight:900!important;
+  font-size:1.35rem!important;letter-spacing:-.035em!important
+}
+body:not(.professional-booking-mode) .section-kicker{
+  color:var(--muted);font-size:.75rem;font-weight:650
+}
+
+/* Más vendidos */
+body:not(.professional-booking-mode) .pops{
+  gap:12px!important;margin:0 -20px!important;padding:3px 20px 10px!important
+}
+body:not(.professional-booking-mode) .pop{
+  width:174px!important;padding:0 0 12px!important;
+  background:var(--menu-card)!important;border-radius:20px!important;
+  box-shadow:var(--menu-shadow)!important;overflow:hidden!important
+}
+body:not(.professional-booking-mode) .pop .tile{
+  width:174px!important;height:142px!important;border-radius:0!important;background:var(--surface)!important
+}
+body:not(.professional-booking-mode) .pop .tile img{border-radius:0!important}
+body:not(.professional-booking-mode) .pop .pn,
+body:not(.professional-booking-mode) .pop .pp{padding:0 12px}
+body:not(.professional-booking-mode) .pop .pn{
+  margin-top:9px;font-size:.91rem;font-weight:850;letter-spacing:-.02em
+}
+body:not(.professional-booking-mode) .pop .pp{color:var(--ink)!important;font-weight:850}
+
+/* Productos: tarjetas visuales */
+body:not(.professional-booking-mode) .list{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;margin-top:0!important
+}
+body:not(.professional-booking-mode) .item{
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;
+  min-height:100%!important;padding:0 0 14px!important;gap:0!important;
+  border:1px solid var(--menu-border)!important;border-radius:20px!important;
+  background:var(--menu-card)!important;box-shadow:var(--menu-shadow)!important;
+  overflow:hidden!important;position:relative
+}
+body:not(.professional-booking-mode) .item .tile{
+  order:1;width:100%!important;height:auto!important;aspect-ratio:1.24/1!important;
+  border-radius:0!important;background:var(--surface)!important;overflow:hidden!important
+}
+body:not(.professional-booking-mode) .item .tile img{
+  border-radius:0!important;object-fit:cover!important;transition:transform .28s ease
+}
+@media(hover:hover){
+ body:not(.professional-booking-mode) .item:hover .tile img{transform:scale(1.035)}
+}
+body:not(.professional-booking-mode) .item .txt{
+  order:2;padding:12px 13px 0!important;display:flex;flex-direction:column;flex:1
+}
+body:not(.professional-booking-mode) .item h3{margin:0!important}
+body:not(.professional-booking-mode) .item .name{
+  font-size:.98rem!important;font-weight:900!important;line-height:1.18!important;letter-spacing:-.025em
+}
+body:not(.professional-booking-mode) .item .desc{
+  font-size:.79rem!important;line-height:1.32!important;margin:5px 0 0!important;
+  -webkit-line-clamp:2!important;min-height:2.1em
+}
+body:not(.professional-booking-mode) .item .price{
+  margin:auto 0 0!important;padding-top:10px;font-size:1rem!important;font-weight:900!important
+}
+body:not(.professional-booking-mode) .item .badge{
+  position:absolute;top:10px;left:10px;z-index:2;margin:0!important;
+  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;
+  box-shadow:0 5px 16px rgba(0,0,0,.12)
+}
+body:not(.professional-booking-mode) .item .plus{
+  right:10px!important;bottom:10px!important;width:38px!important;height:38px!important;
+  border:0!important;background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;
+  box-shadow:0 7px 20px color-mix(in srgb,var(--menu-accent) 34%,transparent)!important
+}
+body:not(.professional-booking-mode) .cnt{
+  left:auto!important;right:9px!important;top:9px!important;border:0!important;
+  background:var(--ink)!important;color:var(--bg)!important
+}
+
+/* Información secundaria más ligera */
+body:not(.professional-booking-mode) .trust{
+  margin-top:34px!important;grid-template-columns:repeat(4,1fr)!important;gap:10px!important
+}
+body:not(.professional-booking-mode) .trust div{
+  min-height:70px!important;padding:13px!important;border:1px solid var(--menu-border)!important;
+  background:var(--menu-card)!important;box-shadow:none!important;border-radius:15px!important
+}
+body:not(.professional-booking-mode) .infos{
+  margin-top:24px!important;padding:22px!important;
+  border:1px solid var(--menu-border)!important;border-radius:22px!important;
+  background:var(--menu-card)!important;box-shadow:none!important
+}
+
+/* Barra carrito */
+body:not(.professional-booking-mode) .bar{
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom))!important;
+  background:linear-gradient(to top,var(--menu-page) 75%,transparent)!important
+}
+body:not(.professional-booking-mode) .bar button{
+  max-width:620px!important;min-height:58px!important;border-radius:17px!important;
+  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;
+  box-shadow:var(--menu-shadow-strong)!important
+}
+body:not(.professional-booking-mode) .bar .n{
+  background:var(--menu-accent-ink)!important;color:var(--menu-accent)!important
+}
+
+/* Detalle producto premium */
+body:not(.professional-booking-mode) #detail{
+  max-width:590px!important;border-radius:28px 28px 0 0!important;background:var(--menu-card)!important
+}
+body:not(.professional-booking-mode) #detail .d-art{
+  height:min(48vh,390px)!important;background:var(--surface)!important
+}
+body:not(.professional-booking-mode) #detail .d-art img{object-fit:cover!important}
+body:not(.professional-booking-mode) #detail .d-in{padding:22px 20px 12px!important}
+body:not(.professional-booking-mode) #detail .d-in h2{
+  font-family:var(--body)!important;font-size:1.65rem!important;font-weight:950!important;letter-spacing:-.04em
+}
+body:not(.professional-booking-mode) #detail .pick .box,
+body:not(.professional-booking-mode) #detail .segopt .box{
+  border-color:var(--menu-border)!important;background:var(--menu-card)!important
+}
+body:not(.professional-booking-mode) #detail .pick input:checked + .box,
+body:not(.professional-booking-mode) #detail .segopt input:checked + .box{
+  border-color:var(--menu-accent)!important;
+  box-shadow:inset 0 0 0 1px var(--menu-accent)!important;
+  background:color-mix(in srgb,var(--menu-accent) 8%,var(--menu-card))!important
+}
+body:not(.professional-booking-mode) #detail .d-foot{
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom))!important;
+  background:color-mix(in srgb,var(--menu-card) 94%,transparent)!important;
+  backdrop-filter:blur(16px)
+}
+body:not(.professional-booking-mode) #detail .add{
+  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important;
+  border-radius:16px!important;min-height:56px!important
+}
+
+/* Carrito */
+body:not(.professional-booking-mode) #sheet{
+  max-width:620px!important;border-radius:28px 28px 0 0!important;background:var(--menu-card)!important
+}
+body:not(.professional-booking-mode) #sheet .sheet{padding:22px 18px calc(24px + env(safe-area-inset-bottom))!important}
+body:not(.professional-booking-mode) #sheet .sheet-head h2{
+  font-family:var(--body)!important;font-size:1.65rem!important;font-weight:950!important;letter-spacing:-.04em
+}
+body:not(.professional-booking-mode) #sheet .line{padding:16px 0!important}
+body:not(.professional-booking-mode) #sheet .segopt .box{
+  border-radius:15px!important;border-color:var(--menu-border)!important
+}
+body:not(.professional-booking-mode) #sheet .segopt input:checked + .box{
+  border-color:var(--menu-accent)!important;background:color-mix(in srgb,var(--menu-accent) 9%,var(--menu-card))!important
+}
+body:not(.professional-booking-mode) #sheet .send{
+  min-height:58px!important;border-radius:17px!important;
+  background:var(--menu-accent)!important;color:var(--menu-accent-ink)!important
+}
+body:not(.professional-booking-mode) #sheet .sug{
+  width:118px!important;background:var(--menu-card)!important;
+  border:1px solid var(--menu-border);border-radius:16px;overflow:hidden;padding-bottom:9px!important
+}
+body:not(.professional-booking-mode) #sheet .sug .tile{
+  width:118px!important;height:92px!important;border-radius:0!important
+}
+body:not(.professional-booking-mode) #sheet .sn,
+body:not(.professional-booking-mode) #sheet .sp{padding:0 9px}
+
+/* Desktop */
+@media(min-width:900px){
+ body:not(.professional-booking-mode) .list{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:16px!important}
+ body:not(.professional-booking-mode) .item .tile{aspect-ratio:1.42/1!important}
+ body:not(.professional-booking-mode) .pop{width:205px!important}
+ body:not(.professional-booking-mode) .pop .tile{width:205px!important;height:160px!important}
+}
+
+/* Mobile refinado */
+@media(max-width:719px){
+ body:not(.professional-booking-mode) .wrap{width:min(100% - 24px,1180px)!important}
+ body:not(.professional-booking-mode) .hero{padding:14px 0 16px!important}
+ body:not(.professional-booking-mode) .hero-art{width:58px!important;height:58px!important;border-radius:17px!important}
+ body:not(.professional-booking-mode) .hero-meta{gap:4px 8px!important}
+ body:not(.professional-booking-mode) .hero h1{font-size:1.55rem!important;margin-top:9px!important}
+ body:not(.professional-booking-mode) .lead{font-size:.82rem!important}
+ body:not(.professional-booking-mode) .top-actions{margin-top:11px!important}
+ body:not(.professional-booking-mode) .mini-btn{min-height:34px!important;font-size:.72rem!important}
+ body:not(.professional-booking-mode) .search{margin-top:10px!important}
+ body:not(.professional-booking-mode) .search input{height:52px!important}
+ body:not(.professional-booking-mode) .navbar .wrap{width:100%!important;padding-left:12px;padding-right:12px}
+ body:not(.professional-booking-mode) .cats{padding-top:8px!important}
+ body:not(.professional-booking-mode) .chip{min-width:69px;height:64px;font-size:.68rem!important}
+ body:not(.professional-booking-mode) .chip .cat-ico{width:31px;height:28px;font-size:1.08rem}
+ body:not(.professional-booking-mode) section[data-cat]{padding-top:22px!important}
+ body:not(.professional-booking-mode) .pops{margin:0 -12px!important;padding-left:12px!important;padding-right:12px!important}
+ body:not(.professional-booking-mode) .pop{width:156px!important}
+ body:not(.professional-booking-mode) .pop .tile{width:156px!important;height:125px!important}
+ body:not(.professional-booking-mode) .list{gap:9px!important}
+ body:not(.professional-booking-mode) .item{border-radius:17px!important;padding-bottom:11px!important}
+ body:not(.professional-booking-mode) .item .txt{padding:10px 10px 0!important}
+ body:not(.professional-booking-mode) .item .name{font-size:.9rem!important}
+ body:not(.professional-booking-mode) .item .desc{font-size:.72rem!important}
+ body:not(.professional-booking-mode) .item .price{font-size:.91rem!important;padding-top:8px!important}
+ body:not(.professional-booking-mode) .item .plus{width:34px!important;height:34px!important;right:8px!important;bottom:8px!important}
+ body:not(.professional-booking-mode) .trust{grid-template-columns:1fr 1fr!important}
+ body:not(.professional-booking-mode) .trust div{font-size:.76rem!important;min-height:62px!important}
+ body:not(.professional-booking-mode) .infos{margin-left:0!important;margin-right:0!important;padding:17px!important}
+ body:not(.professional-booking-mode) .site-version{padding-bottom:105px!important}
+}
+@media(max-width:370px){
+ body:not(.professional-booking-mode) .list{grid-template-columns:1fr!important}
+ body:not(.professional-booking-mode) .item .tile{aspect-ratio:1.55/1!important}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>(function(){try{document.documentElement.setAttribute("data-theme",localStorage.getItem("menu_theme")==="light"?"light":"dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}})();</script><script>window.initExpressGooglePlaces=function(){window.__expressGoogleMapsReady=true;window.dispatchEvent(new Event("express-google-maps-ready"));};function normalizeHex(hex){var v=String(hex||"").trim().replace("#","");if(v.length===3)v=v.split("").map(x=>x+x).join("");return/^[0-9a-f]{6}$/i.test(v)?"#"+v.toLowerCase():null}function relativeLuminance(hex){var v=normalizeHex(hex);if(!v)return 0;var rgb=[1,3,5].map(i=>parseInt(v.slice(i,i+2),16)/255).map(x=>x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4));return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]}function contrastRatio(a,b){var x=relativeLuminance(a),y=relativeLuminance(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)}function colorContrast(hex){return contrastRatio(hex,"#171717")>=contrastRatio(hex,"#ffffff")?"#171717":"#ffffff"}function applyMenuThemePalette(theme){var h=document.documentElement,meta=document.querySelector('meta[name="theme-color"]');if(theme==="dark"){h.style.setProperty("--bg","#000000");h.style.setProperty("--surface","#101010");h.style.setProperty("--ink","#ffffff");h.style.setProperty("--muted","#b9b9b9");h.style.setProperty("--line","#2a2a2a");h.style.setProperty("--mustard","#ffc21a");h.style.setProperty("--on-mustard","#1e1f24");h.style.setProperty("--hero-bg","#000000");h.style.setProperty("--hero-ink","#ffffff");h.style.setProperty("--red","#d7263d");h.style.setProperty("--on-secondary","#ffffff");if(meta)meta.setAttribute("content","#000000");return}var primary=normalizeHex(h.style.getPropertyValue("--restaurant-primary"))||"#ffc21a",secondary=normalizeHex(h.style.getPropertyValue("--restaurant-secondary"))||"#d7263d",preferred=normalizeHex(h.style.getPropertyValue("--restaurant-text"))||"#1e1f24",heroText=contrastRatio(preferred,primary)>=4.5?preferred:colorContrast(primary);h.style.setProperty("--bg","#ffffff");h.style.setProperty("--surface","#f5f4f0");h.style.setProperty("--ink","#1e1f24");h.style.setProperty("--muted","#5b5f67");h.style.setProperty("--line","#e6e4de");h.style.setProperty("--mustard",primary);h.style.setProperty("--on-mustard",heroText);h.style.setProperty("--hero-bg",primary);h.style.setProperty("--hero-ink",heroText);h.style.setProperty("--red",secondary);h.style.setProperty("--on-secondary",colorContrast(secondary));if(meta)meta.setAttribute("content",primary)}new MutationObserver(()=>applyMenuThemePalette(document.documentElement.getAttribute("data-theme")||"dark")).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});applyMenuThemePalette(document.documentElement.getAttribute("data-theme")||"light");</script>
@@ -1661,11 +1999,25 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
   }
 
   const menuEl = $("#menu"), navEl = $("#cats");
-  navEl.insertAdjacentHTML("beforeend", `<a class="chip" href="#c-populares" data-cat="populares">Populares</a>`);
-  let html = `<section id="c-populares" data-cat="populares"><h2>Los más pedidos</h2><div class="pops">${popItems.map(popHTML).join("")}</div></section>`;
+  function categoryIcon(name){
+    const n=norm(String(name||""));
+    if(/hamburg|burger/.test(n))return "🍔";
+    if(/lomo|sandwich|sandw/.test(n))return "🥪";
+    if(/pizza/.test(n))return "🍕";
+    if(/cerveza|beer/.test(n))return "🍺";
+    if(/bebida|gaseosa|refresco|jugo|drink/.test(n))return "🥤";
+    if(/papa|frit/.test(n))return "🍟";
+    if(/postre|dulce|brownie|flan/.test(n))return "🍰";
+    if(/cafe|coffee/.test(n))return "☕";
+    if(/ensalada/.test(n))return "🥗";
+    if(/pollo|chicken/.test(n))return "🍗";
+    return "•";
+  }
+  navEl.insertAdjacentHTML("beforeend", `<a class="chip" href="#c-populares" data-cat="populares"><span class="cat-ico">🔥</span><span>Populares</span></a>`);
+  let html = `<section id="c-populares" data-cat="populares"><div class="section-title-row"><h2>Más vendidos</h2><span class="section-kicker">Favoritos del local</span></div><div class="pops">${popItems.map(popHTML).join("")}</div></section>`;
   MENU.forEach(cat => {
-    navEl.insertAdjacentHTML("beforeend", `<a class="chip" href="#c-${cat.id}" data-cat="${cat.id}">${cat.name}</a>`);
-    html += `<section id="c-${cat.id}" data-cat="${cat.id}"><h2>${cat.name}</h2><div class="list">${cat.items.map(rowHTML).join("")}</div></section>`;
+    navEl.insertAdjacentHTML("beforeend", `<a class="chip" href="#c-${cat.id}" data-cat="${cat.id}"><span class="cat-ico">${categoryIcon(cat.name)}</span><span>${cat.name}</span></a>`);
+    html += `<section id="c-${cat.id}" data-cat="${cat.id}"><div class="section-title-row"><h2>${cat.name}</h2></div><div class="list">${cat.items.map(rowHTML).join("")}</div></section>`;
   });
   html += `<p class="empty" id="empty" hidden>No encontramos productos con esa búsqueda.</p>`;
   menuEl.innerHTML = html;
@@ -2407,5 +2759,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.35</footer></body>
+<footer class="site-version">Versión v1.6.36</footer></body>
 </html>
