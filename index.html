@@ -287,7 +287,7 @@ section[data-cat]{padding-top:38px}section[data-cat] h2{font-size:clamp(1.35rem,
 html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;height:auto}input,select,textarea,button{max-width:100%}@media(max-width:900px){.wrap{width:min(100% - 24px,1180px)!important;margin-left:auto!important;margin-right:auto!important}.top,.row.between{gap:10px;flex-wrap:wrap}.tabs{display:flex!important;overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch;padding-bottom:6px}.tabs .tab{flex:0 0 auto!important}.grid{grid-template-columns:1fr!important}.span4,.span5,.span6,.span7,.span8,.span12{grid-column:1/-1!important;width:100%!important}.card{max-width:100%!important}}@media(max-width:600px){body{font-size:15px}.wrap{width:min(100% - 16px,1180px)!important}.top{align-items:flex-start!important}.top>.row{width:100%;display:flex;flex-wrap:wrap}.card{padding:16px!important}.row{flex-wrap:wrap}input,select,textarea{width:100%!important;min-width:0!important}button,.btn{min-height:44px}table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}}
 
 /* =========================================================
-   YummyPro Menú Público · Rediseño completo v1.6.39
+   YummyPro Menú Público · Rediseño completo v1.6.40
    Inspirado en una app premium de delivery; conserva toda la lógica.
    ========================================================= */
 :root{
@@ -940,6 +940,291 @@ body:not(.professional-booking-mode) #detail .d-foot .add{width:100%}
 @media(min-width:720px){
   .mobile-tools-panel{left:auto;right:0}
   .business-compact{max-width:620px}
+}
+
+
+/* =========================================================
+   v1.6.40 · Legibilidad móvil + centrado escritorio
+   ========================================================= */
+
+/* Escritorio: todo el menú respira y queda realmente centrado */
+@media(min-width:981px) and (pointer:fine){
+  body:not(.professional-booking-mode) .hero>.wrap,
+  body:not(.professional-booking-mode) .menu-discovery>.wrap,
+  body:not(.professional-booking-mode) .navbar>.wrap,
+  body:not(.professional-booking-mode) #menu,
+  body:not(.professional-booking-mode) .wrap.infos,
+  body:not(.professional-booking-mode) section.wrap[aria-label="Ventajas"]{
+    width:min(1120px,calc(100% - 56px))!important;
+    max-width:1120px!important;
+    margin-left:auto!important;
+    margin-right:auto!important
+  }
+  body:not(.professional-booking-mode) .hero>.wrap{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+  }
+  .mockup-topbar{width:100%;max-width:900px;margin:0 auto}
+  .business-compact{
+    width:100%;max-width:900px!important;margin:10px auto 0!important;
+    justify-content:flex-start
+  }
+  body:not(.professional-booking-mode) .lead{
+    width:100%;max-width:900px!important;margin:10px auto 0!important
+  }
+  .quick-order-selector{
+    width:min(760px,100%)!important;margin:16px auto 0!important
+  }
+  .menu-location-row{
+    width:min(760px,100%)!important;margin:10px auto 0!important
+  }
+  body:not(.professional-booking-mode) .search{
+    width:min(900px,100%)!important;margin:16px auto 0!important
+  }
+  body:not(.professional-booking-mode) .cats{
+    justify-content:center!important
+  }
+  .menu-promo-card{
+    max-width:1000px!important;margin-left:auto!important;margin-right:auto!important
+  }
+  body:not(.professional-booking-mode) .list{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:18px!important
+  }
+}
+
+/* Teléfono real y navegador móvil incluso cuando usa viewport grande/zoom */
+@media(max-width:980px), (pointer:coarse) and (max-width:1200px){
+  body:not(.professional-booking-mode) .wrap{
+    width:calc(100% - 24px)!important;
+    max-width:720px!important;
+    margin-left:auto!important;
+    margin-right:auto!important
+  }
+  body:not(.professional-booking-mode) #menu{
+    width:calc(100% - 24px)!important;
+    max-width:720px!important;
+    margin-left:auto!important;
+    margin-right:auto!important
+  }
+
+  .mockup-topbar{min-height:58px!important}
+  .mockup-menu-btn,.mockup-cart-btn{width:44px!important;height:44px!important}
+  .mockup-menu-btn span{width:22px!important;height:2.4px!important}
+  .mockup-cart-btn svg{width:26px!important;height:26px!important}
+  .yp-burger{width:39px!important;height:39px!important}
+  .yp-name{font-size:1.35rem!important}
+  .app-cart-badge{min-width:20px!important;height:20px!important;font-size:.67rem!important}
+
+  .business-compact{margin-top:4px!important;padding:8px 0 5px!important;gap:12px!important}
+  body:not(.professional-booking-mode) .hero-art{
+    width:52px!important;height:52px!important;border-radius:15px!important;padding:5px!important
+  }
+  body:not(.professional-booking-mode) .hero h1{
+    font-size:1.1rem!important;
+    line-height:1.14!important;
+    max-width:100%!important
+  }
+  .menu-status-line{gap:7px!important;margin-top:5px!important}
+  body:not(.professional-booking-mode) .hero .pill{
+    padding:4px 8px!important;
+    font-size:.69rem!important
+  }
+  .menu-status-line #hours{font-size:.71rem!important}
+
+  .quick-order-selector{
+    min-height:52px!important;
+    margin-top:9px!important;
+    padding:4px!important;
+    border-radius:16px!important
+  }
+  .quick-order-selector button{
+    min-height:44px!important;
+    border-radius:13px!important;
+    font-size:.94rem!important;
+    gap:7px!important
+  }
+  .mode-icon{font-size:1.08rem!important}
+
+  .menu-location-row{
+    min-height:38px!important;
+    margin-top:6px!important;
+    padding:0 7px!important;
+    gap:7px!important
+  }
+  .menu-location-icon{width:25px!important;height:25px!important;font-size:1rem!important}
+  .menu-location-label,.menu-location-value{font-size:.74rem!important}
+  .menu-location-chevron{font-size:1.1rem!important}
+
+  .menu-discovery{padding-top:6px!important}
+  body:not(.professional-booking-mode) .search{margin-top:7px!important}
+  body:not(.professional-booking-mode) .search input{
+    height:52px!important;
+    border-radius:17px!important;
+    padding-left:48px!important;
+    font-size:.92rem!important
+  }
+  body:not(.professional-booking-mode) .search svg{
+    left:17px!important;
+    width:22px!important;
+    height:22px!important
+  }
+
+  body:not(.professional-booking-mode) .navbar .wrap{
+    width:100%!important;
+    max-width:720px!important;
+    padding:0 12px!important
+  }
+  body:not(.professional-booking-mode) .cats{
+    gap:9px!important;
+    padding:8px 0 11px!important
+  }
+  body:not(.professional-booking-mode) .chip{
+    flex:0 0 78px!important;
+    min-width:78px!important;
+    width:78px!important;
+    height:72px!important;
+    padding:6px 5px!important;
+    border-radius:17px!important;
+    font-size:.62rem!important;
+    line-height:1.1!important
+  }
+  body:not(.professional-booking-mode) .chip .cat-ico{
+    width:39px!important;
+    height:35px!important;
+    border-radius:11px!important;
+    font-size:1.22rem!important
+  }
+
+  .menu-promo-card{
+    min-height:192px!important;
+    max-height:192px!important;
+    margin-top:9px!important;
+    border-radius:20px!important
+  }
+  .menu-promo-copy{padding:20px 15px 24px!important}
+  .promo-overline{font-size:.58rem!important}
+  .menu-promo-copy h2{
+    margin:4px 0 7px!important;
+    font-size:1.7rem!important;
+    line-height:.98!important
+  }
+  .menu-promo-copy p{
+    font-size:.71rem!important;
+    line-height:1.38!important;
+    max-height:2.9em!important
+  }
+  .menu-promo-copy button{
+    min-height:39px!important;
+    margin-top:12px!important;
+    padding:0 14px!important;
+    border-radius:11px!important;
+    font-size:.75rem!important
+  }
+  .menu-promo-art{height:192px!important}
+
+  body:not(.professional-booking-mode) section[data-cat]{padding-top:20px!important}
+  .section-title-row{margin-bottom:10px!important}
+  .section-title-row h2{font-size:1.15rem!important}
+  .section-kicker{font-size:.67rem!important}
+
+  body:not(.professional-booking-mode) .pops{
+    gap:11px!important;
+    margin:0 -12px!important;
+    padding:2px 12px 12px!important
+  }
+  body:not(.professional-booking-mode) .pop{
+    flex:0 0 168px!important;
+    width:168px!important;
+    border-radius:16px!important
+  }
+  body:not(.professional-booking-mode) .pop .tile{
+    width:168px!important;
+    height:128px!important
+  }
+  body:not(.professional-booking-mode) .pop .pn{
+    padding:0 10px!important;
+    font-size:.85rem!important
+  }
+  body:not(.professional-booking-mode) .pop .pd{
+    margin:4px 10px 5px!important;
+    font-size:.65rem!important
+  }
+  body:not(.professional-booking-mode) .pop .pp{
+    padding:0 46px 0 10px!important;
+    font-size:.84rem!important
+  }
+  body:not(.professional-booking-mode) .pop-add{
+    width:33px!important;height:33px!important;
+    font-size:1.12rem!important
+  }
+
+  /* Siempre 2 columnas en teléfono/tablet táctil, no 3 minitarjetas */
+  body:not(.professional-booking-mode) .list{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:11px!important
+  }
+  body:not(.professional-booking-mode) .item{
+    border-radius:17px!important
+  }
+  body:not(.professional-booking-mode) .item .tile{
+    aspect-ratio:1.28/1!important
+  }
+  body:not(.professional-booking-mode) .item .txt{
+    padding:11px 11px 0!important
+  }
+  body:not(.professional-booking-mode) .item .name{
+    font-size:.88rem!important;
+    line-height:1.18!important
+  }
+  body:not(.professional-booking-mode) .item .desc{
+    font-size:.69rem!important;
+    line-height:1.38!important;
+    min-height:2.1em!important
+  }
+  body:not(.professional-booking-mode) .item .price{
+    font-size:.88rem!important;
+    padding-top:9px!important
+  }
+  body:not(.professional-booking-mode) .item .plus{
+    width:38px!important;height:38px!important;
+    font-size:1.25rem!important
+  }
+
+  body:not(.professional-booking-mode) .bar{
+    padding:9px 12px calc(9px + env(safe-area-inset-bottom))!important
+  }
+  body:not(.professional-booking-mode) .bar button{
+    min-height:58px!important;
+    border-radius:17px!important;
+    font-size:.96rem!important
+  }
+  body:not(.professional-booking-mode) .bar .n{
+    width:31px!important;height:31px!important;
+    font-size:.84rem!important
+  }
+
+  body:not(.professional-booking-mode) #detail .d-in h2{font-size:1.8rem!important}
+  body:not(.professional-booking-mode) #detail .d-in>.desc{font-size:.94rem!important}
+  .d-category{font-size:.74rem!important;padding:6px 10px!important}
+  .d-base-price{font-size:1.13rem!important}
+  body:not(.professional-booking-mode) #detail .pick .box{
+    min-height:56px!important;
+    font-size:.9rem!important
+  }
+  body:not(.professional-booking-mode) #detail .add{
+    min-height:58px!important;
+    font-size:.98rem!important
+  }
+}
+
+/* En teléfonos angostos mantenemos 2 columnas pero sin apretar el texto */
+@media(max-width:380px){
+  body:not(.professional-booking-mode) .wrap,
+  body:not(.professional-booking-mode) #menu{width:calc(100% - 18px)!important}
+  body:not(.professional-booking-mode) .list{gap:8px!important}
+  body:not(.professional-booking-mode) .item .name{font-size:.82rem!important}
+  body:not(.professional-booking-mode) .item .desc{font-size:.65rem!important}
 }
 </style></head>
 <body class="menu-loading">
@@ -2181,6 +2466,9 @@ body:not(.professional-booking-mode) #detail .d-foot .add{width:100%}
     ITEMS[it.id] = it;
     if (it.pop) popItems.push(it);
   }));
+  if(!popItems.length){
+    Object.values(ITEMS).filter(it=>!it.out).slice(0,4).forEach(it=>popItems.push(it));
+  }
   const cart = new Map();
   const CART_KEY = "menu_cart_v2";
   const CUSTOMER_KEY = "menu_customer_v2";
@@ -3110,5 +3398,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.39</footer></body>
+<footer class="site-version">Versión v1.6.40</footer></body>
 </html>
