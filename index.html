@@ -287,7 +287,7 @@ section[data-cat]{padding-top:38px}section[data-cat] h2{font-size:clamp(1.35rem,
 html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;height:auto}input,select,textarea,button{max-width:100%}@media(max-width:900px){.wrap{width:min(100% - 24px,1180px)!important;margin-left:auto!important;margin-right:auto!important}.top,.row.between{gap:10px;flex-wrap:wrap}.tabs{display:flex!important;overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch;padding-bottom:6px}.tabs .tab{flex:0 0 auto!important}.grid{grid-template-columns:1fr!important}.span4,.span5,.span6,.span7,.span8,.span12{grid-column:1/-1!important;width:100%!important}.card{max-width:100%!important}}@media(max-width:600px){body{font-size:15px}.wrap{width:min(100% - 16px,1180px)!important}.top{align-items:flex-start!important}.top>.row{width:100%;display:flex;flex-wrap:wrap}.card{padding:16px!important}.row{flex-wrap:wrap}input,select,textarea{width:100%!important;min-width:0!important}button,.btn{min-height:44px}table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}}
 
 /* =========================================================
-   YummyPro Menú Público · Rediseño completo v1.6.40
+   YummyPro Menú Público · Rediseño completo v1.6.41
    Inspirado en una app premium de delivery; conserva toda la lógica.
    ========================================================= */
 :root{
@@ -1225,6 +1225,30 @@ body:not(.professional-booking-mode) #detail .d-foot .add{width:100%}
   body:not(.professional-booking-mode) .list{gap:8px!important}
   body:not(.professional-booking-mode) .item .name{font-size:.82rem!important}
   body:not(.professional-booking-mode) .item .desc{font-size:.65rem!important}
+}
+
+
+/* =========================================================
+   v1.6.41 · Solo centrado del bloque negocio/estado
+   No modifica menú, categorías, banner, tarjetas ni carrito.
+   ========================================================= */
+@media(min-width:981px) and (pointer:fine){
+  .business-compact{
+    width:max-content!important;
+    max-width:min(620px,100%)!important;
+    margin:12px auto 0!important;
+    justify-content:center!important
+  }
+}
+/* Algunos teléfonos/tablets renderizan el sitio con viewport ancho.
+   Centramos solamente este bloque para que no quede pegado a la izquierda. */
+@media(min-width:600px) and (max-width:1200px) and (pointer:coarse){
+  .business-compact{
+    width:max-content!important;
+    max-width:calc(100% - 24px)!important;
+    margin:6px auto 0!important;
+    justify-content:center!important
+  }
 }
 </style></head>
 <body class="menu-loading">
@@ -3398,5 +3422,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.40</footer></body>
+<footer class="site-version">Versión v1.6.41</footer></body>
 </html>
