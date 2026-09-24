@@ -287,7 +287,7 @@ section[data-cat]{padding-top:38px}section[data-cat] h2{font-size:clamp(1.35rem,
 html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;height:auto}input,select,textarea,button{max-width:100%}@media(max-width:900px){.wrap{width:min(100% - 24px,1180px)!important;margin-left:auto!important;margin-right:auto!important}.top,.row.between{gap:10px;flex-wrap:wrap}.tabs{display:flex!important;overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch;padding-bottom:6px}.tabs .tab{flex:0 0 auto!important}.grid{grid-template-columns:1fr!important}.span4,.span5,.span6,.span7,.span8,.span12{grid-column:1/-1!important;width:100%!important}.card{max-width:100%!important}}@media(max-width:600px){body{font-size:15px}.wrap{width:min(100% - 16px,1180px)!important}.top{align-items:flex-start!important}.top>.row{width:100%;display:flex;flex-wrap:wrap}.card{padding:16px!important}.row{flex-wrap:wrap}input,select,textarea{width:100%!important;min-width:0!important}button,.btn{min-height:44px}table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}}
 
 /* =========================================================
-   YummyPro Menú Público · Rediseño completo v1.6.37
+   YummyPro Menú Público · Rediseño completo v1.6.38
    Inspirado en una app premium de delivery; conserva toda la lógica.
    ========================================================= */
 :root{
@@ -477,6 +477,23 @@ body:not(.professional-booking-mode) .bar button{
 }
 body:not(.professional-booking-mode) .bar .n{background:#17130b!important;color:var(--menu-accent)!important}
 
+
+.app-cart-circle{position:relative}
+.app-cart-badge{
+  position:absolute;right:-4px;top:-5px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;
+  display:grid;place-items:center;background:var(--menu-accent);color:var(--menu-accent-ink);
+  border:2px solid var(--menu-card);font-size:.61rem;font-weight:950
+}
+body:not(.professional-booking-mode) .pop{position:relative}
+body:not(.professional-booking-mode) .pop-open{
+  display:block;width:100%;height:100%;padding:0 0 2px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer
+}
+body:not(.professional-booking-mode) .pop-add{
+  position:absolute;right:9px;bottom:9px;width:32px;height:32px;border:0;border-radius:50%;
+  background:var(--menu-accent);color:var(--menu-accent-ink);font-size:1.08rem;font-weight:900;
+  display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px color-mix(in srgb,var(--menu-accent) 30%,transparent)
+}
+body:not(.professional-booking-mode) .pop .pp{padding-right:48px!important}
 /* Product detail */
 body:not(.professional-booking-mode) #detail{
   max-width:570px!important;max-height:96dvh!important;border-radius:28px 28px 0 0!important;background:var(--menu-card)!important;box-shadow:var(--menu-shadow-lg)!important
@@ -730,8 +747,9 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
         </div>
       </div>
       <div class="menu-app-actions">
-        <button class="app-circle" id="account-btn" type="button" aria-label="Mi cuenta">👤</button>
-        <button class="app-circle" id="orders-btn" type="button" hidden aria-label="Mis pedidos">🧾</button>
+        <button class="app-circle app-cart-circle" id="header-cart-btn" type="button" aria-label="Ver pedido" title="Ver pedido">🛒<span class="app-cart-badge" id="header-cart-badge" hidden>0</span></button>
+        <button class="app-circle" id="account-btn" type="button" aria-label="Mi cuenta" title="Mi cuenta">👤</button>
+        <button class="app-circle" id="orders-btn" type="button" hidden aria-label="Mis pedidos" title="Mis pedidos">🧾</button>
       </div>
     </div>
 
@@ -949,8 +967,8 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     }
     const guest=document.getElementById("account-guest"), auth=document.getElementById("account-auth"), userText=document.getElementById("account-user");
     if(currentCustomer){
-      accountBtn.textContent="👤 Mi cuenta"; ordersBtn.hidden=false; guest.hidden=true; auth.hidden=false;
-      if("Notification" in window&&Notification.permission==="granted"){ordersBtn.textContent="🔔 Mis pedidos";const pb=document.getElementById("customer-push-btn");if(pb){pb.textContent="✅ Notificaciones activadas";pb.disabled=true}registerCustomerPush().catch(e=>console.warn("No se pudo actualizar la suscripción Push",e))}else{const pb=document.getElementById("customer-push-btn");if(pb){const denied=("Notification" in window&&Notification.permission==="denied");pb.textContent=denied?"🔕 Notificaciones bloqueadas":"🔔 Activar notificaciones";pb.disabled=denied}}
+      accountBtn.textContent="👤";accountBtn.title="Mi cuenta";accountBtn.setAttribute("aria-label","Mi cuenta");ordersBtn.hidden=false;ordersBtn.textContent="🧾";ordersBtn.title="Mis pedidos";ordersBtn.setAttribute("aria-label","Mis pedidos");guest.hidden=true;auth.hidden=false;
+      if("Notification" in window&&Notification.permission==="granted"){ordersBtn.textContent="🔔";ordersBtn.title="Mis pedidos con notificaciones";ordersBtn.setAttribute("aria-label","Mis pedidos con notificaciones");const pb=document.getElementById("customer-push-btn");if(pb){pb.textContent="✅ Notificaciones activadas";pb.disabled=true}registerCustomerPush().catch(e=>console.warn("No se pudo actualizar la suscripción Push",e))}else{const pb=document.getElementById("customer-push-btn");if(pb){const denied=("Notification" in window&&Notification.permission==="denied");pb.textContent=denied?"🔕 Notificaciones bloqueadas":"🔔 Activar notificaciones";pb.disabled=denied}}
       const {data:p}=await db.from("customer_profiles").select("*").eq("user_id",currentCustomer.id).maybeSingle();
       userText.textContent=p?.full_name ? p.full_name+" · "+currentCustomer.email : currentCustomer.email;
       if(p?.full_name && document.getElementById("f-name")) document.getElementById("f-name").value=p.full_name;
@@ -958,7 +976,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
       if(p?.default_address && document.getElementById("f-addr")) document.getElementById("f-addr").value=p.default_address;
       await refreshPendingOrder();
     }else{
-      accountBtn.textContent="👤 Iniciar sesión"; ordersBtn.hidden=!window.__tableQrContext;if(window.__tableQrContext)ordersBtn.textContent="🔔 Mis pedidos";guest.hidden=false; auth.hidden=true; userText.textContent=window.__tableQrContext?"Puedes seguir los pedidos de esta mesa sin iniciar sesión.":"Crea una cuenta para guardar tus datos y seguir tus pedidos.";document.getElementById("pending-order-banner").hidden=true;
+      accountBtn.textContent="👤";accountBtn.title="Iniciar sesión";accountBtn.setAttribute("aria-label","Iniciar sesión");ordersBtn.hidden=!window.__tableQrContext;if(window.__tableQrContext){ordersBtn.textContent="🔔";ordersBtn.title="Mis pedidos";ordersBtn.setAttribute("aria-label","Mis pedidos")};guest.hidden=false; auth.hidden=true; userText.textContent=window.__tableQrContext?"Puedes seguir los pedidos de esta mesa sin iniciar sesión.":"Crea una cuenta para guardar tus datos y seguir tus pedidos.";document.getElementById("pending-order-banner").hidden=true;
     }
   }
   async function refreshPendingOrder(){
@@ -1885,7 +1903,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
   }
   if(["supermarket","minimarket"].includes(window.__businessType||"")){
     const ordersBtn=document.getElementById("orders-btn"),lead=document.querySelector(".lead"),trust=document.querySelector(".trust"),heroTitle=document.querySelector("h1");
-    if(ordersBtn){ordersBtn.hidden=false;ordersBtn.textContent="🛒 Mis compras"}
+    if(ordersBtn){ordersBtn.hidden=false;ordersBtn.textContent="🛍️";ordersBtn.title="Mis compras";ordersBtn.setAttribute("aria-label","Mis compras")}
     if(lead)lead.textContent="Compra productos con stock real, elige retiro o delivery y sigue tu compra desde este mismo lugar.";
     if(trust)trust.innerHTML="<div>✓ Stock actualizado</div><div>✓ Retiro o delivery</div><div>✓ Pago seguro y medios locales</div><div>✓ Seguimiento de tu compra</div>";
     if(heroTitle&&/menú|pedido/i.test(heroTitle.textContent||""))heroTitle.textContent=CONFIG.name;
@@ -1901,7 +1919,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
       const seg=field.querySelector(".seg");if(seg)seg.innerHTML='<label class="segopt"><input type="radio" name="tipo" value="Mesa" checked><span class="box"><b>🍽️ En la mesa</b><small>'+esc(window.__tableQrContext.name)+'</small></span></label><label class="segopt"><input type="radio" name="tipo" value="Retiro"><span class="box"><b>🛍️ Retiro en mostrador</b><small>Lo recoges cuando esté listo</small></span></label>';
     }
     if(phone)phone.required=false;
-    const ordersBtn=document.getElementById("orders-btn");if(ordersBtn){ordersBtn.hidden=false;ordersBtn.textContent="🔔 Mis pedidos"}
+    const ordersBtn=document.getElementById("orders-btn");if(ordersBtn){ordersBtn.hidden=false;ordersBtn.textContent="🔔";ordersBtn.title="Mis pedidos";ordersBtn.setAttribute("aria-label","Mis pedidos")}
     const lead=document.querySelector(".lead");if(lead)lead.textContent="Elige tus productos, decide si los quieres en "+window.__tableQrContext.name+" o para retirar en mostrador y envíalos directamente a cocina.";
     const trust=document.querySelector(".trust");if(trust)trust.innerHTML="<div>✓ Agrega productos a un pedido en preparación</div><div>✓ Mesa o retiro en mostrador</div><div>✓ Efectivo, POS o pago en línea</div><div>✓ Seguimiento desde tu teléfono</div>";
   }
@@ -1909,6 +1927,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
   const popItems = [];
   MENU.forEach(cat => cat.items.forEach(it => {
     it.tone = cat.tone;
+    it.category = cat.name || "Menú";
     ITEMS[it.id] = it;
     if (it.pop) popItems.push(it);
   }));
@@ -2034,7 +2053,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
   }
   function popHTML(it){
     const from = it.opts.length > 1 ? "Desde " + fmt(minPrice(it)) : fmt(minPrice(it));
-    return `<button type="button" class="pop" data-open="${it.id}"><span class="tile" data-tone="${it.tone}">${artSVG(it, 0)}<span class="cnt" data-cnt="${it.id}" hidden></span></span><span class="pn">${it.name}</span><span class="pp">${from}</span></button>`;
+    return `<article class="pop"><button type="button" class="pop-open" data-open="${it.id}"><span class="tile" data-tone="${it.tone}">${artSVG(it, 0)}<span class="cnt" data-cnt="${it.id}" hidden></span></span><span class="pn">${it.name}</span><span class="pp">${from}</span></button>${it.out?"":`<button type="button" class="pop-add" data-plus="${it.id}" aria-label="Agregar ${it.name}">+</button>`}</article>`;
   }
 
   const menuEl = $("#menu"), navEl = $("#cats");
@@ -2151,7 +2170,7 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
   syncQuickOrderSelector();
   function renderCart(){
     linesEl.innerHTML = [...cart.entries()].map(([k, v]) =>
-      `<div class="line"><div class="cart-thumb">${artSVG(v.it,v.oi||0)}</div><div class="ln"><strong>${lineName(v)}</strong>`
+      `<div class="line"><div class="cart-thumb">${artSVG(v.it,Math.max(0,v.it.opts.indexOf(v.opt)))}</div><div class="ln"><strong>${lineName(v)}</strong>`
       + (v.ex.length ? `<span>+ ${v.ex.map(x => x.name).join(", ")}</span>` : "")
       + (v.note ? `<span class="nt">“${esc(v.note)}”</span>` : "")
       + `<span>${fmt(unitOf(v))} c/u</span></div>`
@@ -2177,6 +2196,8 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
     document.body.classList.toggle("has-cart", n > 0);
     $("#bar-n").textContent = n;
     $("#bar-t").textContent = fmt(t);
+    const headerBadge=$("#header-cart-badge");
+    if(headerBadge){headerBadge.hidden=n===0;headerBadge.textContent=n}
     const cnt = {};
     cart.forEach(v => { cnt[v.it.id] = (cnt[v.it.id] || 0) + v.qty; });
     $$("[data-cnt]").forEach(el => { const c = cnt[el.dataset.cnt]; el.hidden = !c; if (c) el.textContent = c; });
@@ -2262,6 +2283,10 @@ body.professional-booking-mode>:not(#professional-booking-app):not(script){displ
 
   /* ---------- Ventana del pedido ---------- */
   $("#open-cart").addEventListener("click", () => { renderCart(); $("#err").textContent = ""; $("#sheet-title").textContent=qrOrderEditTarget?.mode==="append"?"Agregar al pedido #"+qrOrderEditTarget.order_code:(qrOrderEditTarget?.mode==="new"?"Pedido adicional":"Tu pedido"); sheet.showModal(); sheet.scrollTop = 0; });
+  $("#header-cart-btn")?.addEventListener("click",()=>{
+    if(totals().n<=0){document.getElementById("c-populares")?.scrollIntoView({behavior:"smooth",block:"start"});return}
+    $("#open-cart").click();
+  });
   $("#close").addEventListener("click", () => sheet.close());
   sheet.addEventListener("click", e => { if (e.target === sheet) sheet.close(); });
   linesEl.addEventListener("click", e => {
@@ -2830,5 +2855,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.37</footer></body>
+<footer class="site-version">Versión v1.6.38</footer></body>
 </html>
