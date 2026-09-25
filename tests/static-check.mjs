@@ -5,7 +5,7 @@ for(const marker of ['currencyDigits','minimumFractionDigits:shown','maximumFrac
 if(!/<\/html>/i.test(html))throw new Error('HTML incompleto');
 console.log('Menú cliente validado');
 
-for(const marker of ['pwa-install-btn','installCustomerPwa','yummypro_last_restaurant','/manifest.webmanifest?v=1622','/pwa-sw.js','yummypro_client_pwa_identity_v1622','customer-pwa-v1623','Versión v1.6.46'])if(!html.includes(marker))throw new Error('Falta PWA cliente actual: '+marker);
+for(const marker of ['pwa-install-btn','installCustomerPwa','yummypro_last_restaurant','/manifest.webmanifest?v=1625','/pwa-sw.js','yummypro_client_pwa_identity_v1622','customer-pwa-v1623','Versión v1.6.50'])if(!html.includes(marker))throw new Error('Falta PWA cliente actual: '+marker);
 
 const pwaManifest=readFileSync('manifest.webmanifest','utf8');
 for(const marker of ['"id": "/"','"start_url": "/?source=pwa"','"scope": "/"','"display": "standalone"','"/icon-192.png"','"/icon-512.png"','"purpose": "maskable"'])if(!pwaManifest.includes(marker))throw new Error('Manifest PWA cliente v1.6.23 incompleto: '+marker);
@@ -22,3 +22,6 @@ for(const marker of ['get_public_retail_catalog','retail_create_online_order','r
 for(const marker of ['professional-booking-app','professional-booking-mode','get_public_professional_catalog','get_professional_public_catalog','get_professional_available_slots','create_professional_booking_payment_intent','renderProfessionalPublicBooking','professional_service_selected','professional_payment_intent_created','create-professional-appointment-payment','yummypro_professional_payment_return','get_public_professional_booking_payment_status','verify-professional-booking-payment','yummypro_professional_mp_redirecting','resumeProfessionalPaymentReturn','visibilitychange','pageshow','mercadopago_configured',':root[data-theme="dark"] .professional-booking',':root[data-theme="dark"] .professional-booking-card',':root[data-theme="dark"] .professional-choice','professional-theme','professional-account','professional-reservations','professional-login-form','professional-register-form','syncProfessionalCustomer','loadProfessionalCustomerReservations','startProfessionalReservationsRealtime','customer_reservations_load_failure','professional-payment-methods','professional-mp-pay','select_professional_booking_payment_method','Aún no existe una reserva','Continuar al pago','payment_amount_due','paid_amount'])if(!html.includes(marker))throw new Error('index.html: falta reserva pública profesional '+marker);
 if(html.includes('create_public_professional_appointment'))throw new Error('index.html: el cliente no debe crear una reserva antes del pago');
 if((html.match(/<\/html>/gi)||[]).length!==1||!html.trim().endsWith('</html>'))throw new Error('index.html: HTML duplicado o contenido después de </html>');
+
+
+for(const marker of ['window.__demoMode=!!r.is_demo','Esta es una cuenta demo','renderDemoOrders','professional-demo-mp','Pago online seguro'])if(!html.includes(marker))throw new Error('Los negocios demo deben conservar el flujo real sin ejecutar acciones: '+marker);
