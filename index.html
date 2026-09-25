@@ -28,7 +28,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="YummyPro">
-<link rel="manifest" href="/manifest.webmanifest?v=1623">
+<link rel="manifest" href="/manifest.webmanifest?v=1624">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" sizes="192x192" href="/icon-192.png" type="image/png">
 <meta name="theme-color" content="#000000">
@@ -287,7 +287,7 @@ section[data-cat]{padding-top:38px}section[data-cat] h2{font-size:clamp(1.35rem,
 html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;height:auto}input,select,textarea,button{max-width:100%}@media(max-width:900px){.wrap{width:min(100% - 24px,1180px)!important;margin-left:auto!important;margin-right:auto!important}.top,.row.between{gap:10px;flex-wrap:wrap}.tabs{display:flex!important;overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch;padding-bottom:6px}.tabs .tab{flex:0 0 auto!important}.grid{grid-template-columns:1fr!important}.span4,.span5,.span6,.span7,.span8,.span12{grid-column:1/-1!important;width:100%!important}.card{max-width:100%!important}}@media(max-width:600px){body{font-size:15px}.wrap{width:min(100% - 16px,1180px)!important}.top{align-items:flex-start!important}.top>.row{width:100%;display:flex;flex-wrap:wrap}.card{padding:16px!important}.row{flex-wrap:wrap}input,select,textarea{width:100%!important;min-width:0!important}button,.btn{min-height:44px}table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}}
 
 /* =========================================================
-   YummyPro Menú Público · Rediseño completo v1.6.47
+   YummyPro Menú Público · Rediseño completo v1.6.48
    Inspirado en una app premium de delivery; conserva toda la lógica.
    ========================================================= */
 :root{
@@ -1782,6 +1782,135 @@ body.vertical-retail #detail .d-note-field label::after{
   background:var(--menu-card)!important;
   color:#f7f9fc!important;
   border-color:var(--menu-border)!important
+}
+
+
+/* =========================================================
+   v1.6.48 · Corrección completa del modo oscuro Profesional
+   Los estilos de identidad violeta ya no pisan la paleta oscura.
+   ========================================================= */
+:root[data-theme="dark"] body.professional-booking-mode.vertical-professional{
+  --pro-accent:#7c6df2;
+  --pro-accent-dark:#b7adff;
+  --pro-soft:#211d3b;
+  background:#07070c!important;
+  color:#f7f5ff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking{
+  background:
+    radial-gradient(circle at 90% 0,#241f48 0,transparent 34%),
+    linear-gradient(180deg,#09090f,#11101b)!important;
+  color:#f7f5ff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-yummypro-mark{
+  background:#171522!important;
+  border-color:#302b49!important;
+  box-shadow:0 8px 24px #0005!important;
+  color:#f7f5ff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-yummypro-mark>span:last-child{
+  color:#a99cff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-mark-icon{
+  background:#272241!important;
+  color:#a99cff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking h1{
+  color:#f8f6ff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking-kicker{
+  background:#262044!important;
+  color:#c6bdff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking-address{
+  color:#a9a6b8!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking-contact a,
+:root[data-theme="dark"] body.vertical-professional .professional-booking-contact button{
+  background:#171522!important;
+  border-color:#37314f!important;
+  color:#f7f5ff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking-card{
+  background:#12111b!important;
+  border-color:#2d293e!important;
+  box-shadow:0 18px 44px #0008!important;
+  color:#f7f5ff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking-step>span{
+  background:var(--pro-accent)!important;
+  color:#fff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking-step h2,
+:root[data-theme="dark"] body.vertical-professional .professional-booking-step h3{
+  color:#f7f5ff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking-step p{
+  color:#aaa6ba!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-choice{
+  background:#171522!important;
+  border-color:#3b3553!important;
+  color:#f7f5ff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-choice:hover{
+  border-color:#675d91!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-choice.selected{
+  background:#262044!important;
+  border-color:var(--pro-accent)!important;
+  box-shadow:0 0 0 3px #7c6df226!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-choice small{
+  color:#aaa6ba!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-choice-price{
+  color:#b8adff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-slot{
+  background:#171522!important;
+  border-color:#3b3553!important;
+  color:#f7f5ff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-slot.selected{
+  background:var(--pro-accent)!important;
+  border-color:var(--pro-accent)!important;
+  color:#fff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking input,
+:root[data-theme="dark"] body.vertical-professional .professional-booking textarea,
+:root[data-theme="dark"] body.vertical-professional .professional-booking select{
+  background:#0d0c14!important;
+  border-color:#3b3553!important;
+  color:#f7f5ff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking input::placeholder,
+:root[data-theme="dark"] body.vertical-professional .professional-booking textarea::placeholder{
+  color:#777286!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking-fields label{
+  color:#d9d4e8!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking-summary{
+  background:linear-gradient(180deg,#171522,#12111b)!important;
+  border-color:#302b43!important;
+  color:#f7f5ff!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-summary-line{
+  border-bottom-color:#302b43!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-summary-line span,
+:root[data-theme="dark"] body.vertical-professional .professional-summary-empty{
+  color:#aaa6ba!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking-status{
+  background:#211d31!important;
+  color:#d8d3e6!important
+}
+:root[data-theme="dark"] body.vertical-professional .professional-booking-submit{
+  background:linear-gradient(135deg,#7162eb,#8d7cff)!important;
+  color:#fff!important;
+  box-shadow:0 11px 24px #5f52d13b!important
 }
 </style></head>
 <body class="menu-loading">
@@ -4037,5 +4166,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.47</footer></body>
+<footer class="site-version">Versión v1.6.48</footer></body>
 </html>
