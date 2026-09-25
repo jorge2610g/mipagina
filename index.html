@@ -2219,7 +2219,8 @@ body.vertical-retail #detail .d-note-field label::after{
     if(currentCustomer){
       const {data:role}=await db.rpc("current_account_role");
       if(role!=="customer"&&!window.__adminClientPreview){
-        await db.auth.signOut();currentCustomer=null;
+        if(role==="admin"&&!window.__restaurantId){currentCustomer=null}
+        else{await db.auth.signOut();currentCustomer=null}
       }
     }
     const guest=document.getElementById("account-guest"), auth=document.getElementById("account-auth"), userText=document.getElementById("account-user");
@@ -2614,6 +2615,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
     const savedZones=Array.isArray(r.delivery_zones)?r.delivery_zones:[];const deliveryMode=(savedZones.length&&r.latitude!=null&&r.longitude!=null)?"distance":(r.delivery_pricing_mode||"fixed");CONFIG.delivery={mode:deliveryMode,fixed:Number(r.delivery_fixed_price||0),zones:savedZones,lat:r.latitude==null?null:Number(r.latitude),lng:r.longitude==null?null:Number(r.longitude)};
     window.__businessType=String(r.business_type||"restaurant").toLowerCase();
     window.__restaurantId=r.id;
+    await syncCustomerUI();
     if(window.__businessType==="professional"){
       window.__tableQrContext=null;
       const [publicCatalog,bookingCatalog,mpStatus,paymentMethods]=await Promise.all([
