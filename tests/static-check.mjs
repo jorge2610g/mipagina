@@ -5,7 +5,7 @@ for(const marker of ['currencyDigits','minimumFractionDigits:shown','maximumFrac
 if(!/<\/html>/i.test(html))throw new Error('HTML incompleto');
 console.log('Menú cliente validado');
 
-for(const marker of ['pwa-install-btn','installCustomerPwa','yummypro_last_restaurant','/manifest.webmanifest?v=1625','/pwa-sw.js','yummypro_client_pwa_identity_v1622','customer-pwa-v1623','Versión v1.6.51'])if(!html.includes(marker))throw new Error('Falta PWA cliente actual: '+marker);
+for(const marker of ['pwa-install-btn','installCustomerPwa','yummypro_last_restaurant','/manifest.webmanifest?v=1625','/pwa-sw.js','yummypro_client_pwa_identity_v1622','customer-pwa-v1623','Versión v1.6.52'])if(!html.includes(marker))throw new Error('Falta PWA cliente actual: '+marker);
 
 const pwaManifest=readFileSync('manifest.webmanifest','utf8');
 for(const marker of ['"id": "/"','"start_url": "/?source=pwa"','"scope": "/"','"display": "standalone"','"/icon-192.png"','"/icon-512.png"','"purpose": "maskable"'])if(!pwaManifest.includes(marker))throw new Error('Manifest PWA cliente v1.6.23 incompleto: '+marker);
@@ -24,4 +24,4 @@ if(html.includes('create_public_professional_appointment'))throw new Error('inde
 if((html.match(/<\/html>/gi)||[]).length!==1||!html.trim().endsWith('</html>'))throw new Error('index.html: HTML duplicado o contenido después de </html>');
 
 
-for(const marker of ['business_payment_public_status','effective_demo','using_admin_credentials','Esta es una cuenta demo','renderDemoOrders','professional-demo-mp','Pago online seguro'])if(!html.includes(marker))throw new Error('Falta modo demo efectivo controlado por credenciales del administrador: '+marker);
+for(const marker of ['business_public_client_mode','effective_demo','effective_demo','Esta es una cuenta demo','renderDemoOrders','professional-demo-mp','Pago online seguro'])if(!html.includes(marker))throw new Error('Falta modo demo efectivo controlado por credenciales del administrador: '+marker);
