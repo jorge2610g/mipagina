@@ -2168,30 +2168,66 @@ body.vertical-retail #detail .d-note-field label::after{
   const SUPABASE_URL = "https://gulctljitzlwokqydigx.supabase.co";
   const SUPABASE_KEY = "sb_publishable__moppTxObowifx6rJbW_tw_3GiCkqhG";
   const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+  window.__adminClientPreview=false;
+  window.__adminClientPreviewRestaurantId=null;
+  window.__adminClientPreviewBooting=false;
+  function clearAdminClientPreviewHash(){
+    const raw=String(location.hash||"").replace(/^#/,"");if(!raw)return;
+    const hp=new URLSearchParams(raw);hp.delete("admin_client_token_hash");hp.delete("admin_client_restaurant");
+    history.replaceState({},document.title,location.pathname+location.search+(hp.toString()?"#"+hp.toString():""))
+  }
+  async function consumeAdminClientPreviewTicket(){
+    if(!db)return false;
+    const hp=new URLSearchParams(String(location.hash||"").replace(/^#/,""));
+    const token=String(hp.get("admin_client_token_hash")||"").trim(),rid=Number(hp.get("admin_client_restaurant")||0);
+    if(!token)return false;
+    if(!rid){clearAdminClientPreviewHash();throw new Error("El acceso administrativo no incluye un negocio válido.")}
+    window.__adminClientPreviewBooting=true;
+    try{
+      const verified=await db.auth.verifyOtp({token_hash:token,type:"email"});
+      if(verified.error||!verified.data?.session)throw verified.error||new Error("No se pudo iniciar la vista de prueba.");
+      const activated=await db.rpc("activate_admin_client_preview",{p_restaurant_id:rid});
+      if(activated.error||!activated.data?.active)throw activated.error||new Error("No se pudo activar la vista de prueba.");
+      window.__adminClientPreview=true;
+      window.__adminClientPreviewRestaurantId=rid;
+      clearAdminClientPreviewHash();
+      return true
+    }finally{window.__adminClientPreviewBooting=false}
+  }
+  async function refreshAdminClientPreviewState(restaurantId){
+    if(!db||!restaurantId)return false;
+    const {data:{session}}=await db.auth.getSession();
+    if(!session?.user){window.__adminClientPreview=false;window.__adminClientPreviewRestaurantId=null;return false}
+    const result=await db.rpc("has_admin_client_preview",{p_restaurant_id:Number(restaurantId)});
+    window.__adminClientPreview=!result.error&&result.data===true;
+    window.__adminClientPreviewRestaurantId=window.__adminClientPreview?Number(restaurantId):null;
+    return window.__adminClientPreview
+  }
   let currentCustomer=null;
   const CLIENT_TELEMETRY_KEY="yummy_client_telemetry_session_v1";
   function clientTelemetrySession(){try{let v=localStorage.getItem(CLIENT_TELEMETRY_KEY);if(!v){v=(crypto.randomUUID?.()||Date.now()+"-"+Math.random().toString(16).slice(2));localStorage.setItem(CLIENT_TELEMETRY_KEY,v)}return v}catch(_){return "client-"+Date.now()}}
   function telemetryRestaurantId(){const n=Number(window.__restaurantId);return Number.isFinite(n)?n:null}
-  async function trackClientEvent(eventName,module=null,metadata={}){if(!db||window.__demoMode)return;try{await db.rpc("log_app_event",{p_app_context:"client",p_event_name:eventName,p_module:module,p_restaurant_id:telemetryRestaurantId(),p_plan_id:null,p_session_id:clientTelemetrySession(),p_route:location.pathname+location.search,p_metadata:metadata||{}})}catch(_){}}
-  async function trackClientError(category,errorCode,message,isUserError=false,metadata={}){if(!db||window.__demoMode)return;try{const {error}=await db.rpc("log_app_error",{p_app_context:"client",p_category:category,p_error_code:errorCode,p_message:String(message||"").slice(0,650),p_severity:isUserError?"info":"error",p_is_user_error:!!isUserError,p_restaurant_id:telemetryRestaurantId(),p_session_id:clientTelemetrySession(),p_route:location.pathname+location.search,p_metadata:metadata||{}});if(!error&&!isUserError)fetch(SUPABASE_URL+"/functions/v1/observability-admin-alert",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({kind:"error"})}).catch(()=>{})}catch(_){}}
+  async function trackClientEvent(eventName,module=null,metadata={}){if(!db||window.__demoMode||window.__adminClientPreview)return;try{await db.rpc("log_app_event",{p_app_context:"client",p_event_name:eventName,p_module:module,p_restaurant_id:telemetryRestaurantId(),p_plan_id:null,p_session_id:clientTelemetrySession(),p_route:location.pathname+location.search,p_metadata:metadata||{}})}catch(_){}}
+  async function trackClientError(category,errorCode,message,isUserError=false,metadata={}){if(!db||window.__demoMode||window.__adminClientPreview)return;try{const {error}=await db.rpc("log_app_error",{p_app_context:"client",p_category:category,p_error_code:errorCode,p_message:String(message||"").slice(0,650),p_severity:isUserError?"info":"error",p_is_user_error:!!isUserError,p_restaurant_id:telemetryRestaurantId(),p_session_id:clientTelemetrySession(),p_route:location.pathname+location.search,p_metadata:metadata||{}});if(!error&&!isUserError)fetch(SUPABASE_URL+"/functions/v1/observability-admin-alert",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({kind:"error"})}).catch(()=>{})}catch(_){}}
 
   async function syncCustomerUI(){
     const accountBtn=document.getElementById("account-btn"), ordersBtn=document.getElementById("orders-btn");
-    if(window.__demoMode){currentCustomer=null;if(accountBtn){accountBtn.hidden=false;accountBtn.textContent="👤 Iniciar sesión"}if(ordersBtn){ordersBtn.hidden=false;ordersBtn.textContent=["supermarket","minimarket","retail"].includes(window.__businessType||"")?"🛍️ Mis compras":"🧾 Mis pedidos"}const guest=document.getElementById("account-guest"),auth=document.getElementById("account-auth"),userText=document.getElementById("account-user");if(guest)guest.hidden=false;if(auth)auth.hidden=true;if(userText)userText.textContent="Modo demostración: la cuenta cliente está deshabilitada, pero puedes recorrer el flujo completo.";document.getElementById("pending-order-banner").hidden=true;return;}
+    if(window.__adminClientPreviewBooting)return;
+    if(window.__demoMode&&!window.__adminClientPreview){currentCustomer=null;if(accountBtn){accountBtn.hidden=false;accountBtn.textContent="👤 Iniciar sesión"}if(ordersBtn){ordersBtn.hidden=false;ordersBtn.textContent=["supermarket","minimarket","retail"].includes(window.__businessType||"")?"🛍️ Mis compras":"🧾 Mis pedidos"}const guest=document.getElementById("account-guest"),auth=document.getElementById("account-auth"),userText=document.getElementById("account-user");if(guest)guest.hidden=false;if(auth)auth.hidden=true;if(userText)userText.textContent="Modo demostración: la cuenta cliente está deshabilitada, pero puedes recorrer el flujo completo.";document.getElementById("pending-order-banner").hidden=true;return;}
     const {data:{session}}=await db.auth.getSession();
     currentCustomer=session?.user||null;
     if(currentCustomer){
       const {data:role}=await db.rpc("current_account_role");
-      if(role!=="customer"){
+      if(role!=="customer"&&!window.__adminClientPreview){
         await db.auth.signOut();currentCustomer=null;
       }
     }
     const guest=document.getElementById("account-guest"), auth=document.getElementById("account-auth"), userText=document.getElementById("account-user");
     if(currentCustomer){
-      accountBtn.textContent="👤 Mi cuenta";accountBtn.title="Mi cuenta";accountBtn.setAttribute("aria-label","Mi cuenta");ordersBtn.hidden=false;ordersBtn.textContent="🧾 Mis pedidos";ordersBtn.title="Mis pedidos";ordersBtn.setAttribute("aria-label","Mis pedidos");guest.hidden=true;auth.hidden=false;
+      accountBtn.textContent=window.__adminClientPreview?"👤 Admin prueba":"👤 Mi cuenta";accountBtn.title=window.__adminClientPreview?"Vista administrativa de prueba":"Mi cuenta";accountBtn.setAttribute("aria-label",accountBtn.title);ordersBtn.hidden=false;ordersBtn.textContent="🧾 Mis pedidos";ordersBtn.title="Mis pedidos";ordersBtn.setAttribute("aria-label","Mis pedidos");guest.hidden=true;auth.hidden=false;
       if("Notification" in window&&Notification.permission==="granted"){ordersBtn.textContent="🔔 Mis pedidos";ordersBtn.title="Mis pedidos con notificaciones";ordersBtn.setAttribute("aria-label","Mis pedidos con notificaciones");const pb=document.getElementById("customer-push-btn");if(pb){pb.textContent="✅ Notificaciones activadas";pb.disabled=true}registerCustomerPush().catch(e=>console.warn("No se pudo actualizar la suscripción Push",e))}else{const pb=document.getElementById("customer-push-btn");if(pb){const denied=("Notification" in window&&Notification.permission==="denied");pb.textContent=denied?"🔕 Notificaciones bloqueadas":"🔔 Activar notificaciones";pb.disabled=denied}}
-      const {data:p}=await db.from("customer_profiles").select("*").eq("user_id",currentCustomer.id).maybeSingle();
-      userText.textContent=p?.full_name ? p.full_name+" · "+currentCustomer.email : currentCustomer.email;
+      let p=null;if(!window.__adminClientPreview){const profileResult=await db.from("customer_profiles").select("*").eq("user_id",currentCustomer.id).maybeSingle();p=profileResult.data||null}
+      userText.textContent=window.__adminClientPreview?("Vista de prueba administrativa · "+(currentCustomer.email||"Administrador")):(p?.full_name ? p.full_name+" · "+currentCustomer.email : currentCustomer.email);
       if(p?.full_name && document.getElementById("f-name")) document.getElementById("f-name").value=p.full_name;
       if(p?.phone && document.getElementById("f-phone")) document.getElementById("f-phone").value=p.phone;
       if(p?.default_address && document.getElementById("f-addr")) document.getElementById("f-addr").value=p.default_address;
@@ -2217,6 +2253,7 @@ body.vertical-retail #detail .d-note-field label::after{
   const WEB_PUSH_PUBLIC_KEY="BEhtHznJex6P3ANNL3SZzgiyXTrilvU-On1qpSwdx0MqmPhrpikxI1sCAbXUFFfkVczLAHdyDFQQS9_Wm5mahpw";
   function pushKeyBytes(value){const padding="=".repeat((4-value.length%4)%4),base64=(value+padding).replace(/-/g,"+").replace(/_/g,"/"),raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)))}
   async function registerCustomerPush(){
+    if(window.__adminClientPreview)return;
     if(!currentCustomer||!("serviceWorker" in navigator)||!("PushManager" in window)||Notification.permission!=="granted")return;
     const registration=await navigator.serviceWorker.register("/pwa-sw.js");
     let subscription=await registration.pushManager.getSubscription();
@@ -2389,8 +2426,9 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
   document.getElementById("tab-register").addEventListener("click",()=>setAccountTab(true));
   document.getElementById("login-form").addEventListener("submit",async e=>{e.preventDefault();if(window.__demoMode){clientDemoMessage("account-msg","Esta es una cuenta demo. El inicio de sesión está deshabilitado y no se guardará ningún dato.");return}const msg=document.getElementById("account-msg");msg.className="account-msg";msg.textContent="Ingresando…";const {error}=await db.auth.signInWithPassword({email:document.getElementById("login-email").value.trim(),password:document.getElementById("login-password").value});if(error){const raw=String(error.message||"Error de autenticación"),userError=/invalid login credentials|invalid credentials|email not confirmed|wrong password/i.test(raw);await trackClientError("auth",userError?"invalid_credentials":"login_failure",raw,userError);msg.className="account-msg error";msg.textContent="No pudimos iniciar sesión. Revisa correo y contraseña.";return;}const {data:role}=await db.rpc("current_account_role");if(role!=="customer"){await trackClientError("auth","wrong_account_type","La cuenta no corresponde a cliente",true,{role:role||null});await db.auth.signOut();msg.className="account-msg error";msg.textContent=role==="restaurant"?"Esta cuenta pertenece a un restaurante. Ingresa desde el panel de restaurante.":role==="admin"?"Esta cuenta es de administrador y no puede iniciar sesión como cliente.":"Esta cuenta no está registrada como cliente.";return;}await trackClientEvent("login_success","account");msg.textContent="Sesión iniciada.";await syncCustomerUI();const checkoutErr=document.getElementById("err");if(checkoutErr&&checkoutErr.textContent.includes("iniciar sesión o crear una cuenta"))checkoutErr.textContent="";setTimeout(()=>document.getElementById("account-dialog").close(),500);});
   document.getElementById("register-form").addEventListener("submit",async e=>{e.preventDefault();if(window.__demoMode){clientDemoMessage("account-msg","Esta es una cuenta demo. No se crearán usuarios reales; esta pantalla solo muestra cómo funciona el registro.");return}const msg=document.getElementById("account-msg");msg.className="account-msg";msg.textContent="Creando cuenta…";const name=document.getElementById("register-name").value.trim(),phone=document.getElementById("register-phone").value.trim(),email=document.getElementById("register-email").value.trim(),password=document.getElementById("register-password").value;const {data,error}=await db.auth.signUp({email,password,options:{data:{account_type:"customer",full_name:name,phone}}});if(error){msg.className="account-msg error";const em=String(error.message||""),userError=/already|registered|exists/i.test(em);await trackClientError("signup",/email rate limit exceeded/i.test(em)?"email_rate_limit":userError?"already_registered":"signup_failure",em,userError);msg.textContent=/email rate limit exceeded/i.test(em)?"El servicio de correo alcanzó temporalmente su límite de confirmaciones. Espera unos minutos y vuelve a intentar, o inicia sesión si la cuenta ya fue creada.":userError?"Este correo ya tiene una cuenta. Usa Iniciar sesión.":"No pudimos crear la cuenta: "+em;return;}await trackClientEvent("signup_success","account",{session_created:!!data.session});if(data.session){await db.from("customer_profiles").upsert({user_id:data.user.id,full_name:name,phone});msg.textContent="Cuenta creada correctamente.";await syncCustomerUI();const checkoutErr=document.getElementById("err");if(checkoutErr&&checkoutErr.textContent.includes("iniciar sesión o crear una cuenta"))checkoutErr.textContent="";}else{msg.textContent="Cuenta creada correctamente. Ya puedes iniciar sesión.";setAccountTab(false);}});
-  document.getElementById("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();await syncCustomerUI();document.getElementById("account-dialog").close();});
-  db.auth.onAuthStateChange(()=>setTimeout(async()=>{await syncCustomerUI();startOrderRealtime();},0));
+  document.getElementById("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();window.__adminClientPreview=false;window.__adminClientPreviewRestaurantId=null;await syncCustomerUI();document.getElementById("account-dialog").close();});
+  db.auth.onAuthStateChange(()=>setTimeout(async()=>{if(window.__adminClientPreviewBooting)return;await syncCustomerUI();startOrderRealtime();},0));
+  try{await consumeAdminClientPreviewTicket()}catch(e){console.error("No se pudo iniciar la vista cliente del administrador",e)}
   await syncCustomerUI();
 
   // Actualización automática del seguimiento sin recargar la página.
@@ -2555,6 +2593,11 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
       const modeResult=await db.rpc("business_public_client_mode",{p_restaurant_id:r.id});
       if(!modeResult.error)publicClientMode=modeResult.data||null;
     }catch(e){console.warn("No se pudo resolver el modo público del negocio",e)}
+    if(window.__adminClientPreviewRestaurantId&&Number(window.__adminClientPreviewRestaurantId)!==Number(r.id)){
+      window.__adminClientPreview=false;window.__adminClientPreviewRestaurantId=null;
+    }else if(!window.__adminClientPreview){
+      try{await refreshAdminClientPreviewState(r.id)}catch(e){console.warn("No se pudo recuperar la vista administrativa de cliente",e)}
+    }
     window.__demoMode=typeof publicClientMode?.effective_demo==="boolean"
       ? publicClientMode.effective_demo
       : !!r.is_demo;
@@ -2815,18 +2858,18 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
     document.getElementById("professional-register-tab")?.addEventListener("click",()=>{document.getElementById("professional-login-form").hidden=true;document.getElementById("professional-register-form").hidden=false;document.getElementById("professional-login-tab").classList.remove("active");document.getElementById("professional-register-tab").classList.add("active")});
     async function syncProfessionalCustomer(){
       const accountBtn=document.getElementById("professional-account"),guest=document.getElementById("professional-account-guest"),authBox=document.getElementById("professional-account-auth"),userText=document.getElementById("professional-account-user"),msg=document.getElementById("professional-account-message");
-      if(window.__demoMode){currentCustomer=null;accountBtn.textContent="👤 Iniciar sesión";guest.hidden=false;authBox.hidden=true;userText.textContent="Modo demostración: puedes revisar el flujo, pero no iniciar sesión ni crear cuentas.";if(msg){msg.classList.remove("error");msg.textContent=""}return}
+      if(window.__demoMode&&!window.__adminClientPreview){currentCustomer=null;accountBtn.textContent="👤 Iniciar sesión";guest.hidden=false;authBox.hidden=true;userText.textContent="Modo demostración: puedes revisar el flujo, pero no iniciar sesión ni crear cuentas.";if(msg){msg.classList.remove("error");msg.textContent=""}return}
       const {data:{session}}=await db.auth.getSession();
       currentCustomer=session?.user||null;
       if(currentCustomer){
         const {data:role}=await db.rpc("current_account_role");
-        if(role!=="customer"){await db.auth.signOut();currentCustomer=null}
+        if(role!=="customer"&&!window.__adminClientPreview){await db.auth.signOut();currentCustomer=null}
       }
       if(currentCustomer){
-        accountBtn.textContent="👤 Mi cuenta";guest.hidden=true;authBox.hidden=false;
+        accountBtn.textContent=window.__adminClientPreview?"👤 Admin prueba":"👤 Mi cuenta";guest.hidden=true;authBox.hidden=false;
         if("Notification" in window&&Notification.permission==="granted")registerCustomerPush().catch(e=>console.warn("No se pudo actualizar la suscripción Push",e));
-        const {data:p}=await db.from("customer_profiles").select("full_name,phone").eq("user_id",currentCustomer.id).maybeSingle();
-        userText.textContent=(p?.full_name?String(p.full_name)+" · ":"")+String(currentCustomer.email||"");
+        let p=null;if(!window.__adminClientPreview){const profileResult=await db.from("customer_profiles").select("full_name,phone").eq("user_id",currentCustomer.id).maybeSingle();p=profileResult.data||null}
+        userText.textContent=window.__adminClientPreview?("Vista de prueba administrativa · "+String(currentCustomer.email||"Administrador")):((p?.full_name?String(p.full_name)+" · ":"")+String(currentCustomer.email||""));
         const name=document.getElementById("public-professional-name"),phone=document.getElementById("public-professional-phone"),email=document.getElementById("public-professional-email");
         if(name&&!name.value&&p?.full_name)name.value=p.full_name;
         if(phone&&!phone.value&&p?.phone)phone.value=p.phone;
@@ -2885,7 +2928,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
       }
     });
     document.getElementById("professional-logout")?.addEventListener("click",async()=>{
-      await db.auth.signOut();currentCustomer=null;closeProfessionalAccount();closeProfessionalReservations();await syncProfessionalCustomer();
+      await db.auth.signOut();window.__adminClientPreview=false;window.__adminClientPreviewRestaurantId=null;currentCustomer=null;closeProfessionalAccount();closeProfessionalReservations();await syncProfessionalCustomer();
     });
     db.auth.onAuthStateChange(()=>setTimeout(syncProfessionalCustomer,0));
     syncProfessionalCustomer();
@@ -3779,7 +3822,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
   async function saveOrderToCloud(){
     if (!db || !cart.size) return false;
     const f=form();
-    if(currentCustomer&&!window.__tableQrContext){await db.from("customer_profiles").upsert({user_id:currentCustomer.id,full_name:f.name,phone:f.phone,default_address:f.type==="Delivery"?f.addr:null,updated_at:new Date().toISOString()});}
+    if(currentCustomer&&!window.__tableQrContext&&!window.__adminClientPreview){await db.from("customer_profiles").upsert({user_id:currentCustomer.id,full_name:f.name,phone:f.phone,default_address:f.type==="Delivery"?f.addr:null,updated_at:new Date().toISOString()});}
     if(["supermarket","minimarket","retail"].includes(window.__businessType||"")){
       const retailItems=[...cart.values()].map(v=>({product_id:Number(v.it.retailProductId||String(v.it.id||"").replace("retail-","")),quantity:Number(v.qty||0)})).filter(x=>x.product_id&&x.quantity>0);
       const {data,error}=await db.rpc("retail_create_online_order",{
@@ -4188,5 +4231,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.52</footer></body>
+<footer class="site-version">Versión v1.6.53</footer></body>
 </html>
