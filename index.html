@@ -2177,7 +2177,7 @@ body.vertical-retail #detail .d-note-field label::after{
 
   async function syncCustomerUI(){
     const accountBtn=document.getElementById("account-btn"), ordersBtn=document.getElementById("orders-btn");
-    if(window.__demoMode){currentCustomer=null;if(accountBtn)accountBtn.hidden=true;if(ordersBtn)ordersBtn.hidden=true;document.getElementById("pending-order-banner").hidden=true;return;}
+    if(window.__demoMode){currentCustomer=null;if(accountBtn){accountBtn.hidden=false;accountBtn.textContent="👤 Iniciar sesión"}if(ordersBtn){ordersBtn.hidden=false;ordersBtn.textContent=["supermarket","minimarket","retail"].includes(window.__businessType||"")?"🛍️ Mis compras":"🧾 Mis pedidos"}const guest=document.getElementById("account-guest"),auth=document.getElementById("account-auth"),userText=document.getElementById("account-user");if(guest)guest.hidden=false;if(auth)auth.hidden=true;if(userText)userText.textContent="Modo demostración: la cuenta cliente está deshabilitada, pero puedes recorrer el flujo completo.";document.getElementById("pending-order-banner").hidden=true;return;}
     const {data:{session}}=await db.auth.getSession();
     currentCustomer=session?.user||null;
     if(currentCustomer){
@@ -2327,10 +2327,16 @@ body.vertical-retail #detail .d-note-field label::after{
   }
 
 
-  document.getElementById("account-btn").addEventListener("click",()=>{if(window.__demoMode)return;document.getElementById("account-dialog").showModal()});
+  function clientDemoMessage(target,message){const el=document.getElementById(target);if(el){el.classList?.remove("error");el.textContent=message}}
+function renderDemoOrders(){
+ const list=document.getElementById("orders-list"),isRetail=["supermarket","minimarket","retail"].includes(window.__businessType||"");
+ if(!list)return;
+ list.innerHTML='<div class="item"><b>🧪 Seguimiento de demostración</b><div class="mut">En un negocio real aquí verías '+(isRetail?"tus compras":"tus pedidos")+' y sus cambios de estado.</div></div><div class="item"><div class="row between"><b>DEMO-001</b><span class="badge">'+(isRetail?"Preparando compra":"En preparación")+'</span></div><div class="mut">Pago aprobado · seguimiento de ejemplo</div><div style="margin-top:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px"><small>✓ Recibido</small><small>✓ Pago</small><small>● Preparación</small><small>○ Entregado</small></div></div>';
+}
+document.getElementById("account-btn").addEventListener("click",()=>{if(window.__demoMode){document.getElementById("account-dialog").showModal();clientDemoMessage("account-msg","Esta es una cuenta demo. Puedes revisar esta pantalla, pero iniciar sesión y crear una cuenta están deshabilitados.");return;}document.getElementById("account-dialog").showModal()});
   document.getElementById("account-close").addEventListener("click",()=>document.getElementById("account-dialog").close());
   document.getElementById("orders-close").addEventListener("click",()=>document.getElementById("orders-dialog").close());
-  document.getElementById("orders-btn").addEventListener("click",async()=>{if(window.__demoMode)return;await enableOrderNotifications();document.getElementById("orders-dialog").showModal();await loadCustomerOrders();});
+  document.getElementById("orders-btn").addEventListener("click",async()=>{if(window.__demoMode){renderDemoOrders();document.getElementById("orders-dialog").showModal();return}await enableOrderNotifications();document.getElementById("orders-dialog").showModal();await loadCustomerOrders();});
   document.getElementById("customer-push-btn")?.addEventListener("click",async()=>{await enableOrderNotifications();await syncCustomerUI();if("Notification" in window&&Notification.permission==="granted")trackClientEvent("push_enabled","notifications").catch(()=>{})});
   document.getElementById("pending-order-open").addEventListener("click",()=>openOrderDetail(window.__pendingCustomerOrder));
   const tableBanner=document.getElementById("table-order-banner");if(tableBanner){const openTableTracking=async()=>{await enableTableQrNotifications(true);const row=await refreshTableQrOrderStatus();if(row)openOrderDetail(row)};tableBanner.addEventListener("click",openTableTracking);tableBanner.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openTableTracking()}})}
@@ -2381,8 +2387,8 @@ body.vertical-retail #detail .d-note-field label::after{
 
   document.getElementById("tab-login").addEventListener("click",()=>setAccountTab(false));
   document.getElementById("tab-register").addEventListener("click",()=>setAccountTab(true));
-  document.getElementById("login-form").addEventListener("submit",async e=>{e.preventDefault();const msg=document.getElementById("account-msg");msg.className="account-msg";msg.textContent="Ingresando…";const {error}=await db.auth.signInWithPassword({email:document.getElementById("login-email").value.trim(),password:document.getElementById("login-password").value});if(error){const raw=String(error.message||"Error de autenticación"),userError=/invalid login credentials|invalid credentials|email not confirmed|wrong password/i.test(raw);await trackClientError("auth",userError?"invalid_credentials":"login_failure",raw,userError);msg.className="account-msg error";msg.textContent="No pudimos iniciar sesión. Revisa correo y contraseña.";return;}const {data:role}=await db.rpc("current_account_role");if(role!=="customer"){await trackClientError("auth","wrong_account_type","La cuenta no corresponde a cliente",true,{role:role||null});await db.auth.signOut();msg.className="account-msg error";msg.textContent=role==="restaurant"?"Esta cuenta pertenece a un restaurante. Ingresa desde el panel de restaurante.":role==="admin"?"Esta cuenta es de administrador y no puede iniciar sesión como cliente.":"Esta cuenta no está registrada como cliente.";return;}await trackClientEvent("login_success","account");msg.textContent="Sesión iniciada.";await syncCustomerUI();const checkoutErr=document.getElementById("err");if(checkoutErr&&checkoutErr.textContent.includes("iniciar sesión o crear una cuenta"))checkoutErr.textContent="";setTimeout(()=>document.getElementById("account-dialog").close(),500);});
-  document.getElementById("register-form").addEventListener("submit",async e=>{e.preventDefault();const msg=document.getElementById("account-msg");msg.className="account-msg";msg.textContent="Creando cuenta…";const name=document.getElementById("register-name").value.trim(),phone=document.getElementById("register-phone").value.trim(),email=document.getElementById("register-email").value.trim(),password=document.getElementById("register-password").value;const {data,error}=await db.auth.signUp({email,password,options:{data:{account_type:"customer",full_name:name,phone}}});if(error){msg.className="account-msg error";const em=String(error.message||""),userError=/already|registered|exists/i.test(em);await trackClientError("signup",/email rate limit exceeded/i.test(em)?"email_rate_limit":userError?"already_registered":"signup_failure",em,userError);msg.textContent=/email rate limit exceeded/i.test(em)?"El servicio de correo alcanzó temporalmente su límite de confirmaciones. Espera unos minutos y vuelve a intentar, o inicia sesión si la cuenta ya fue creada.":userError?"Este correo ya tiene una cuenta. Usa Iniciar sesión.":"No pudimos crear la cuenta: "+em;return;}await trackClientEvent("signup_success","account",{session_created:!!data.session});if(data.session){await db.from("customer_profiles").upsert({user_id:data.user.id,full_name:name,phone});msg.textContent="Cuenta creada correctamente.";await syncCustomerUI();const checkoutErr=document.getElementById("err");if(checkoutErr&&checkoutErr.textContent.includes("iniciar sesión o crear una cuenta"))checkoutErr.textContent="";}else{msg.textContent="Cuenta creada correctamente. Ya puedes iniciar sesión.";setAccountTab(false);}});
+  document.getElementById("login-form").addEventListener("submit",async e=>{e.preventDefault();if(window.__demoMode){clientDemoMessage("account-msg","Esta es una cuenta demo. El inicio de sesión está deshabilitado y no se guardará ningún dato.");return}const msg=document.getElementById("account-msg");msg.className="account-msg";msg.textContent="Ingresando…";const {error}=await db.auth.signInWithPassword({email:document.getElementById("login-email").value.trim(),password:document.getElementById("login-password").value});if(error){const raw=String(error.message||"Error de autenticación"),userError=/invalid login credentials|invalid credentials|email not confirmed|wrong password/i.test(raw);await trackClientError("auth",userError?"invalid_credentials":"login_failure",raw,userError);msg.className="account-msg error";msg.textContent="No pudimos iniciar sesión. Revisa correo y contraseña.";return;}const {data:role}=await db.rpc("current_account_role");if(role!=="customer"){await trackClientError("auth","wrong_account_type","La cuenta no corresponde a cliente",true,{role:role||null});await db.auth.signOut();msg.className="account-msg error";msg.textContent=role==="restaurant"?"Esta cuenta pertenece a un restaurante. Ingresa desde el panel de restaurante.":role==="admin"?"Esta cuenta es de administrador y no puede iniciar sesión como cliente.":"Esta cuenta no está registrada como cliente.";return;}await trackClientEvent("login_success","account");msg.textContent="Sesión iniciada.";await syncCustomerUI();const checkoutErr=document.getElementById("err");if(checkoutErr&&checkoutErr.textContent.includes("iniciar sesión o crear una cuenta"))checkoutErr.textContent="";setTimeout(()=>document.getElementById("account-dialog").close(),500);});
+  document.getElementById("register-form").addEventListener("submit",async e=>{e.preventDefault();if(window.__demoMode){clientDemoMessage("account-msg","Esta es una cuenta demo. No se crearán usuarios reales; esta pantalla solo muestra cómo funciona el registro.");return}const msg=document.getElementById("account-msg");msg.className="account-msg";msg.textContent="Creando cuenta…";const name=document.getElementById("register-name").value.trim(),phone=document.getElementById("register-phone").value.trim(),email=document.getElementById("register-email").value.trim(),password=document.getElementById("register-password").value;const {data,error}=await db.auth.signUp({email,password,options:{data:{account_type:"customer",full_name:name,phone}}});if(error){msg.className="account-msg error";const em=String(error.message||""),userError=/already|registered|exists/i.test(em);await trackClientError("signup",/email rate limit exceeded/i.test(em)?"email_rate_limit":userError?"already_registered":"signup_failure",em,userError);msg.textContent=/email rate limit exceeded/i.test(em)?"El servicio de correo alcanzó temporalmente su límite de confirmaciones. Espera unos minutos y vuelve a intentar, o inicia sesión si la cuenta ya fue creada.":userError?"Este correo ya tiene una cuenta. Usa Iniciar sesión.":"No pudimos crear la cuenta: "+em;return;}await trackClientEvent("signup_success","account",{session_created:!!data.session});if(data.session){await db.from("customer_profiles").upsert({user_id:data.user.id,full_name:name,phone});msg.textContent="Cuenta creada correctamente.";await syncCustomerUI();const checkoutErr=document.getElementById("err");if(checkoutErr&&checkoutErr.textContent.includes("iniciar sesión o crear una cuenta"))checkoutErr.textContent="";}else{msg.textContent="Cuenta creada correctamente. Ya puedes iniciar sesión.";setAccountTab(false);}});
   document.getElementById("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();await syncCustomerUI();document.getElementById("account-dialog").close();});
   db.auth.onAuthStateChange(()=>setTimeout(async()=>{await syncCustomerUI();startOrderRealtime();},0));
   await syncCustomerUI();
@@ -2543,7 +2549,7 @@ body.vertical-retail #detail .d-note-field label::after{
       const fallback=await db.from("restaurants").select("*").eq("active",true).in("subscription_status",["trial","active"]).gt("subscription_expires_at",new Date().toISOString()).order("id",{ascending:true}).limit(1).maybeSingle();
       r=fallback.data;
     }
-    if(!r) throw new Error(requestedSlug ? "Este restaurante no está disponible. Su suscripción puede estar vencida o suspendida." : "No se encontró un restaurante activo con suscripción vigente para este enlace.");
+    if(!r) throw new Error(requestedSlug ? "Este restaurante no está disponible. Su suscripción puede estar vencida o suspendida." : "No se encontró un restaurante activo con suscripción vigente para este enlace.");window.__demoMode=!!r.is_demo;
     if(tableToken){
       const {data:tableData,error:tableError}=await db.rpc("get_table_qr_context",{p_table_token:tableToken});
       const tableRow=Array.isArray(tableData)?tableData[0]:tableData;
@@ -2570,7 +2576,7 @@ body.vertical-retail #detail .d-note-field label::after{
       const mpRow=Array.isArray(mpStatus.data)?mpStatus.data[0]:mpStatus.data;
       const bookingInfo=bookingCatalog.data?.booking||{timezone:r.timezone,currency_code:r.currency_code,locale:r.locale,max_days:60,min_notice_hours:2};
       const professionalMethods=(paymentMethods.data||[]).filter(m=>String(m.method_type||"").toLowerCase()!=="bank_transfer"||bookingInfo.accept_bank_transfer!==false);
-      window.__professionalCatalog={...publicCatalog.data,payment_methods:professionalMethods,booking:{...bookingInfo,mercadopago_configured:bookingInfo.accept_mercadopago!==false&&!mpStatus.error&&!!mpRow?.configured}};
+      window.__professionalCatalog={...publicCatalog.data,payment_methods:professionalMethods,booking:{...bookingInfo,mercadopago_configured:window.__demoMode?true:(bookingInfo.accept_mercadopago!==false&&!mpStatus.error&&!!mpRow?.configured)}};
       MENU=[];CONFIG.payments=[];return;
     }
     if(["supermarket","minimarket","retail"].includes(window.__businessType)){
@@ -2593,8 +2599,8 @@ body.vertical-retail #detail .d-note-field label::after{
         const {data:mpStatus,error:mpStatusError}=await db.rpc("restaurant_mp_public_status",{rid:r.id});
         const mpRow=Array.isArray(mpStatus)?mpStatus[0]:mpStatus;
         const mpValidated=!mpStatusError&&!!mpRow?.configured;
-        if(!countryConfig?.mercadopago_enabled||r.accept_mercadopago===false||!mpValidated)CONFIG.payments=CONFIG.payments.filter(p=>p!=="Mercado Pago");
-      }catch(_){CONFIG.payments=CONFIG.payments.filter(p=>p!=="Mercado Pago")}
+        if(!window.__demoMode&&(!countryConfig?.mercadopago_enabled||r.accept_mercadopago===false||!mpValidated))CONFIG.payments=CONFIG.payments.filter(p=>p!=="Mercado Pago");
+      }catch(_){if(!window.__demoMode)CONFIG.payments=CONFIG.payments.filter(p=>p!=="Mercado Pago")}
       if(String(r.country_code||"")==="BO"&&String(r.currency_code||"")==="BOB"){
         try{
           const vpRes=await fetch(SUPABASE_URL+"/functions/v1/restaurant-veripagos-public-status?restaurant_id="+encodeURIComponent(r.id),{headers:{"apikey":SUPABASE_KEY}});
@@ -2621,9 +2627,9 @@ body.vertical-retail #detail .d-note-field label::after{
       const {data:mpStatus,error:mpStatusError}=await db.rpc("restaurant_mp_public_status",{rid:r.id});
       const mpRow=Array.isArray(mpStatus)?mpStatus[0]:mpStatus;
       const mpValidated=!mpStatusError && !!mpRow?.configured;
-      if(!countryConfig?.mercadopago_enabled||r.accept_mercadopago===false||!mpValidated) CONFIG.payments=CONFIG.payments.filter(p=>p!=="Mercado Pago");
+      if(!window.__demoMode&&(!countryConfig?.mercadopago_enabled||r.accept_mercadopago===false||!mpValidated)) CONFIG.payments=CONFIG.payments.filter(p=>p!=="Mercado Pago");
     }catch(_){
-      CONFIG.payments=CONFIG.payments.filter(p=>p!=="Mercado Pago");
+      if(!window.__demoMode)CONFIG.payments=CONFIG.payments.filter(p=>p!=="Mercado Pago");
     }
     if(String(r.country_code||"")==="BO"&&String(r.currency_code||"")==="BOB"){
       try{
@@ -2785,6 +2791,7 @@ body.vertical-retail #detail .d-note-field label::after{
         }).subscribe();
     }
     async function openProfessionalReservations(){
+      if(window.__demoMode){professionalReservationsOverlay.hidden=false;const list=document.getElementById("professional-reservations-list");if(list)list.innerHTML='<article class="professional-reservation-card"><div class="professional-reservation-top"><div><h3>#DEMO-001 · Reserva de ejemplo</h3><div class="professional-reservation-meta">Seguimiento visible para clientes reales</div></div><div class="professional-reservation-pills"><span class="professional-reservation-pill warn">Confirmada</span><span class="professional-reservation-pill ok">Pago aprobado</span></div></div><div class="professional-tracking"><div class="professional-track-step done">Solicitud</div><div class="professional-track-step done">Confirmada</div><div class="professional-track-step">En atención</div><div class="professional-track-step">Completada</div></div></article>';return}
       if(!currentCustomer){professionalPendingBookingAfterAuth=false;openProfessionalAccount("Inicia sesión o crea una cuenta para ver tus reservas.");return}
       professionalReservationsOverlay.hidden=false;
       await loadProfessionalCustomerReservations();
@@ -2800,6 +2807,7 @@ body.vertical-retail #detail .d-note-field label::after{
     document.getElementById("professional-register-tab")?.addEventListener("click",()=>{document.getElementById("professional-login-form").hidden=true;document.getElementById("professional-register-form").hidden=false;document.getElementById("professional-login-tab").classList.remove("active");document.getElementById("professional-register-tab").classList.add("active")});
     async function syncProfessionalCustomer(){
       const accountBtn=document.getElementById("professional-account"),guest=document.getElementById("professional-account-guest"),authBox=document.getElementById("professional-account-auth"),userText=document.getElementById("professional-account-user"),msg=document.getElementById("professional-account-message");
+      if(window.__demoMode){currentCustomer=null;accountBtn.textContent="👤 Iniciar sesión";guest.hidden=false;authBox.hidden=true;userText.textContent="Modo demostración: puedes revisar el flujo, pero no iniciar sesión ni crear cuentas.";if(msg){msg.classList.remove("error");msg.textContent=""}return}
       const {data:{session}}=await db.auth.getSession();
       currentCustomer=session?.user||null;
       if(currentCustomer){
@@ -2825,7 +2833,7 @@ body.vertical-retail #detail .d-note-field label::after{
       }catch(_){}
     }
     document.getElementById("professional-login-form")?.addEventListener("submit",async event=>{
-      event.preventDefault();
+      event.preventDefault();if(window.__demoMode){const msg=document.getElementById("professional-account-message");msg.classList.add("error");msg.textContent="Esta es una cuenta demo. El inicio de sesión está deshabilitado.";return}
       const msg=document.getElementById("professional-account-message");msg.classList.remove("error");msg.textContent="Ingresando…";
       const email=document.getElementById("professional-login-email").value.trim(),password=document.getElementById("professional-login-password").value;
       const {error}=await db.auth.signInWithPassword({email,password});
@@ -2843,7 +2851,7 @@ body.vertical-retail #detail .d-note-field label::after{
       if(professionalPendingBookingAfterAuth){professionalPendingBookingAfterAuth=false;status.hidden=false;status.classList.remove("error");status.textContent="Sesión iniciada. Presiona Confirmar reserva para guardar tu cita."}
     });
     document.getElementById("professional-register-form")?.addEventListener("submit",async event=>{
-      event.preventDefault();
+      event.preventDefault();if(window.__demoMode){const msg=document.getElementById("professional-account-message");msg.classList.add("error");msg.textContent="Esta es una cuenta demo. No se crearán usuarios reales.";return}
       const msg=document.getElementById("professional-account-message");msg.classList.remove("error");msg.textContent="Creando cuenta…";
       const name=document.getElementById("professional-register-name").value.trim(),phone=document.getElementById("professional-register-phone").value.trim(),email=document.getElementById("professional-register-email").value.trim(),password=document.getElementById("professional-register-password").value;
       const {data,error}=await db.auth.signUp({email,password,options:{data:{account_type:"customer",full_name:name,phone}}});
@@ -2900,6 +2908,12 @@ body.vertical-retail #detail .d-note-field label::after{
       const name=document.getElementById("public-professional-name").value.trim(),phone=document.getElementById("public-professional-phone").value.trim(),email=document.getElementById("public-professional-email").value.trim(),notes=document.getElementById("public-professional-notes").value.trim();
       status.hidden=false;status.classList.remove("error");
       if(!name||!phone){status.classList.add("error");status.textContent="Completa tu nombre y teléfono.";return}
+      if(window.__demoMode){
+        const when=new Intl.DateTimeFormat(locale,{dateStyle:"full",timeStyle:"short",timeZone:timezone}).format(new Date(state.slot));
+        app.innerHTML='<div class="professional-booking-shell" style="padding-top:5vh"><section class="professional-booking-card professional-booking-success"><div class="check">⌛</div><h2>Completa el pago</h2><p>'+e(state.service.name)+' con '+e(state.provider.name)+'<br><b>'+e(when)+'</b></p><div class="professional-payment-summary"><span>Pago de la reserva</span><strong>'+e(cash(state.service.price||0))+'</strong></div><h3>Elige cómo pagar</h3><div class="professional-payment-methods"><button class="professional-payment-method" id="professional-demo-mp" type="button"><b>Mercado Pago</b><span>Pago online seguro</span></button></div><p id="professional-demo-status" class="professional-booking-status" hidden></p><div class="professional-return-actions"><button type="button" onclick="location.reload()" class="secondary">← Volver a reservas</button></div></section></div>';
+        document.getElementById("professional-demo-mp")?.addEventListener("click",()=>{const s=document.getElementById("professional-demo-status");s.hidden=false;s.textContent="🧪 Esta es una cuenta demo. En un negocio real aquí se abriría Mercado Pago; no se realizará ningún cobro ni reserva real."});
+        return
+      }
       if(!currentCustomer){await syncProfessionalCustomer()}
       if(!currentCustomer){professionalPendingBookingAfterAuth=true;status.classList.add("error");status.textContent="Inicia sesión o crea una cuenta para continuar al pago.";openProfessionalAccount("Necesitas una cuenta de cliente para pagar y reservar.");return}
 
@@ -3174,9 +3188,9 @@ body.vertical-retail #detail .d-note-field label::after{
   }
   if(window.__demoMode){
     const accountBtn=document.getElementById("account-btn"),ordersBtn=document.getElementById("orders-btn"),pending=document.getElementById("pending-order-banner"),clearCart=document.getElementById("clear-cart");
-    if(accountBtn)accountBtn.hidden=true;
-    if(ordersBtn)ordersBtn.hidden=true;
-    if(clearCart)clearCart.hidden=true;
+    if(accountBtn){accountBtn.hidden=false;accountBtn.textContent="👤 Iniciar sesión"}
+    if(ordersBtn){ordersBtn.hidden=false;ordersBtn.textContent=["supermarket","minimarket","retail"].includes(window.__businessType||"")?"🛍️ Mis compras":"🧾 Mis pedidos"}
+    if(clearCart)clearCart.hidden=false;
     if(pending)pending.hidden=true;
   }
   if(["supermarket","minimarket","retail"].includes(window.__businessType||"")){
@@ -3271,8 +3285,8 @@ body.vertical-retail #detail .d-note-field label::after{
   $("#i-wa").href = "https://wa.me/" + CONFIG.whatsapp;
   if(window.__demoMode){
     $("#i-wa").removeAttribute("target");
-    $("#i-wa").href="https://web.yummypro.online/";
-    $("#i-wa").textContent="💬 Crear mi cuenta para usar el menú completo";
+    $("#i-wa").removeAttribute("href");
+    $("#i-wa").textContent="🧪 Contacto deshabilitado en demo";
   }
   if (CONFIG.instagram){ const ig = $("#i-ig"); ig.hidden = false; ig.href = "https://instagram.com/" + CONFIG.instagram.replace("@", ""); }
   $("#eta-p").textContent = CONFIG.eta.pickup;
@@ -3828,7 +3842,7 @@ body.vertical-retail #detail .d-note-field label::after{
     e.preventDefault();
     if(window.__tableQrContext)try{await enableTableQrNotifications(true)}catch(_){}
     if(window.__demoMode){
-      $("#err").innerHTML='Esta es una demostración: puedes explorar el menú, carrito y métodos de pago, pero las acciones reales están desactivadas. <a href="https://web.yummypro.online/" style="font-weight:900;text-decoration:underline">Crea tu restaurante para obtener acceso completo.</a>';
+      $("#err").textContent="🧪 Esta es una cuenta demo. Llegaste al paso final: en un negocio real aquí se registraría el pedido o se abriría el método de pago seleccionado. No se crearán pedidos ni cobros reales.";
       return;
     }
     const f=form();
@@ -4166,5 +4180,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.49</footer></body>
+<footer class="site-version">Versión v1.6.50</footer></body>
 </html>
