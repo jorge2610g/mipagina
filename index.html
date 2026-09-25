@@ -2549,7 +2549,16 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
       const fallback=await db.from("restaurants").select("*").eq("active",true).in("subscription_status",["trial","active"]).gt("subscription_expires_at",new Date().toISOString()).order("id",{ascending:true}).limit(1).maybeSingle();
       r=fallback.data;
     }
-    if(!r) throw new Error(requestedSlug ? "Este restaurante no está disponible. Su suscripción puede estar vencida o suspendida." : "No se encontró un restaurante activo con suscripción vigente para este enlace.");window.__demoMode=!!r.is_demo;
+    if(!r) throw new Error(requestedSlug ? "Este restaurante no está disponible. Su suscripción puede estar vencida o suspendida." : "No se encontró un restaurante activo con suscripción vigente para este enlace.");
+    let publicPaymentMode=null;
+    try{
+      const modeResult=await db.rpc("business_payment_public_status",{p_restaurant_id:r.id});
+      if(!modeResult.error)publicPaymentMode=modeResult.data||null;
+    }catch(e){console.warn("No se pudo resolver el modo público del negocio",e)}
+    window.__adminCredentialTestMode=!!publicPaymentMode?.using_admin_credentials;
+    window.__demoMode=typeof publicPaymentMode?.effective_demo==="boolean"
+      ? publicPaymentMode.effective_demo
+      : (!!r.is_demo&&!window.__adminCredentialTestMode);
     if(tableToken){
       const {data:tableData,error:tableError}=await db.rpc("get_table_qr_context",{p_table_token:tableToken});
       const tableRow=Array.isArray(tableData)?tableData[0]:tableData;
@@ -4180,5 +4189,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.50</footer></body>
+<footer class="site-version">Versión v1.6.51</footer></body>
 </html>
