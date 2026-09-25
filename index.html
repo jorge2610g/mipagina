@@ -28,7 +28,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="YummyPro">
-<link rel="manifest" href="/manifest.webmanifest?v=1624">
+<link rel="manifest" href="/manifest.webmanifest?v=1625">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" sizes="192x192" href="/icon-192.png" type="image/png">
 <meta name="theme-color" content="#000000">
@@ -287,7 +287,7 @@ section[data-cat]{padding-top:38px}section[data-cat] h2{font-size:clamp(1.35rem,
 html,body{max-width:100%;overflow-x:hidden}img,video,iframe,svg{max-width:100%;height:auto}input,select,textarea,button{max-width:100%}@media(max-width:900px){.wrap{width:min(100% - 24px,1180px)!important;margin-left:auto!important;margin-right:auto!important}.top,.row.between{gap:10px;flex-wrap:wrap}.tabs{display:flex!important;overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch;padding-bottom:6px}.tabs .tab{flex:0 0 auto!important}.grid{grid-template-columns:1fr!important}.span4,.span5,.span6,.span7,.span8,.span12{grid-column:1/-1!important;width:100%!important}.card{max-width:100%!important}}@media(max-width:600px){body{font-size:15px}.wrap{width:min(100% - 16px,1180px)!important}.top{align-items:flex-start!important}.top>.row{width:100%;display:flex;flex-wrap:wrap}.card{padding:16px!important}.row{flex-wrap:wrap}input,select,textarea{width:100%!important;min-width:0!important}button,.btn{min-height:44px}table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}}
 
 /* =========================================================
-   YummyPro Menú Público · Rediseño completo v1.6.48
+   YummyPro Menú Público · Rediseño completo v1.6.49
    Inspirado en una app premium de delivery; conserva toda la lógica.
    ========================================================= */
 :root{
@@ -2749,7 +2749,7 @@ body.vertical-retail #detail .d-note-field label::after{
     let professionalReservationsChannel=null,professionalReservationsTimer=null,professionalPendingBookingAfterAuth=false;
     const professionalStatusLabels={pending:"Pendiente de aprobación",confirmed:"Confirmada",in_service:"En atención",completed:"Completada",cancelled:"Cancelada",no_show:"No asistió"};
     const professionalPaymentLabels={not_required:"Sin pago previo",pending:"Pago pendiente",approved:"Pagado",refunded:"Reembolsado",rejected:"Pago rechazado",cancelled:"Pago cancelado",expired:"Pago vencido"};
-    const openProfessionalAccount=(message="")=>{professionalAccountOverlay.hidden=false;if(message){const msg=document.getElementById("professional-account-message");msg.classList.remove("error");msg.textContent=message}};
+    const openProfessionalAccount=(message="")=>{professionalAccountOverlay.hidden=false;const msg=document.getElementById("professional-account-message");if(!msg)return;const safeMessage=typeof message==="string"?message:"";msg.classList.remove("error");msg.textContent=safeMessage};
     const closeProfessionalAccount=()=>{professionalAccountOverlay.hidden=true};
     const closeProfessionalReservations=()=>{professionalReservationsOverlay.hidden=true;if(professionalReservationsTimer){clearInterval(professionalReservationsTimer);professionalReservationsTimer=null}};
     function professionalReservationCard(a){
@@ -2791,7 +2791,7 @@ body.vertical-retail #detail .d-note-field label::after{
       if(professionalReservationsTimer)clearInterval(professionalReservationsTimer);
       professionalReservationsTimer=setInterval(()=>{if(!professionalReservationsOverlay.hidden)loadProfessionalCustomerReservations()},10000);
     }
-    document.getElementById("professional-account")?.addEventListener("click",openProfessionalAccount);
+    document.getElementById("professional-account")?.addEventListener("click",()=>openProfessionalAccount());
     document.getElementById("professional-reservations")?.addEventListener("click",openProfessionalReservations);
     document.getElementById("professional-account-close")?.addEventListener("click",closeProfessionalAccount);
     document.getElementById("professional-reservations-close")?.addEventListener("click",closeProfessionalReservations);
@@ -4166,5 +4166,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.48</footer></body>
+<footer class="site-version">Versión v1.6.49</footer></body>
 </html>
