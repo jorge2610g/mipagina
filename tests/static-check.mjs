@@ -8,7 +8,7 @@ console.log('Menú cliente validado');
 for(const marker of ['pwa-install-btn','installCustomerPwa','yummypro_last_restaurant','/manifest.webmanifest?v=1626','/pwa-sw.js','yummypro_client_pwa_identity_v1622','customer-pwa-v1623','Versión v1.6.58'])if(!html.includes(marker))throw new Error('Falta PWA cliente actual: '+marker);
 
 const pwaManifest=readFileSync('manifest.webmanifest','utf8');
-for(const marker of ['"id": "/"','"start_url": "/?source=pwa"','"scope": "/"','"display": "standalone"','"/icon-192.png"','"/icon-512.png"','"purpose": "maskable"'])if(!pwaManifest.includes(marker))throw new Error('Manifest PWA cliente v1.6.58 incompleto: '+marker);
+for(const marker of ['"id": "/"','"start_url": "/?source=pwa"','"scope": "/"','"display": "standalone"','"/white-label-icon.svg"','"purpose": "any maskable"'])if(!pwaManifest.includes(marker))throw new Error('Manifest PWA cliente v1.6.58 incompleto: '+marker);
 
 const pwaSw=readFileSync('pwa-sw.js','utf8');
 for(const marker of ['yummypro-client-v1635-white-label-complete','SKIP_WAITING','/offline.html','/icon-192.png','/icon-512.png'])if(!pwaSw.includes(marker))throw new Error('Service Worker PWA cliente v1.6.58 incompleto: '+marker);
