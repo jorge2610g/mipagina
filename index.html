@@ -2560,7 +2560,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
 
   let whiteLabelManifestUrl="";
   function clientAssetUrl(path){
-    try{return new URL(String(path||"").replace(/^\\/+/, ""),new URL(".",location.href)).href}catch(_){return String(path||"")}
+    try{return new URL(String(path||"").replace(/^\/+/, ""),new URL(".",location.href)).href}catch(_){return String(path||"")}
   }
   function clientInstallContext(){
     try{
