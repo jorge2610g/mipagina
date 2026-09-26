@@ -1,5 +1,14 @@
 # Changelog YummyPro — Cliente
 
+## 2026-09-25/26 — 1.6.55 — Pruebas
+
+- Se corrigieron las tarjetas de **Más vendidos** en móvil: imagen más contenida, altura automática y títulos sin recorte.
+- Se compactaron las ilustraciones de las tarjetas de productos para evitar que se vean demasiado anchas.
+- El menú respeta la configuración del restaurante: solo Retiro, solo Delivery o ambos.
+- Si Delivery está apagado se ocultan su selector, dirección y costo de envío; si Retiro está apagado se oculta esa opción.
+- El checkout valida nuevamente que el tipo de pedido siga habilitado antes de enviar o cobrar.
+- Este cambio permanece en Pruebas hasta un release explícito.
+
 ## 2026-09-25/26 — 1.6.54 — Pruebas
 
 - Se formalizó el flujo **Pruebas → Release → Producción**.
