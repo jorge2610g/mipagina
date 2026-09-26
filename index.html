@@ -1998,6 +1998,14 @@ body.vertical-retail #detail .d-note-field label::after{
   body:not(.professional-booking-mode) #c-populares .pop .tile{height:102px!important}
 }
 </style>
+
+<style id="test-rubro-selector-v1659">
+#test-rubro-switcher{position:sticky;top:0;z-index:9998;display:flex;align-items:center;justify-content:center;gap:10px;padding:9px 12px;background:#111;color:#fff;border-bottom:1px solid #333;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+#test-rubro-switcher .trs-label{font-size:12px;font-weight:800;white-space:nowrap}
+#test-rubro-switcher select{min-width:180px;max-width:260px;height:38px;border:1px solid #444;border-radius:10px;background:#1b1b1b;color:#fff;padding:0 34px 0 12px;font-weight:750;font-size:14px}
+#test-rubro-switcher .trs-badge{font-size:10px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;padding:4px 7px;border-radius:999px;background:#ffc21a;color:#171717}
+@media(max-width:520px){#test-rubro-switcher{justify-content:space-between;gap:7px;padding:8px}.trs-label{display:none!important}#test-rubro-switcher select{min-width:0;flex:1;max-width:none}}
+</style>
 </head>
 <body class="menu-loading">
 
@@ -2255,6 +2263,61 @@ body.vertical-retail #detail .d-note-field label::after{
   const SUPABASE_URL = YUMMY_IS_PRODUCTION ? "https://gulctljitzlwokqydigx.supabase.co" : "https://wodqqheeesrelsbacmgx.supabase.co";
   const SUPABASE_KEY = YUMMY_IS_PRODUCTION ? "sb_publishable__moppTxObowifx6rJbW_tw_3GiCkqhG" : "sb_publishable_yiuYVYAAwVLtzlTdEM1kUg_s1Z7BiyE";
   const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+  const TEST_RUBRO_SWITCHER=location.hostname==="jorge2610g.github.io"&&location.pathname.startsWith("/yummy-cliente-pruebas/");
+  function testRubroKey(type){
+    const value=String(type||"restaurant").toLowerCase();
+    if(["supermarket","minimarket","retail"].includes(value))return "retail";
+    if(value==="professional")return "professional";
+    if(value==="streaming")return "streaming";
+    return "restaurant";
+  }
+  function testRubroUrl(key,row){
+    if(key==="streaming")return "https://jorge2610g.github.io/yummy-streaming-pruebas/catalogo/?business="+encodeURIComponent(row.id);
+    return "https://jorge2610g.github.io/yummy-cliente-pruebas/?r="+encodeURIComponent(row.slug||row.id);
+  }
+  async function loadTestRubroTargets(){
+    if(!db)return {};
+    const {data,error}=await db.from("restaurants")
+      .select("id,slug,name,business_type,is_demo")
+      .eq("active",true)
+      .in("subscription_status",["trial","active"])
+      .gt("subscription_expires_at",new Date().toISOString())
+      .order("is_demo",{ascending:false})
+      .order("id",{ascending:true});
+    if(error)throw error;
+    const targets={};
+    for(const row of (data||[])){
+      const key=testRubroKey(row.business_type);
+      if(!targets[key])targets[key]=row;
+    }
+    return targets;
+  }
+  async function mountTestRubroSelector(){
+    if(!TEST_RUBRO_SWITCHER||document.getElementById("test-rubro-switcher"))return;
+    let targets={};
+    try{targets=await loadTestRubroTargets()}catch(e){console.warn("Selector de rubros de Pruebas",e)}
+    const current=testRubroKey(window.__businessType||"restaurant");
+    if(!targets[current]&&window.__restaurantId&&window.__restaurantId!=="demo"){
+      targets[current]={id:window.__restaurantId,slug:new URLSearchParams(location.search).get("r")||window.__restaurantId,name:CONFIG.name,business_type:window.__businessType||"restaurant"};
+    }
+    const labels={restaurant:"🍽️ Restaurante",retail:"🛒 Retail",professional:"💼 Profesionales",streaming:"🎬 Streaming"};
+    const bar=document.createElement("div");
+    bar.id="test-rubro-switcher";
+    bar.innerHTML='<span class="trs-badge">Pruebas</span><span class="trs-label">Cambiar rubro</span><select id="test-rubro-select" aria-label="Cambiar rubro de prueba"></select>';
+    const select=bar.querySelector("select");
+    for(const key of ["restaurant","retail","professional","streaming"]){
+      const option=document.createElement("option");
+      option.value=key;option.textContent=labels[key]+(targets[key]?"":" · sin demo");
+      option.disabled=!targets[key];option.selected=key===current;
+      select.appendChild(option);
+    }
+    select.addEventListener("change",()=>{
+      const key=select.value,row=targets[key];
+      if(!row){select.value=current;return}
+      location.href=testRubroUrl(key,row);
+    });
+    document.body.prepend(bar);
+  }
   window.__adminClientPreview=false;
   window.__adminClientPreviewRestaurantId=null;
   window.__adminClientPreviewBooting=false;
@@ -3414,6 +3477,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
       brandIcon.innerHTML='<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M11 18h26l-2.4 20H13.4L11 18Z" stroke="currentColor" stroke-width="2.7" stroke-linejoin="round"/><path d="M17 18c.7-5.8 3.2-9 7-9s6.3 3.2 7 9" stroke="currentColor" stroke-width="2.7" stroke-linecap="round"/><path d="M18 26h12M18 31h9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>';
       brandIcon.setAttribute("aria-label","Tienda");
     }
+    await mountTestRubroSelector();
     trackClientEvent("menu_view","menu",{table_qr:!!window.__tableQrContext,business_type:resolvedBusinessType});
   } catch (loadError) {
     console.error(loadError);
