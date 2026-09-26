@@ -28,15 +28,21 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Menú">
-<link rel="manifest" href="/manifest.webmanifest?v=1625">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" sizes="192x192" href="/icon-192.png" type="image/png">
+<link id="app-manifest" rel="manifest" href="/manifest.webmanifest?v=1626">
+<link id="brand-apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="/white-label-icon.svg">
+<link id="brand-favicon" rel="icon" href="/white-label-icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#000000">
 <meta name="description" content="Menú digital del restaurante. Pedidos directos por WhatsApp.">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Menú del restaurante</title>
+<style id="white-label-boot-guard">
+html:not([data-brand-ready="true"]) .yummypro-wordmark,
+html:not([data-brand-ready="true"]) .professional-yummypro-mark{visibility:hidden!important}
+html[data-white-label="true"] .yummypro-wordmark,
+html[data-white-label="true"] .professional-yummypro-mark{display:none!important}
+</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2552,14 +2558,66 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
     delivery: { mode:"fixed", fixed:0, zones:[], lat:null, lng:null }
   };
 
+  let whiteLabelManifestUrl="";
+  function clientAssetUrl(path){
+    try{return new URL(String(path||"").replace(/^\\/+/, ""),new URL(".",location.href)).href}catch(_){return String(path||"")}
+  }
+  function clientInstallContext(){
+    try{
+      const current=new URL(location.href),params=new URLSearchParams(),restaurant=current.searchParams.get("r");
+      if(restaurant)params.set("r",restaurant);
+      params.set("source","pwa");
+      const startPath=current.pathname+(params.toString()?"?"+params.toString():"");
+      const scopePath=new URL(".",current).pathname;
+      const idPath=restaurant?current.pathname+"?r="+encodeURIComponent(restaurant):current.pathname;
+      return {startUrl:new URL(startPath,current.origin).href,scope:new URL(scopePath,current.origin).href,id:new URL(idPath,current.origin).href};
+    }catch(_){
+      return {startUrl:location.href,scope:location.origin+"/",id:location.origin+location.pathname};
+    }
+  }
+  function publicExperienceDescription(){
+    const name=String(CONFIG.name||"Mi negocio").trim()||"Mi negocio",type=String(window.__businessType||"").toLowerCase();
+    if(["supermarket","minimarket","retail"].includes(type))return "Tienda online de "+name+".";
+    if(type==="professional")return "Reservas y servicios de "+name+".";
+    if(type==="streaming")return "Catálogo y servicios de "+name+".";
+    return "Menú digital de "+name+".";
+  }
+  function applyClientManifest(enabled){
+    const link=document.getElementById("app-manifest")||document.querySelector('link[rel="manifest"]');
+    if(!link)return;
+    if(whiteLabelManifestUrl){try{URL.revokeObjectURL(whiteLabelManifestUrl)}catch(_){} whiteLabelManifestUrl=""}
+    const ctx=clientInstallContext(),businessName=String(CONFIG.name||"Mi negocio").trim()||"Mi negocio";
+    const common={lang:"es",start_url:ctx.startUrl,scope:ctx.scope,display:"standalone",orientation:"any",background_color:"#000000",theme_color:"#000000",categories:["food","shopping","business"]};
+    const manifest=enabled
+      ?{...common,id:ctx.id,name:businessName,short_name:businessName.slice(0,30),description:publicExperienceDescription(),icons:[
+          ...(CONFIG.logo?[{src:String(CONFIG.logo),sizes:"any",purpose:"any"}]:[]),
+          {src:clientAssetUrl("white-label-icon.svg"),sizes:"any",type:"image/svg+xml",purpose:"any maskable"}
+        ]}
+      :{...common,id:ctx.id,name:"YummyPro Cliente",short_name:"YummyPro Cliente",description:"Menú digital, tienda online, compras y seguimiento para clientes YummyPro",icons:[
+          {src:clientAssetUrl("icon-192.png"),sizes:"192x192",type:"image/png",purpose:"any"},
+          {src:clientAssetUrl("icon-512.png"),sizes:"512x512",type:"image/png",purpose:"any"},
+          {src:clientAssetUrl("pwa-icon.svg"),sizes:"any",type:"image/svg+xml",purpose:"maskable"}
+        ]};
+    whiteLabelManifestUrl=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:"application/manifest+json"}));
+    link.href=whiteLabelManifestUrl;
+  }
   function applyWhiteLabelBranding(){
-    const enabled=CONFIG.whiteLabel===true;
-    document.documentElement.setAttribute("data-white-label",enabled?"true":"false");
+    const enabled=CONFIG.whiteLabel===true,root=document.documentElement;
+    root.setAttribute("data-white-label",enabled?"true":"false");
     const wordmark=document.querySelector(".yummypro-wordmark");
     if(wordmark)wordmark.hidden=enabled;
-    const appleTitle=document.querySelector('meta[name="apple-mobile-web-app-title"]');
-    if(appleTitle)appleTitle.setAttribute("content",enabled?CONFIG.name:"YummyPro");
     document.querySelectorAll(".professional-yummypro-mark").forEach(el=>el.hidden=enabled);
+    const appleTitle=document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if(appleTitle)appleTitle.setAttribute("content",enabled?CONFIG.name:"YummyPro Cliente");
+    const description=document.querySelector('meta[name="description"]');
+    if(description)description.setAttribute("content",enabled?publicExperienceDescription():"Menú digital, tienda online, compras y seguimiento para clientes YummyPro.");
+    const icon=enabled?(CONFIG.logo||clientAssetUrl("white-label-icon.svg")):clientAssetUrl("icon-192.png");
+    const favicon=document.getElementById("brand-favicon");
+    if(favicon){favicon.href=icon;if(enabled&&CONFIG.logo)favicon.removeAttribute("type");else favicon.setAttribute("type",enabled?"image/svg+xml":"image/png")}
+    const appleIcon=document.getElementById("brand-apple-touch-icon");
+    if(appleIcon)appleIcon.href=enabled?(CONFIG.logo||clientAssetUrl("white-label-icon.svg")):clientAssetUrl("apple-touch-icon.png");
+    applyClientManifest(enabled);
+    root.setAttribute("data-brand-ready","true");
   }
   function publicPlatformName(){return CONFIG.whiteLabel?CONFIG.name:"YummyPro"}
 
@@ -4372,5 +4430,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.57</footer></body>
+<footer class="site-version">Versión v1.6.58</footer></body>
 </html>
