@@ -5,7 +5,7 @@ for(const marker of ['currencyDigits','minimumFractionDigits:shown','maximumFrac
 if(!/<\/html>/i.test(html))throw new Error('HTML incompleto');
 console.log('Menú cliente validado');
 
-for(const marker of ['pwa-install-btn','installCustomerPwa','yummypro_last_restaurant','/manifest.webmanifest?v=1626','/pwa-sw.js','yummypro_client_pwa_identity_v1622','customer-pwa-v1623','Versión v1.6.60'])if(!html.includes(marker))throw new Error('Falta PWA cliente actual: '+marker);
+for(const marker of ['pwa-install-btn','installCustomerPwa','yummypro_last_restaurant','/manifest.webmanifest?v=1626','/pwa-sw.js','yummypro_client_pwa_identity_v1622','customer-pwa-v1623','Versión v1.6.61'])if(!html.includes(marker))throw new Error('Falta PWA cliente actual: '+marker);
 
 const pwaManifest=readFileSync('manifest.webmanifest','utf8');
 for(const marker of ['"id": "/"','"start_url": "/?source=pwa"','"scope": "/"','"display": "standalone"','"/white-label-icon.svg"','"purpose": "any maskable"'])if(!pwaManifest.includes(marker))throw new Error('Manifest PWA cliente v1.6.60 incompleto: '+marker);
@@ -35,8 +35,11 @@ for(const marker of ['pathParts','yummy-cliente-pruebas','pathParts.shift()'])if
 for(const marker of ['whiteLabel','white_label_enabled','applyWhiteLabelBranding','publicPlatformName','data-white-label'])if(!html.includes(marker))throw new Error('Falta Marca blanca pública: '+marker);
 
 
-for(const marker of ['test-rubro-selector-v1659','TEST_RUBRO_SWITCHER','testRubroKey','loadTestRubroTargets','mountTestRubroSelector','yummy-cliente-pruebas','yummy-streaming-pruebas/catalogo/?business=','🍽️ Restaurante','🛒 Retail','💼 Profesionales','🎬 Streaming'])if(!html.includes(marker))throw new Error('Falta selector de rubros exclusivo de Pruebas: '+marker);
+for(const marker of ['test-rubro-selector-v1661','TEST_RUBRO_SWITCHER','testRubroKey','loadTestRubroTargets','mountTestRubroSelector','yummy-cliente-pruebas','yummy-streaming-pruebas/catalogo/?business=','🍽️ Restaurante','🛒 Retail','💼 Profesionales','🎬 Streaming'])if(!html.includes(marker))throw new Error('Falta selector de rubros exclusivo de Pruebas: '+marker);
 if(!html.includes('location.pathname.startsWith("/yummy-cliente-pruebas/")'))throw new Error('El selector de rubros debe limitarse a Cliente Pruebas');
 
 
 for(const marker of ['TEST_RUBRO_TARGETS_KEY','yummypro_test_rubro_targets_v1','readTestRubroTargets','saveTestRubroTargets'])if(!html.includes(marker))throw new Error('Falta persistencia del selector de rubros de Pruebas: '+marker);
+
+
+for(const marker of ['yummypro_test_rubro_targets_v2','cleanTestRubroTargets','test_nav','testRubroUrl(key,row,targets)','body.professional-booking-mode>:not(#professional-booking-app):not(#test-rubro-switcher):not(script)'])if(!html.includes(marker))throw new Error('Falta persistencia robusta del selector de rubros de Pruebas: '+marker);
