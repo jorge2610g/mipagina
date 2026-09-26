@@ -1,5 +1,14 @@
 # Changelog YummyPro — Cliente
 
+## 2026-09-26 — 1.6.57 — Pruebas
+
+- Se añadió soporte público para **Marca blanca / White Label** por negocio.
+- Cuando está activa, se oculta la marca visible YummyPro en menú, tienda Retail y reservas Profesionales.
+- El título de la página y la etiqueta móvil usan el nombre del negocio.
+- Los textos públicos de verificación de pago pasan a ser neutrales cuando corresponde.
+- La identidad propia del negocio (nombre, logo y colores) se mantiene visible.
+- Producción no fue modificada.
+
 ## 2026-09-25/26 — 1.6.56 — Pruebas
 
 - Se corrigió la detección del restaurante al abrir directamente la raíz de GitHub Pages de Pruebas.
