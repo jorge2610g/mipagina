@@ -2646,10 +2646,13 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
     }
     if(!db) throw new Error("No se pudo conectar con el servicio de datos.");
     const cleanPath=decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g,""));
-    const pathSlug=(cleanPath.split("/").filter(Boolean).pop()||"").replace(/^index\.html$/i,"");
-    const requestedSlug=params.get("r") || pathSlug || null;
-    if(requestedSlug&&location.hostname.replace(/^www\./,"")==="menu.yummypro.online"){try{localStorage.setItem("yummypro_last_restaurant",requestedSlug)}catch(_){}}
     const host=location.hostname.toLowerCase().replace(/^www\./,"");
+    const pathParts=cleanPath.split("/").filter(Boolean).filter(part=>!/^index\.html$/i.test(part));
+    if(host==="jorge2610g.github.io"&&["yummy-cliente-pruebas","mipagina"].includes(String(pathParts[0]||"").toLowerCase()))pathParts.shift();
+    const pathSlug=pathParts.length?pathParts[pathParts.length-1]:"";
+    const requestedSlug=params.get("r") || pathSlug || null;
+    if(requestedSlug&&host==="menu.yummypro.online"){try{localStorage.setItem("yummypro_last_restaurant",requestedSlug)}catch(_){}}
+
     const platformHosts=["app.expressdelivery.pro","menu.yummypro.online","jorge2610g.github.io","localhost","127.0.0.1"];
     if(host==="menu.yummypro.online"&&!requestedSlug){
       window.__demoMode=true;MENU=DEMO_MENU;CONFIG.name="Restaurante Demo";CONFIG.whatsapp="";CONFIG.address="Vista demostración";CONFIG.payments=["Efectivo","Transferencia","Mercado Pago"];window.__restaurantId="demo";return;
@@ -4357,5 +4360,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.55</footer></body>
+<footer class="site-version">Versión v1.6.56</footer></body>
 </html>
