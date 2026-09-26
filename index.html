@@ -1952,7 +1952,47 @@ body.vertical-retail #detail .d-note-field label::after{
   color:#fff!important;
   box-shadow:0 11px 24px #5f52d13b!important
 }
-</style></head>
+</style><style id="menu-mobile-card-fix-v1655">
+/* Última capa: evita que reglas anteriores vuelvan a estirar las tarjetas en teléfono. */
+@media(max-width:980px), (pointer:coarse) and (max-width:1200px){
+  body:not(.professional-booking-mode) #c-populares .pop{
+    flex:0 0 156px!important;width:156px!important;height:auto!important;min-height:0!important;overflow:hidden!important
+  }
+  body:not(.professional-booking-mode) #c-populares .pop-open{
+    display:flex!important;flex-direction:column!important;height:auto!important;min-height:0!important;padding:0 0 46px!important
+  }
+  body:not(.professional-booking-mode) #c-populares .pop .tile{
+    flex:none!important;width:100%!important;height:108px!important;aspect-ratio:auto!important;overflow:hidden!important
+  }
+  body:not(.professional-booking-mode) #c-populares .pop .tile>svg{
+    width:100%!important;height:100%!important;padding:12%!important;box-sizing:border-box!important
+  }
+  body:not(.professional-booking-mode) #c-populares .pop .tile>img{
+    width:100%!important;height:100%!important;object-fit:contain!important;padding:7%!important;box-sizing:border-box!important
+  }
+  body:not(.professional-booking-mode) #c-populares .pop .pn{
+    display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;
+    min-height:2.4em!important;margin:8px 9px 0!important;padding:0!important;overflow:hidden!important;line-height:1.2!important
+  }
+  body:not(.professional-booking-mode) #c-populares .pop .pd{
+    min-height:0!important;margin:4px 9px 5px!important;-webkit-line-clamp:2!important
+  }
+  body:not(.professional-booking-mode) #c-populares .pop .pp{
+    margin-top:auto!important;padding:0 44px 0 9px!important
+  }
+  body:not(.professional-booking-mode) .item .tile>svg{
+    width:100%!important;height:100%!important;padding:11%!important;box-sizing:border-box!important
+  }
+  body:not(.professional-booking-mode) .item .tile>img{
+    object-fit:contain!important;padding:6%!important;box-sizing:border-box!important
+  }
+}
+@media(max-width:390px){
+  body:not(.professional-booking-mode) #c-populares .pop{flex-basis:146px!important;width:146px!important}
+  body:not(.professional-booking-mode) #c-populares .pop .tile{height:102px!important}
+}
+</style>
+</head>
 <body class="menu-loading">
 
 <main id="professional-booking-app" class="professional-booking" hidden></main>
@@ -3606,7 +3646,11 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
       trustItems[1].textContent=pickupOn&&deliveryOn?"✓ Retiro o delivery":pickupOn?"✓ Retiro en el local":"✓ Delivery disponible";
     }
     syncQuickOrderSelector();
-    toggleDelivery();
+    const selected=document.querySelector('input[name="tipo"]:checked')?.value||"Retiro";
+    const deliverySelectedNow=selected==="Delivery"&&deliveryOn;
+    const addrWrap=document.getElementById("addr-wrap"),shipHint=document.getElementById("ship-hint");
+    if(addrWrap)addrWrap.hidden=!deliverySelectedNow;
+    if(shipHint)shipHint.hidden=!deliverySelectedNow;
   }
   function syncQuickOrderSelector(){
     if(!quickOrderSelector)return;
