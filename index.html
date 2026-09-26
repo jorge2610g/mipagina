@@ -494,6 +494,46 @@ body:not(.professional-booking-mode) .pop-add{
   display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 16px color-mix(in srgb,var(--menu-accent) 30%,transparent)
 }
 body:not(.professional-booking-mode) .pop .pp{padding-right:48px!important}
+/* v1.6.55 · Tarjetas móviles compactas y sin texto cortado */
+body:not(.professional-booking-mode) .pop-open{
+  height:auto!important;min-height:0!important;display:flex!important;flex-direction:column!important;padding-bottom:46px!important
+}
+body:not(.professional-booking-mode) .pop{
+  height:auto!important;min-height:0!important;align-self:flex-start!important
+}
+body:not(.professional-booking-mode) .pop .tile>svg,
+body:not(.professional-booking-mode) .item .tile>svg{
+  width:100%!important;height:100%!important;box-sizing:border-box!important;padding:10%!important
+}
+body:not(.professional-booking-mode) .pop .pn{
+  display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;
+  overflow:hidden!important;line-height:1.2!important;min-height:2.4em!important
+}
+body:not(.professional-booking-mode) .pop .pd{
+  min-height:0!important
+}
+.quick-order-selector.single{grid-template-columns:1fr!important}
+@media(max-width:980px), (pointer:coarse) and (max-width:1200px){
+  body:not(.professional-booking-mode) .pop{
+    flex-basis:156px!important;width:156px!important
+  }
+  body:not(.professional-booking-mode) .pop .tile{
+    width:156px!important;height:108px!important
+  }
+  body:not(.professional-booking-mode) .pop .tile>svg{padding:12%!important}
+  body:not(.professional-booking-mode) .item .tile{
+    aspect-ratio:1.4/1!important
+  }
+  body:not(.professional-booking-mode) .item .tile>svg{padding:11%!important}
+}
+@media(max-width:390px){
+  body:not(.professional-booking-mode) .pop{
+    flex-basis:146px!important;width:146px!important
+  }
+  body:not(.professional-booking-mode) .pop .tile{
+    width:146px!important;height:102px!important
+  }
+}
 /* Product detail */
 body:not(.professional-booking-mode) #detail{
   max-width:570px!important;max-height:96dvh!important;border-radius:28px 28px 0 0!important;background:var(--menu-card)!important;box-shadow:var(--menu-shadow-lg)!important
@@ -2467,6 +2507,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
     payments: ["Efectivo", "Transferencia", "Mercado Pago"],
     country: "CL", currency: "CLP", locale: "es-CL", timezone: "America/Santiago", paymentMethods: [],
     eta: { pickup: "Listo en 20–30 min", delivery: "35–50 min, envío a confirmar" },
+    fulfillment: { pickup:true, delivery:true },
     delivery: { mode:"fixed", fixed:0, zones:[], lat:null, lng:null }
   };
 
@@ -2615,6 +2656,10 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
     CONFIG.instagram=r.instagram||""; CONFIG.country=r.country_code||"CL";CONFIG.currency=r.currency_code||"CLP";CONFIG.locale=r.locale||"es-CL";CONFIG.timezone=r.timezone||"America/Santiago";CONFIG.manualOpenStatus=r.manual_open_status||null; CONFIG.mercadopagoPublicKey=r.mercadopago_public_key||""; CONFIG.eta={pickup:r.pickup_eta||CONFIG.eta.pickup,delivery:r.delivery_eta||CONFIG.eta.delivery};
     const savedZones=Array.isArray(r.delivery_zones)?r.delivery_zones:[];const deliveryMode=(savedZones.length&&r.latitude!=null&&r.longitude!=null)?"distance":(r.delivery_pricing_mode||"fixed");CONFIG.delivery={mode:deliveryMode,fixed:Number(r.delivery_fixed_price||0),zones:savedZones,lat:r.latitude==null?null:Number(r.latitude),lng:r.longitude==null?null:Number(r.longitude)};
     window.__businessType=String(r.business_type||"restaurant").toLowerCase();
+    CONFIG.fulfillment=window.__businessType==="restaurant"
+      ?{pickup:r.pickup_enabled!==false,delivery:r.delivery_enabled!==false}
+      :{pickup:true,delivery:true};
+    if(!CONFIG.fulfillment.pickup&&!CONFIG.fulfillment.delivery)CONFIG.fulfillment={pickup:true,delivery:false};
     window.__restaurantId=r.id;
     await syncCustomerUI();
     if(window.__businessType==="professional"){
@@ -3530,19 +3575,52 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
 
   const sheet = $("#sheet"), linesEl = $("#lines"), bar = $("#bar");
   const quickOrderSelector=$("#quick-order-selector");
+  function fulfillmentAllowed(type){
+    if(window.__tableQrContext)return true;
+    if(String(window.__businessType||"")==="restaurant"){
+      if(type==="Delivery")return CONFIG.fulfillment?.delivery!==false;
+      if(type==="Retiro")return CONFIG.fulfillment?.pickup!==false;
+    }
+    return true;
+  }
+  function applyFulfillmentAvailability(){
+    if(window.__tableQrContext){if(quickOrderSelector)quickOrderSelector.hidden=true;return}
+    const pickupOn=fulfillmentAllowed("Retiro"),deliveryOn=fulfillmentAllowed("Delivery");
+    const quickPickup=quickOrderSelector?.querySelector('[data-quick-type="Retiro"]');
+    const quickDelivery=quickOrderSelector?.querySelector('[data-quick-type="Delivery"]');
+    if(quickPickup)quickPickup.hidden=!pickupOn;
+    if(quickDelivery)quickDelivery.hidden=!deliveryOn;
+    if(quickOrderSelector){quickOrderSelector.hidden=false;quickOrderSelector.classList.toggle("single",Number(pickupOn)+Number(deliveryOn)===1)}
+    const pickupRadio=document.querySelector('input[name="tipo"][value="Retiro"]');
+    const deliveryRadio=document.querySelector('input[name="tipo"][value="Delivery"]');
+    const pickupLabel=pickupRadio?.closest(".segopt"),deliveryLabel=deliveryRadio?.closest(".segopt");
+    if(pickupLabel)pickupLabel.hidden=!pickupOn;
+    if(deliveryLabel)deliveryLabel.hidden=!deliveryOn;
+    const current=document.querySelector('input[name="tipo"]:checked');
+    if(!current||!fulfillmentAllowed(current.value)){
+      const fallback=pickupOn?pickupRadio:deliveryRadio;
+      if(fallback)fallback.checked=true;
+    }
+    const trustItems=document.querySelectorAll(".trust div");
+    if(trustItems?.[1]&&String(window.__businessType||"")==="restaurant"){
+      trustItems[1].textContent=pickupOn&&deliveryOn?"✓ Retiro o delivery":pickupOn?"✓ Retiro en el local":"✓ Delivery disponible";
+    }
+    syncQuickOrderSelector();
+    toggleDelivery();
+  }
   function syncQuickOrderSelector(){
     if(!quickOrderSelector)return;
     if(window.__tableQrContext){quickOrderSelector.hidden=true;return}
-    const selected=document.querySelector('input[name="tipo"]:checked')?.value||"Retiro";
+    const selected=document.querySelector('input[name="tipo"]:checked')?.value||(CONFIG.fulfillment?.pickup!==false?"Retiro":"Delivery");
     quickOrderSelector.querySelectorAll("[data-quick-type]").forEach(btn=>btn.classList.toggle("active",btn.dataset.quickType===selected));
   }
   quickOrderSelector?.addEventListener("click",e=>{
-    const btn=e.target.closest("[data-quick-type]");if(!btn)return;
+    const btn=e.target.closest("[data-quick-type]");if(!btn||btn.hidden||!fulfillmentAllowed(btn.dataset.quickType))return;
     const radio=document.querySelector('input[name="tipo"][value="'+btn.dataset.quickType+'"]');
     if(radio){radio.checked=true;radio.dispatchEvent(new Event("change",{bubbles:true}));syncQuickOrderSelector()}
   });
-  document.querySelectorAll('input[name="tipo"]').forEach(r=>r.addEventListener("change",syncQuickOrderSelector));
-  syncQuickOrderSelector();
+  document.querySelectorAll('input[name="tipo"]').forEach(r=>r.addEventListener("change",()=>{if(!fulfillmentAllowed(r.value)){applyFulfillmentAvailability();return}syncQuickOrderSelector()}));
+  applyFulfillmentAvailability();
   function renderCart(){
     linesEl.innerHTML = [...cart.entries()].map(([k, v]) =>
       `<div class="line"><div class="cart-thumb">${artSVG(v.it,Math.max(0,v.it.opts.indexOf(v.opt)))}</div><div class="ln"><strong>${lineName(v)}</strong>`
@@ -3718,7 +3796,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
   const send = $("#send");
   let whatsappOrderUrl=""; function refreshLink(){ whatsappOrderUrl = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(buildMessage()); }
   function toggleDelivery(){
-    const d = form().type === "Delivery";
+    const d = form().type === "Delivery" && fulfillmentAllowed("Delivery");
     $("#addr-wrap").hidden = !d;
     $("#ship-hint").hidden = !d;
   }
@@ -3903,6 +3981,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
     if(!isOpen){$("#err").textContent="El local está cerrado. No se pueden enviar pedidos en este momento.";return;}
     let msg="";
     if(!cart.size)msg="Agregá al menos un producto.";
+    else if(!window.__tableQrContext&&!fulfillmentAllowed(f.type))msg=f.type==="Delivery"?"Este restaurante no tiene Delivery habilitado.":"Este restaurante no tiene Retiro en el local habilitado.";
     else if(!f.name)msg="Escribí tu nombre.";
     else if(!f.phone&&!window.__tableQrContext)msg="Ingresa tu número de teléfono.";
     else if(f.type==="Delivery"&&!f.addr)msg="Escribí la dirección de entrega.";
@@ -4234,5 +4313,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.54</footer></body>
+<footer class="site-version">Versión v1.6.55</footer></body>
 </html>
