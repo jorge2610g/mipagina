@@ -28,8 +28,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Menú">
-<link id="app-manifest" rel="manifest" href="/manifest.webmanifest?v=1626">
-<link id="brand-apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="/white-label-icon.svg">
+<link id="app-manifest" rel="manifest" href="./manifest.webmanifest?v=1626">
+<link id="brand-apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="./white-label-icon.svg">
 <link id="brand-favicon" rel="icon" href="/white-label-icon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#000000">
 <meta name="description" content="Menú digital del restaurante. Pedidos directos por WhatsApp.">
@@ -2443,7 +2443,7 @@ body.vertical-retail #detail .d-note-field label::after{
   async function registerCustomerPush(){
     if(window.__adminClientPreview)return;
     if(!currentCustomer||!("serviceWorker" in navigator)||!("PushManager" in window)||Notification.permission!=="granted")return;
-    const registration=await navigator.serviceWorker.register("/pwa-sw.js");
+    const registration=await navigator.serviceWorker.register(clientAssetUrl("pwa-sw.js"));
     let subscription=await registration.pushManager.getSubscription();
     if(subscription){
       try{
@@ -4370,7 +4370,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
   }
   async function registerTableQrOrderPush(orderId){
     if(!window.__tableQrContext||!orderId||!("serviceWorker" in navigator)||!("PushManager" in window)||!("Notification" in window)||Notification.permission!=="granted")return false;
-    const registration=await navigator.serviceWorker.register("/pwa-sw.js");
+    const registration=await navigator.serviceWorker.register(clientAssetUrl("pwa-sw.js"));
     let subscription=await registration.pushManager.getSubscription();
     if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(WEB_PUSH_PUBLIC_KEY)});
     const json=subscription.toJSON();
@@ -4575,7 +4575,7 @@ window.addEventListener("DOMContentLoaded",async()=>{
     }
     localStorage.setItem(migrationKey,"1");
    }
-   const reg=await navigator.serviceWorker.register("/pwa-sw.js",{scope:"/"});
+   const reg=await navigator.serviceWorker.register(clientAssetUrl("pwa-sw.js"),{scope:clientInstallContext().scope});
    await reg.update().catch(()=>{});
    const activateWaiting=worker=>{
     if(!worker||!navigator.serviceWorker.controller)return;
@@ -4595,5 +4595,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.61</footer></body>
+<footer class="site-version">Versión v1.6.62</footer></body>
 </html>
