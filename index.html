@@ -2623,6 +2623,37 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
   }
   function publicPlatformName(){return CONFIG.whiteLabel?CONFIG.name:"YummyPro"}
 
+  const PUBLIC_CATALOG_PAGE_SIZE=120;
+  let publicCatalogKind="",publicCatalogOffset=0,publicCatalogTotal=0,publicCatalogSearchTimer=null;
+  let publicCatalogCategoryDefs=[];
+  const publicCatalogSlug=value=>String(value||"general").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"general";
+  function mapPublicRetailProduct(p){
+    const cat=String(p.category||"General").trim()||"General";
+    return {id:"retail-"+p.id,retailProductId:Number(p.id),name:p.name,brand:p.brand||"",desc:p.description||"",badge:Number(p.current_stock)<=Number(p.minimum_stock)?"Últimas unidades":"",pop:false,img:p.image_url||"",opts:[{l:"",p:Number(p.price||0)}],extras:[],was:null,out:Number(p.current_stock||0)<=0,stock:Number(p.current_stock||0),unit:p.unit||"unidad",barcode:p.barcode||"",allowFractional:!!p.allow_fractional,art:{k:"box"},category:cat,_catalogCategory:publicCatalogSlug(cat)}
+  }
+  function mapPublicRestaurantProduct(p){
+    const base=Number(p.price)||0,groups=Array.isArray(p.option_groups)?p.option_groups:[],single=groups.find(g=>g.selection_type==="single"),multiple=groups.filter(g=>g.selection_type==="multiple"),singleOptions=single?(single.options||[]):[],opts=singleOptions.length?singleOptions.map(o=>({l:o.name,p:base+Number(o.price_delta||0),optionId:o.id})).concat(single.required?[]:[{l:"Sin "+String(single.name||"opción").toLowerCase(),p:base}]):[{l:"",p:base}],extras=multiple.flatMap(g=>(g.options||[]).map(o=>({id:"dbopt-"+o.id,name:o.name,p:Number(o.price_delta||0),group:g.name}))),cat=publicCatalogCategoryDefs.find(x=>Number(x.id)===Number(p.category_id)),catName=cat?.name||"General",catSlug=cat?.slug||"general";
+    return {id:"db-"+p.id,name:p.name,desc:p.description||"",badge:p.badge||"",pop:!!p.featured,img:p.image_url||"",opts,extras,was:p.compare_price?Number(p.compare_price):null,art:{k:"burger"},category:catName,_catalogCategory:catSlug}
+  }
+  function buildPublicMenu(categories,rows,kind){
+    publicCatalogKind=kind;publicCatalogCategoryDefs=Array.isArray(categories)?categories:[];
+    if(kind==="retail"){
+      MENU=publicCatalogCategoryDefs.map((x,i)=>{const name=x.name||"General";return{id:publicCatalogSlug(name),name,tone:i%2?"cool":"warm",items:[]}});
+      (rows||[]).forEach(p=>{const it=mapPublicRetailProduct(p),cat=MENU.find(x=>x.id===it._catalogCategory);if(cat)cat.items.push(it)});
+    }else{
+      MENU=publicCatalogCategoryDefs.map(x=>({id:x.slug||"general",name:x.name||"General",tone:"warm",items:[]}));
+      (rows||[]).forEach(p=>{const it=mapPublicRestaurantProduct(p),cat=MENU.find(x=>x.id===it._catalogCategory);if(cat)cat.items.push(it)});
+    }
+    publicCatalogOffset=(rows||[]).length;
+  }
+  async function fetchPublicCatalogPage(offset=0,search=null,limit=PUBLIC_CATALOG_PAGE_SIZE){
+    if(!window.__restaurantId||!publicCatalogKind)return {rows:[],total:0,categories:[]};
+    const fn=publicCatalogKind==="retail"?"get_public_retail_catalog_page":"get_public_restaurant_catalog_page";
+    const {data,error}=await db.rpc(fn,{p_restaurant_id:Number(window.__restaurantId),p_limit:limit,p_offset:Math.max(0,Number(offset)||0),p_search:String(search||"").trim()||null});
+    if(error)throw error;
+    return data||{rows:[],total:0,categories:[]}
+  }
+
   const EXTRAS_BURGER = [
     { id:"cheddar", name:"Cheddar extra",    p:250 },
     { id:"bacon",   name:"Panceta crocante", p:350 },
@@ -2795,16 +2826,14 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
     }
     if(["supermarket","minimarket","retail"].includes(window.__businessType)){
       window.__tableQrContext=null;
-      const [{data:retailRows,error:retailError},{data:countryConfig},{data:paymentMethods}]=await Promise.all([
-        db.rpc("get_public_retail_catalog",{p_restaurant_id:r.id}),
+      const [{data:retailPage,error:retailError},{data:countryConfig},{data:paymentMethods}]=await Promise.all([
+        db.rpc("get_public_retail_catalog_page",{p_restaurant_id:r.id,p_limit:PUBLIC_CATALOG_PAGE_SIZE,p_offset:0,p_search:null}),
         db.from("platform_countries").select("*").eq("code",r.country_code||"CL").maybeSingle(),
         db.from("restaurant_payment_methods").select("*").eq("restaurant_id",r.id).eq("active",true).order("sort_order")
       ]);
       if(retailError)throw new Error("No se pudo cargar la tienda: "+retailError.message);
-      const rows=retailRows||[],slugifyRetail=v=>String(v||"general").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"general";
-      const groups=new Map();
-      rows.forEach(p=>{const cat=String(p.category||"General").trim()||"General";if(!groups.has(cat))groups.set(cat,[]);groups.get(cat).push({id:"retail-"+p.id,retailProductId:Number(p.id),name:p.name,brand:p.brand||"",desc:p.description||"",badge:p.current_stock<=p.minimum_stock?"Últimas unidades":"",pop:false,img:p.image_url||"",opts:[{l:"",p:Number(p.price||0)}],extras:[],was:null,out:Number(p.current_stock||0)<=0,stock:Number(p.current_stock||0),unit:p.unit||"unidad",barcode:p.barcode||"",allowFractional:!!p.allow_fractional,art:{k:"box"}})});
-      MENU=[...groups.entries()].map(([name,items],i)=>({id:slugifyRetail(name),name,tone:i%2?"cool":"warm",items:items.map(it=>({...it,category:name}))}));
+      publicCatalogTotal=Number(retailPage?.total||0);
+      buildPublicMenu(retailPage?.categories||[],retailPage?.rows||[],"retail");
       CONFIG.paymentMethods=(paymentMethods||[]).filter(m=>String(m.method_type||"").toLowerCase()!=="bank_transfer"||r.accept_bank_transfer!==false);
       const methodNames=CONFIG.paymentMethods.map(m=>m.label);
       CONFIG.payments=[...(r.accept_cash!==false?["Efectivo"]:[]),...methodNames];
@@ -2824,17 +2853,14 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
       }
       return;
     }
-    const [{data:cats},{data:prods},{data:optionGroups},{data:productOptions},{data:countryConfig},{data:paymentMethods}]=await Promise.all([
-      db.from("restaurant_categories").select("*").eq("restaurant_id",r.id).eq("active",true).order("sort_order"),
-      db.from("restaurant_products").select("*").eq("restaurant_id",r.id).eq("available",true).order("sort_order"),
-      db.from("restaurant_product_option_groups").select("*").eq("restaurant_id",r.id).eq("active",true).order("sort_order"),
-      db.from("restaurant_product_options").select("*").eq("restaurant_id",r.id).eq("available",true).order("sort_order"),
+    const [{data:catalogPage,error:catalogError},{data:countryConfig},{data:paymentMethods}]=await Promise.all([
+      db.rpc("get_public_restaurant_catalog_page",{p_restaurant_id:r.id,p_limit:PUBLIC_CATALOG_PAGE_SIZE,p_offset:0,p_search:null}),
       db.from("platform_countries").select("*").eq("code",r.country_code||"CL").maybeSingle(),
       db.from("restaurant_payment_methods").select("*").eq("restaurant_id",r.id).eq("active",true).order("sort_order")
     ]);
-    const activeCats=(cats||[]),visibleProds=(prods||[]),groups=optionGroups||[],allOptions=productOptions||[];
-    const mapCloudProduct=p=>{const base=Number(p.price)||0,productGroups=groups.filter(g=>g.product_id===p.id),single=productGroups.find(g=>g.selection_type==="single"),multiple=productGroups.filter(g=>g.selection_type==="multiple"),singleOptions=single?allOptions.filter(o=>o.group_id===single.id):[],opts=singleOptions.length?singleOptions.map(o=>({l:o.name,p:base+Number(o.price_delta||0),optionId:o.id})).concat(single.required?[]:[{l:"Sin "+single.name.toLowerCase(),p:base}]):[{l:"",p:base}],extras=multiple.flatMap(g=>allOptions.filter(o=>o.group_id===g.id).map(o=>({id:"dbopt-"+o.id,name:o.name,p:Number(o.price_delta||0),group:g.name})));return{id:"db-"+p.id,name:p.name,desc:p.description||"",badge:p.badge||"",pop:!!p.featured,img:p.image_url||"",opts,extras,was:p.compare_price?Number(p.compare_price):null,art:{k:"burger"}}};
-    const uncategorized=visibleProds.filter(p=>!p.category_id||!activeCats.some(cat=>cat.id===p.category_id));MENU=activeCats.map(cat=>({id:cat.slug,name:cat.name,tone:"warm",items:visibleProds.filter(p=>p.category_id===cat.id).map(mapCloudProduct).map(it=>({...it,category:cat.name}))}));if(uncategorized.length)MENU.push({id:"general",name:"General",tone:"warm",items:uncategorized.map(mapCloudProduct).map(it=>({...it,category:"General"}))});
+    if(catalogError)throw new Error("No se pudo cargar el menú: "+catalogError.message);
+    publicCatalogTotal=Number(catalogPage?.total||0);
+    buildPublicMenu(catalogPage?.categories||[],catalogPage?.rows||[],"restaurant");
     CONFIG.paymentMethods=(paymentMethods||[]).filter(m=>String(m.method_type||"").toLowerCase()!=="bank_transfer"||r.accept_bank_transfer!==false);const methodNames=CONFIG.paymentMethods.map(m=>m.label);CONFIG.payments=[...(r.accept_cash!==false?["Efectivo"]:[]),...methodNames];if(window.__tableQrContext&&!CONFIG.payments.includes("Tarjeta POS"))CONFIG.payments.splice(Math.min(1,CONFIG.payments.length),0,"Tarjeta POS");if(countryConfig?.mercadopago_enabled&&r.accept_mercadopago!==false)CONFIG.payments.push("Mercado Pago");window.__restaurantId=r.id;
     // Mercado Pago solo se ofrece cuando la conexión del restaurante fue validada.
     try{
@@ -3615,7 +3641,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
     navEl.insertAdjacentHTML("beforeend", `<a class="chip" href="#c-${cat.id}" data-cat="${cat.id}"><span class="cat-ico">${categoryIcon(cat.name)}</span><span>${cat.name}</span></a>`);
     html += `<section id="c-${cat.id}" data-cat="${cat.id}"><div class="section-title-row"><h2>${cat.name}</h2></div><div class="list">${cat.items.map(rowHTML).join("")}</div></section>`;
   });
-  html += `<p class="empty" id="empty" hidden>No encontramos productos con esa búsqueda.</p>`;
+  html += `<div id="public-catalog-pager" class="item" style="margin:22px 0;text-align:center" hidden><button id="public-catalog-more" type="button" class="primary" style="width:auto;padding:12px 20px">Cargar más productos</button><div id="public-catalog-progress" class="mut" style="margin-top:8px"></div></div><p class="empty" id="empty" hidden>No encontramos productos con esa búsqueda.</p>`;
   menuEl.innerHTML = html;
   if(isRetailVertical){
     const retailPopulars=document.querySelector("#c-populares .pops");
@@ -3624,6 +3650,35 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
       requestAnimationFrame(()=>{retailPopulars.scrollLeft=0});
     }
   }
+  function updatePublicCatalogPager(){
+    const wrap=document.getElementById("public-catalog-pager"),btn=document.getElementById("public-catalog-more"),progress=document.getElementById("public-catalog-progress");
+    if(!wrap||!btn||!progress)return;
+    const remaining=Math.max(0,publicCatalogTotal-publicCatalogOffset);
+    wrap.hidden=!publicCatalogKind||remaining<=0;
+    btn.disabled=remaining<=0;
+    progress.textContent=publicCatalogKind?Math.min(publicCatalogOffset,publicCatalogTotal)+" de "+publicCatalogTotal+" productos cargados":"";
+  }
+  function mergePublicCatalogRows(rawRows){
+    let added=0;
+    (rawRows||[]).forEach(raw=>{
+      const it=publicCatalogKind==="retail"?mapPublicRetailProduct(raw):mapPublicRestaurantProduct(raw);
+      if(ITEMS[it.id])return;
+      const cat=MENU.find(x=>x.id===it._catalogCategory);if(!cat)return;
+      it.tone=cat.tone;it.category=cat.name||it.category||"Menú";cat.items.push(it);ITEMS[it.id]=it;
+      const list=document.querySelector("#c-"+CSS.escape(cat.id)+" .list");if(list)list.insertAdjacentHTML("beforeend",rowHTML(it));
+      added++
+    });
+    return added
+  }
+  async function loadMorePublicCatalog(){
+    const btn=document.getElementById("public-catalog-more");if(btn)btn.disabled=true;
+    try{
+      const page=await fetchPublicCatalogPage(publicCatalogOffset,null,PUBLIC_CATALOG_PAGE_SIZE),rows=page?.rows||[];
+      publicCatalogTotal=Number(page?.total||publicCatalogTotal);publicCatalogOffset+=rows.length;mergePublicCatalogRows(rows);updatePublicCatalogPager();
+    }catch(e){console.error("Catálogo incremental",e);if(btn)btn.disabled=false}
+  }
+  document.getElementById("public-catalog-more")?.addEventListener("click",loadMorePublicCatalog);
+  updatePublicCatalogPager();
 
   /* Chip activo según el scroll */
   const chips = $$(".chip");
@@ -3642,15 +3697,21 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
   }
 
   /* Buscador */
+  function applyPublicCatalogFilter(query){
+    const q=norm(String(query||"").trim());let any=false;
+    $$("#menu .item[data-id]").forEach(el=>{const show=!q||el.dataset.s.includes(q);el.hidden=!show;if(show)any=true});
+    $$("section[data-cat]").forEach(s=>{if(s.id==="c-populares"){s.hidden=!!q;return}s.hidden=![...s.querySelectorAll(".item[data-id]")].some(i=>!i.hidden)});
+    $("#empty").hidden=any||!q
+  }
   $("#q").addEventListener("input", e => {
-    const q = norm(e.target.value.trim());
-    let any = false;
-    $$(".item").forEach(el => { const show = !q || el.dataset.s.includes(q); el.hidden = !show; if (show) any = true; });
-    $$("section[data-cat]").forEach(s => {
-      if (s.id === "c-populares"){ s.hidden = !!q; return; }
-      s.hidden = ![...s.querySelectorAll(".item")].some(i => !i.hidden);
-    });
-    $("#empty").hidden = any || !q;
+    const raw=e.target.value.trim(),q=norm(raw);applyPublicCatalogFilter(raw);
+    clearTimeout(publicCatalogSearchTimer);
+    if(!publicCatalogKind||q.length<2)return;
+    publicCatalogSearchTimer=setTimeout(async()=>{
+      try{
+        const page=await fetchPublicCatalogPage(0,raw,100);mergePublicCatalogRows(page?.rows||[]);applyPublicCatalogFilter(raw)
+      }catch(err){console.error("Búsqueda de catálogo",err)}
+    },280)
   });
 
   /* ---------- Carrito ---------- */
@@ -4432,5 +4493,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.59</footer></body>
+<footer class="site-version">Versión v1.6.60</footer></body>
 </html>
