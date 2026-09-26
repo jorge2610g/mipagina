@@ -39,7 +39,7 @@ for(const marker of ['test-rubro-selector-v1661','TEST_RUBRO_SWITCHER','testRubr
 if(!html.includes('location.pathname.startsWith("/yummy-cliente-pruebas/")'))throw new Error('El selector de rubros debe limitarse a Cliente Pruebas');
 
 
-for(const marker of ['TEST_RUBRO_TARGETS_KEY','yummypro_test_rubro_targets_v1','readTestRubroTargets','saveTestRubroTargets'])if(!html.includes(marker))throw new Error('Falta persistencia del selector de rubros de Pruebas: '+marker);
+for(const marker of ['TEST_RUBRO_TARGETS_KEY','yummypro_test_rubro_targets_v2','readTestRubroTargets','saveTestRubroTargets'])if(!html.includes(marker))throw new Error('Falta persistencia del selector de rubros de Pruebas: '+marker);
 
 
 for(const marker of ['yummypro_test_rubro_targets_v2','cleanTestRubroTargets','test_nav','testRubroUrl(key,row,targets)','body.professional-booking-mode>:not(#professional-booking-app):not(#test-rubro-switcher):not(script)'])if(!html.includes(marker))throw new Error('Falta persistencia robusta del selector de rubros de Pruebas: '+marker);
