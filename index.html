@@ -2292,14 +2292,32 @@ body.vertical-retail #detail .d-note-field label::after{
     }
     return targets;
   }
+  const TEST_RUBRO_TARGETS_KEY="yummypro_test_rubro_targets_v1";
+  function readTestRubroTargets(){
+    try{
+      const parsed=JSON.parse(localStorage.getItem(TEST_RUBRO_TARGETS_KEY)||"{}");
+      return parsed&&typeof parsed==="object"?parsed:{};
+    }catch(_){return {}}
+  }
+  function saveTestRubroTargets(targets){
+    try{
+      const clean={};
+      for(const key of ["restaurant","retail","professional","streaming"]){
+        const row=targets?.[key];
+        if(row?.id)clean[key]={id:row.id,slug:row.slug||null,name:row.name||"",business_type:row.business_type||key};
+      }
+      localStorage.setItem(TEST_RUBRO_TARGETS_KEY,JSON.stringify(clean));
+    }catch(_){}
+  }
   async function mountTestRubroSelector(){
     if(!TEST_RUBRO_SWITCHER||document.getElementById("test-rubro-switcher"))return;
-    let targets={};
-    try{targets=await loadTestRubroTargets()}catch(e){console.warn("Selector de rubros de Pruebas",e)}
+    let targets=readTestRubroTargets();
+    try{targets={...targets,...await loadTestRubroTargets()}}catch(e){console.warn("Selector de rubros de Pruebas",e)}
     const current=testRubroKey(window.__businessType||"restaurant");
-    if(!targets[current]&&window.__restaurantId&&window.__restaurantId!=="demo"){
-      targets[current]={id:window.__restaurantId,slug:new URLSearchParams(location.search).get("r")||window.__restaurantId,name:CONFIG.name,business_type:window.__businessType||"restaurant"};
+    if(window.__restaurantId&&window.__restaurantId!=="demo"){
+      targets[current]={id:window.__restaurantId,slug:new URLSearchParams(location.search).get("r")||targets[current]?.slug||window.__restaurantId,name:CONFIG.name||targets[current]?.name||"",business_type:window.__businessType||current};
     }
+    saveTestRubroTargets(targets);
     const labels={restaurant:"🍽️ Restaurante",retail:"🛒 Retail",professional:"💼 Profesionales",streaming:"🎬 Streaming"};
     const bar=document.createElement("div");
     bar.id="test-rubro-switcher";
@@ -2311,9 +2329,11 @@ body.vertical-retail #detail .d-note-field label::after{
       option.disabled=!targets[key];option.selected=key===current;
       select.appendChild(option);
     }
+    select.value=current;
     select.addEventListener("change",()=>{
       const key=select.value,row=targets[key];
       if(!row){select.value=current;return}
+      saveTestRubroTargets(targets);
       location.href=testRubroUrl(key,row);
     });
     document.body.prepend(bar);
