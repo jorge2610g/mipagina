@@ -1,5 +1,13 @@
 # Changelog YummyPro — Cliente
 
+## 2026-09-25/26 — 1.6.56 — Pruebas
+
+- Se corrigió la detección del restaurante al abrir directamente la raíz de GitHub Pages de Pruebas.
+- El nombre del repositorio `yummy-cliente-pruebas` ya no se interpreta erróneamente como slug de restaurante.
+- El enlace genérico de Cliente Pruebas vuelve a cargar el primer negocio activo si no se pasa `?r=`.
+- Los enlaces específicos con `?r=slug` continúan abriendo exactamente el negocio solicitado.
+- Producción no fue modificada.
+
 ## 2026-09-25/26 — 1.6.55 — Pruebas
 
 - Se corrigieron las tarjetas de **Más vendidos** en móvil: imagen más contenida, altura automática y títulos sin recorte.
