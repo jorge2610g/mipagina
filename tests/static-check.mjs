@@ -5,7 +5,7 @@ for(const marker of ['currencyDigits','minimumFractionDigits:shown','maximumFrac
 if(!/<\/html>/i.test(html))throw new Error('HTML incompleto');
 console.log('Menú cliente validado');
 
-for(const marker of ['pwa-install-btn','installCustomerPwa','yummypro_last_restaurant','./manifest.webmanifest?v=1626','clientAssetUrl("pwa-sw.js")','yummypro_client_pwa_identity_v1622','customer-pwa-v1623','Versión v1.6.62'])if(!html.includes(marker))throw new Error('Falta PWA cliente actual: '+marker);
+for(const marker of ['pwa-install-btn','installCustomerPwa','yummypro_last_restaurant','./manifest.webmanifest?v=1626','new URL("pwa-sw.js",new URL(".",location.href)).href','yummypro_client_pwa_identity_v1622','customer-pwa-v1623','Versión v1.6.63'])if(!html.includes(marker))throw new Error('Falta PWA cliente actual: '+marker);
 
 const pwaManifest=readFileSync('manifest.webmanifest','utf8');
 for(const marker of ['"id": "./"','"start_url": "./?source=pwa"','"scope": "./"','"display": "standalone"','"./white-label-icon.svg"','"purpose": "any maskable"'])if(!pwaManifest.includes(marker))throw new Error('Manifest PWA cliente v1.6.60 incompleto: '+marker);
@@ -44,4 +44,7 @@ for(const marker of ['TEST_RUBRO_TARGETS_KEY','yummypro_test_rubro_targets_v2','
 
 for(const marker of ['yummypro_test_rubro_targets_v2','cleanTestRubroTargets','test_nav','testRubroUrl(key,row,targets)','body.professional-booking-mode>:not(#professional-booking-app):not(#test-rubro-switcher):not(script)'])if(!html.includes(marker))throw new Error('Falta persistencia robusta del selector de rubros de Pruebas: '+marker);
 
-for(const marker of ['clientAssetUrl("pwa-sw.js")','scope:clientInstallContext().scope','./manifest.webmanifest?v=1626'])if(!html.includes(marker))throw new Error('Falta PWA Pages-safe en Cliente: '+marker);
+for(const marker of ['new URL("pwa-sw.js",new URL(".",location.href)).href','scope:new URL(".",location.href).href','./manifest.webmanifest?v=1626'])if(!html.includes(marker))throw new Error('Falta PWA Pages-safe en Cliente: '+marker);
+
+// PWA registration self-contained
+for(const marker of ['new URL("pwa-sw.js",new URL(".",location.href)).href','scope:new URL(".",location.href).href','Versión v1.6.63'])if(!html.includes(marker))throw new Error('Falta registro PWA autocontenido v1.6.63: '+marker);
