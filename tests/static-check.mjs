@@ -35,7 +35,7 @@ for(const marker of ['pathParts','yummy-cliente-pruebas','pathParts.shift()'])if
 for(const marker of ['whiteLabel','white_label_enabled','applyWhiteLabelBranding','publicPlatformName','data-white-label'])if(!html.includes(marker))throw new Error('Falta Marca blanca pública: '+marker);
 
 
-for(const marker of ['test-rubro-selector-v1661','TEST_RUBRO_SWITCHER','testRubroKey','loadTestRubroTargets','mountTestRubroSelector','yummy-cliente-pruebas','yummy-streaming-pruebas/catalogo/?business=','🍽️ Restaurante','🛒 Retail','💼 Profesionales','🎬 Streaming'])if(!html.includes(marker))throw new Error('Falta selector de rubros exclusivo de Pruebas: '+marker);
+for(const marker of ['test-rubro-selector-v1661','TEST_RUBRO_SWITCHER','testRubroKey','loadTestRubroTargets','mountTestRubroSelector','yummy-cliente-pruebas','yummy-streaming-pruebas/catalogo/','url.searchParams.set("business"','🍽️ Restaurante','🛒 Retail','💼 Profesionales','🎬 Streaming'])if(!html.includes(marker))throw new Error('Falta selector de rubros exclusivo de Pruebas: '+marker);
 if(!html.includes('location.pathname.startsWith("/yummy-cliente-pruebas/")'))throw new Error('El selector de rubros debe limitarse a Cliente Pruebas');
 
 
