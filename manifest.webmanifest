@@ -1,11 +1,11 @@
 {
-  "id": "/",
+  "id": "./",
   "name": "Menú y tienda",
   "short_name": "Menú",
   "description": "Menú digital, tienda online y reservas.",
   "lang": "es",
-  "start_url": "/?source=pwa",
-  "scope": "/",
+  "start_url": "./?source=pwa",
+  "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#000000",
@@ -17,19 +17,19 @@
   ],
   "icons": [
     {
-      "src": "/white-label-icon.svg",
+      "src": "./white-label-icon.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/white-label-icon.svg",
+      "src": "./white-label-icon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/white-label-icon.svg",
+      "src": "./white-label-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
