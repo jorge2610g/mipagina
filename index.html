@@ -2541,7 +2541,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
   }
   startOrderRealtime();
   // Respaldo cada 10 s por si la conexión en tiempo real se interrumpe.
-  setInterval(async()=>{if(!currentCustomer)return;await refreshPendingOrder();if(document.getElementById("orders-dialog").open)await loadCustomerOrders();if(document.getElementById("order-detail-dialog").open&&openedOrderId){const {data:o}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address,payment_status").eq("id",openedOrderId).eq("customer_id",currentCustomer.id).eq("restaurant_id",window.__restaurantId).maybeSingle();if(o){const wasOpen=document.getElementById("order-detail-dialog").open;openOrderDetail(o);if(wasOpen&&document.getElementById("order-detail-dialog").open===false)document.getElementById("order-detail-dialog").showModal();}}},5000);
+  setInterval(async()=>{if(document.visibilityState!=="visible"||!currentCustomer)return;await refreshPendingOrder();if(document.getElementById("orders-dialog").open)await loadCustomerOrders();if(document.getElementById("order-detail-dialog").open&&openedOrderId){const {data:o}=await db.from("restaurant_orders").select("id,order_code,items,total,status,order_type,payment_method,created_at,delivery_address,payment_status").eq("id",openedOrderId).eq("customer_id",currentCustomer.id).eq("restaurant_id",window.__restaurantId).maybeSingle();if(o){const wasOpen=document.getElementById("order-detail-dialog").open;openOrderDetail(o);if(wasOpen&&document.getElementById("order-detail-dialog").open===false)document.getElementById("order-detail-dialog").showModal();}}},60000);
   /* =====================  EDITÁ ESTO  ===================== */
   const CONFIG = {
     name: "Hamburguesería Demo",
@@ -3010,7 +3010,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
       professionalReservationsOverlay.hidden=false;
       await loadProfessionalCustomerReservations();
       if(professionalReservationsTimer)clearInterval(professionalReservationsTimer);
-      professionalReservationsTimer=setInterval(()=>{if(!professionalReservationsOverlay.hidden)loadProfessionalCustomerReservations()},10000);
+      professionalReservationsTimer=setInterval(()=>{if(document.visibilityState==="visible"&&!professionalReservationsOverlay.hidden)loadProfessionalCustomerReservations()},60000);
     }
     document.getElementById("professional-account")?.addEventListener("click",()=>openProfessionalAccount());
     document.getElementById("professional-reservations")?.addEventListener("click",openProfessionalReservations);
@@ -4340,7 +4340,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
   if(window.__tableQrContext){
     if("Notification" in window&&Notification.permission==="granted")setTimeout(()=>enableTableQrNotifications(false),0);
     if("serviceWorker" in navigator)navigator.serviceWorker.addEventListener("message",e=>{if(e.data?.type==="yummypro-push"&&String(e.data?.data?.tag||"").startsWith("table-order-"))refreshTableQrOrderStatus()});
-    setInterval(refreshTableQrOrderStatus,8000);
+    setInterval(()=>{if(document.visibilityState==="visible")refreshTableQrOrderStatus()},30000);
   }
   if(["supermarket","minimarket","retail"].includes(window.__businessType||"")){
     let retailStatusSnapshot={};
@@ -4352,7 +4352,7 @@ document.getElementById("account-btn").addEventListener("click",()=>{if(window._
       if(document.getElementById("order-detail-dialog")?.open&&openedOrderId){const row=rows.find(x=>Number(x.id||x.order_id)===Number(openedOrderId));if(row)openOrderDetail(row)}
     };
     loadRetailOrdersFromRefs(false).then(rows=>rows.forEach(row=>retailStatusSnapshot[Number(row.id||row.order_id)]=row.status)).catch(()=>{});
-    setInterval(()=>{if(document.visibilityState==="visible")refreshRetailTracking().catch(()=>{})},8000);
+    setInterval(()=>{if(document.visibilityState==="visible")refreshRetailTracking().catch(()=>{})},30000);
     document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshRetailTracking().catch(()=>{})});
   }
   window.addEventListener("pageshow",()=>{verifyMercadoPagoReturn();refreshTableQrOrderStatus();});
@@ -4432,5 +4432,5 @@ window.addEventListener("DOMContentLoaded",async()=>{
  refreshCustomerInstallButton();
 });
 </script>
-<footer class="site-version">Versión v1.6.58</footer></body>
+<footer class="site-version">Versión v1.6.59</footer></body>
 </html>
