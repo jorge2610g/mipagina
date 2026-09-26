@@ -37,3 +37,6 @@ for(const marker of ['whiteLabel','white_label_enabled','applyWhiteLabelBranding
 
 for(const marker of ['test-rubro-selector-v1659','TEST_RUBRO_SWITCHER','testRubroKey','loadTestRubroTargets','mountTestRubroSelector','yummy-cliente-pruebas','yummy-streaming-pruebas/catalogo/?business=','🍽️ Restaurante','🛒 Retail','💼 Profesionales','🎬 Streaming'])if(!html.includes(marker))throw new Error('Falta selector de rubros exclusivo de Pruebas: '+marker);
 if(!html.includes('location.pathname.startsWith("/yummy-cliente-pruebas/")'))throw new Error('El selector de rubros debe limitarse a Cliente Pruebas');
+
+
+for(const marker of ['TEST_RUBRO_TARGETS_KEY','yummypro_test_rubro_targets_v1','readTestRubroTargets','saveTestRubroTargets'])if(!html.includes(marker))throw new Error('Falta persistencia del selector de rubros de Pruebas: '+marker);
