@@ -1,5 +1,8 @@
-const YUMMYPRO_CLIENT_CACHE="yummypro-client-v1637-public-catalog";
-const CLIENT_CORE=["/offline.html","/manifest.webmanifest","/pwa-icon.svg","/icon-192.png","/icon-512.png","/apple-touch-icon.png","/white-label-icon.svg"];
+const YUMMYPRO_CLIENT_CACHE="yummypro-client-v1638-pages-safe";
+const CLIENT_SCOPE=self.registration.scope;
+const clientAsset=name=>new URL(name,CLIENT_SCOPE).toString();
+const CLIENT_OFFLINE=clientAsset("offline.html");
+const CLIENT_CORE=["offline.html","manifest.webmanifest","pwa-icon.svg","icon-192.png","icon-512.png","apple-touch-icon.png","white-label-icon.svg"].map(clientAsset);
 self.addEventListener("install",event=>{
  event.waitUntil(caches.open(YUMMYPRO_CLIENT_CACHE).then(c=>c.addAll(CLIENT_CORE)));
 });
@@ -10,16 +13,14 @@ self.addEventListener("message",event=>{if(event.data?.type==="SKIP_WAITING")sel
 self.addEventListener("fetch",event=>{
  const req=event.request;if(req.method!=="GET")return;
  const url=new URL(req.url);if(url.origin!==self.location.origin)return;
- if(CLIENT_CORE.includes(url.pathname)){
-  event.respondWith(
-   fetch(req,{cache:"no-store"}).then(async response=>{
-    if(response?.ok){const cache=await caches.open(YUMMYPRO_CLIENT_CACHE);await cache.put(req,response.clone())}
-    return response;
-   }).catch(()=>caches.match(req).then(hit=>hit||caches.match(url.pathname)))
-  );
+ if(CLIENT_CORE.includes(url.href)){
+  event.respondWith(fetch(req,{cache:"no-store"}).then(async response=>{
+   if(response?.ok){const cache=await caches.open(YUMMYPRO_CLIENT_CACHE);await cache.put(req,response.clone())}
+   return response;
+  }).catch(()=>caches.match(req).then(hit=>hit||caches.match(url.href))));
   return;
  }
- if(req.mode==="navigate")event.respondWith(fetch(req).catch(()=>caches.match("/offline.html")));
+ if(req.mode==="navigate")event.respondWith(fetch(req).catch(()=>caches.match(CLIENT_OFFLINE)));
 });
 self.addEventListener("push",event=>{
  let data={};try{data=event.data?.json()||{}}catch{data={body:event.data?.text()||"Tienes una actualización."}}
@@ -27,13 +28,16 @@ self.addEventListener("push",event=>{
   const windows=await clients.matchAll({type:"window",includeUncontrolled:true});
   const visible=windows.find(c=>c.visibilityState==="visible");
   if(data.onlyBackground&&visible){visible.postMessage({type:"yummypro-push",data});return}
-  const options={body:data.body||"Tienes una actualización.",icon:"/icon-192.png",badge:"/icon-192.png",tag:data.tag||"yummypro-notification",renotify:true,silent:!!data.silent,requireInteraction:!!data.requireInteraction,data:{url:data.url||"/"}};
+  const options={body:data.body||"Tienes una actualización.",icon:clientAsset("icon-192.png"),badge:clientAsset("icon-192.png"),tag:data.tag||"yummypro-notification",renotify:true,silent:!!data.silent,requireInteraction:!!data.requireInteraction,data:{url:data.url||"./"}};
   if(!data.silent)options.vibrate=[220,100,220,100,350];
   await self.registration.showNotification(data.title||"Actualización",options);
  })());
 });
 self.addEventListener("notificationclick",event=>{
  event.notification.close();
- const target=new URL(event.notification.data?.url||"/",self.location.origin).href;
- event.waitUntil(clients.matchAll({type:"window",includeUncontrolled:true}).then(list=>{for(const client of list){if(client.url.startsWith(self.location.origin)){client.navigate(target);return client.focus()}}return clients.openWindow(target)}));
+ const target=new URL(event.notification.data?.url||"./",CLIENT_SCOPE).href;
+ event.waitUntil(clients.matchAll({type:"window",includeUncontrolled:true}).then(list=>{
+  for(const client of list){if(client.url.startsWith(CLIENT_SCOPE)){client.navigate(target);return client.focus()}}
+  return clients.openWindow(target)
+ }));
 });
